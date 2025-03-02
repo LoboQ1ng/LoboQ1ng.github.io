@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zn-CN">
+
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="Lobo Q1ng">
+
+
+    <meta name="subtitle" content="天空是为蓝色~">
+
+
+
+
+<title>AIFORE：论文阅读 | Lobo Q1ng&#39;s Blog</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    <script>
+        // this function is used to check current theme before page loaded.
+        (() => {
+            const currentTheme = window.localStorage && window.localStorage.getItem('theme') || '';
+            const isDark = currentTheme === 'dark';
+            const pagebody = document.getElementsByTagName('body')[0]
+            if (isDark) {
+                pagebody.classList.add('dark-theme');
+                // mobile
+                document.getElementById("mobile-toggle-theme").innerText = "· Dark"
+            } else {
+                pagebody.classList.remove('dark-theme');
+                // mobile
+                document.getElementById("mobile-toggle-theme").innerText = "· Light"
+            }
+        })();
+    </script>
+
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">Q1ng&#39;s Blog</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">Q1ng&#39;s Blog</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+            <div class="main">
+                <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    var tocbot_timer;
+    var DEPTH_MAX = 6; // 为 6 时展开所有
+    var tocbot_default_config = {
+        tocSelector: '.tocbot-list',
+        contentSelector: '.post-content',
+        headingSelector: 'h1, h2, h3, h4, h5',
+        orderedList: false,
+        scrollSmooth: true,
+        onClick: extend_click,
+    };
+
+    function extend_click() {
+        clearTimeout(tocbot_timer);
+        tocbot_timer = setTimeout(function() {
+            tocbot.refresh(obj_merge(tocbot_default_config, {
+                hasInnerContainers: true
+            }));
+        }, 420); // 这个值是由 tocbot 源码里定义的 scrollSmoothDuration 得来的
+    }
+
+    document.ready(function() {
+        tocbot.init(obj_merge(tocbot_default_config, {
+            collapseDepth: 1
+        }));
+    });
+
+    function expand_toc() {
+        var b = document.querySelector('.tocbot-toc-expand');
+        var expanded = b.getAttribute('data-expanded');
+        expanded ? b.removeAttribute('data-expanded') : b.setAttribute('data-expanded', true);
+        tocbot.refresh(obj_merge(tocbot_default_config, {
+            collapseDepth: expanded ? 1 : DEPTH_MAX
+        }));
+        b.innerText = expanded ? 'Expand all' : 'Collapse all';
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    function obj_merge(target, source) {
+        for (var item in source) {
+            if (source.hasOwnProperty(item)) {
+                target[item] = source[item];
+            }
+        }
+        return target;
+    }
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">AIFORE：论文阅读</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">Lobo Q1ng</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">August 2, 2024&nbsp;&nbsp;13:52:27</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/Fuzz/">Fuzz</a>
+                            
+                                <a href="/categories/Fuzz/Paper-Reading/">Paper Reading</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <h2 id="AIFORE-Smart-Fuzzing-Based-on-Automatic-Input-Format-Reverse-Engineering"><a href="#AIFORE-Smart-Fuzzing-Based-on-Automatic-Input-Format-Reverse-Engineering" class="headerlink" title="AIFORE: Smart Fuzzing Based on Automatic Input Format Reverse Engineering"></a>AIFORE: Smart Fuzzing Based on Automatic Input Format Reverse Engineering</h2><p>AIFORE的模糊测试过程：</p>
+<p>首先使用污点分析来识别每个Basic Block处理的输入字节，然后使用最小聚类算法识别不可分割的输入字段，并使用表征BB行为的神经网络模型学习它们的类型。使用设计出的一种新的能量调度算法，该算法基于推断出的输入格式存储信息（inferred format knowledge）。使用该算法来指导智能模糊测试。</p>
+<p><strong>摘要</strong></p>
+<p>了解程序的输入格式对于在模糊测试中有效生成输入至关重要。自动输入格式逆向工程代表了一种有吸引力但具有挑战性的学习格式的方法。在本文中，我们解决了自动输入格式逆向工程的几个挑战，并提出了一种只能模糊测试解决方案AIFORE，它充分利用了逆向格式并从中受益。</p>
+<p>输入字段的结构和语义由处理它们的代码块（BB）决定，而不是输入规范。因此，我们首先利用字节级污点分析来<strong>识别每个BB处理的输入字节</strong>，然后使用<strong>最小聚类算法识别不可分割的输入字段</strong>，这些字段始终与一个BB一起处理，并使用神经网络模型来学习它们的类型，该模型描述了BB的行为。最后，我们设计了一种基于推断的格式知识的新型能量调度算法，以指导智能模糊测试。我们实现了 AIFORE  的原型，并评估了格式推断的准确性和模糊测试的性能，与最先进的（SOTA）格式逆向解决方案和模糊测试器进行了比较。AIFORE  在字段边界和类型识别的准确性方面显著优于 SOTA 基线。使用 AIFORE，我们在 15 个程序中发现了 20  个错误，这些错误被其他模糊测试器遗漏了。</p>
+<p><strong>介绍</strong></p>
+<p>了解输入格式对生成高质量的输入至关重要。输入格式描述了程序期望如何组织输入字节。理想情况下，格式良好的输入将被正确解析和处理，从而达到预期的结果。格式错误的输入将被程序中的健全性检查器过滤掉，并尽早丢弃。因此，模糊测试器可以按照格式规范生成输入，这将有助于绕过浅层代码中的一些健全性检查，最终到达并测试更深层、更复杂的代码。此外，由于程序中的健全性机制并不总是健全且完整的，因此更有可能触发意外行为或BUG，因此应该被模糊测试器优先考虑。因此，模糊测试器可以利用格式知识的指导，为exploration 和 exploitation目的生成有价值的输入。</p>
+<p>输入格式推理(input format inference)和格式引导(format-guided)的smart fuzzing</p>
+<p>这类模糊器的解决方案试图回答关于输入格式的三个核心问题：</p>
+<ul>
+<li>不同输入字段的边界在哪里(input fields boundaries)</li>
+<li>这些字段属于哪种类型(input fields types)</li>
+<li>如何利用输入格式的知识来指导fuzzing(how to guide fuzzing)</li>
+</ul>
+<p>输入字段边界识别(input field boundary recognition)</p>
+<blockquote>
+<p>关于输入字段边界识别，现有研究[2-4]主要依赖于统计分析或动态污点分析，将同一指令处理的字节归为一个独特的字段。这类解决方案有几个局限性。首先，一条指令可能会处理多个输入字段，例如在一个循环中，这些字段会被错误地合并为一个字段。此外，一条长的字段会被不同的指令处理，并被错误地分割成多个字段，因为一般来说，一条指令处理的数据不能超过机器字的大小（如 32 位中央处理器的 4 字节）。最后，通过统计分析识别字段需要大量不同的输入，而这些输入往往是无法获得的。</p>
+</blockquote>
+<p>输入字段类型识别(input field type identification)</p>
+<blockquote>
+<p>关于输入字段类型识别，现有的解决方案[5-7]通常依赖于先验知识（例如，一些标准库调用的参数类型，如strcpy）来提取传入的字段的类型。然而，这样的先验知识是分散的，并且需要密集的工程努力来转换为启发式规则并应用它们，这也将不可避免地引入假阳性和假阴性。此外，这样的解决方案通常只能识别程序变量类型（例如，int、数组和字符串）而不是语义类型（例如，幻数、大小或校验和），因为它们没有从语义级别对输入字段如何影响程序的行为进行建模。</p>
+</blockquote>
+<p>输入格式的利用(utilization of input format)</p>
+<blockquote>
+<p>使用输入格式来指导测试用例生成或变异以达到目标程序中的更深代码。</p>
+</blockquote>
+<p>The paper core idea: 由于输入字段是由基本块解释的，因此无论输入格式规范是什么样的，都可以从输入字段中推断出输入的结构和语义信息。因此，可以通过分析处理输入域的结构和语义，并利用这些知识进行smart fuzzing.</p>
+<blockquote>
+<p> 首先，AIFORE利用动态污点分析来了解每个BB处理哪些输入字节。注意，单个不可分割的字段可以由一个BB中的多个指令部分地处理，但是不太可能由多个BB部分地处理，因为这些BB将不总是一起被执行，但是不可分割的字段应该一起被分析。</p>
+<p> 其次，AIFORE建立一个深度学习模型理解BB，即判断这些BBs所处理的输入字段类型。BB能够处理不同类型的输入字段（例如，大小、偏移量、枚举、校验和或幻数(magic number)）。因此，作者训练卷积神经网络(CNN)模型来学习BB如何处理不同类型的输入字段的模式，然后预测输入字段的语义类型。</p>
+<p> 第三，在模糊测试期间，设计一种新的基于格式自动提取的能量调度算法以提高模糊效率。程序仍然可以接受不满足规范[1]的输入，以及不同格式变体的输入。输入格式的不同变体对程序行为有不同的影响。</p>
+<ul>
+<li>规范：Host of Troubles: Multiple Host Ambiguities in HTTP Implementations<ul>
+<li>这篇论文深入分析了HTTP协议中关于Host头的几种模糊定义导致的各种漏洞，并提出了相应的解决方案。</li>
+<li>Http协议规范中，Host头的定义存在多处模糊之处，导致不同HTTP实现之间对Host头的理解和解析存在差异。这些差异会导致安全漏洞、性能下降、甚至功能失效等问题。</li>
+<li>论文重点分析的模糊定义：<ul>
+<li>Host头中的端口号是否可选？RFC7230明确要求Host头必须包含端口号，但许多HTTP实现并没有严格遵守该规则。</li>
+<li>Host头中的域名解析是否应该区分大小写？RFC1035明确规定DNS域名解析区分大小写，但许多HTTP实现却忽略了这一点。</li>
+<li>Host头是否应该包含路径信息？RFC7230没有明确规定，导致不同HTTP实现对路径信息处理存在分歧。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p> 提出一个两步策略来利用格式信息(format knowledge)，即识别新的变体并优先考虑不经常测试的格式。首先，AIFORE挑选具有显著不同代码覆盖率的测试用例，并重新分析它们的输入格式，因为它们可能具有不同的格式。其次，我们优先考虑那些在fuzzing过程中测试频率较低的种子，并增加它们的突变能力。</p>
+</blockquote>
+<p>以readelf为例，分析并总结现有方法的局限性。（elf文件是一种目标文件格式，常见的ELF格式文件包括：可执行文件、可重定位文件(.o)、共享目标文件(.so)、核心转储文件等，主要用于Linux平台）。<strong>一个完整的ELF文件一般会包括如下几个内容：文件头、Section头、Program头和Section</strong></p>
+<img src="/2024/08/02/AIFORE：论文阅读/image-20240724141934191.png"  alt="image-20240724141934191" style="zoom:50%;" />
+
+<p>一个ELF文件由几个数据结构组成（例如，文件头、Section头、Program头和Section头），每个头由几个字段组成。对于Figure1所示的文件头结构，它具有由连续字节组成的一些字段（例如，从偏移0x00到0x03的幻数）和具有单字节值的某些字段（例如，偏移量为0x04的类）。以偏移0x12处的e_mahcine为例，它表示机器架构（例如，AArch64、i386或x86_64），这会改变ELF的结构（例如，地址字段的长度可以是四个或八个字节，用红框标记）。</p>
+<img src="/2024/08/02/AIFORE：论文阅读/image-20240724143204076.png"  alt="image-20240724143204076" style="zoom:50%;" />
+
+<p>Listing 1显示了readelf的代码片段，它解析elf格式的输入。解析输入文件有两个主要步骤。</p>
+<ul>
+<li>第一步是读取输入并初始化与输入字段对应的某些变量。例如，第3行到第6行从输入中读取字段并初始化相应的变量：file_header.e_machine,file_header.e_shnum。</li>
+<li>第二步是在函数process_file_header中进一步处理这些初始化的变量。不同的BB用于处理不同类型的变量。例如，在第21行一次比较一个字节的四字节幻数，而e_machine作为具有switch-case语句的枚举处理。</li>
+</ul>
+<p>并且，readelf在解析elf文件时，可以观察到以下结果。</p>
+<p><strong>结果1</strong>：在大多数情况下，不可分割字段中的字节在一个BB中一起解析。例如，两字节字段e_machine在第4行开始的块和第10行开始的另一个块中作为一个整体来处理。对于字段e_shstrndx，它在第27行的BB中一起解析。然而，存在这样的极端情况，其中一个字段的部分（例如，在第21行解析的幻数字段）可以在不同的BB中解析。此外，一个BB可以处理多个任务并且在运行时被执行多次。例如，BYTE_GET函数中的BB被执行多次以从输入缓冲区读取并提取不同的字节以分配不同的变量。</p>
+<p><strong>结果2</strong>：不同类型的程序代码处理字段使用不同的模式。例如，枚举变量（e_machine）很可能由switch-case语句处理，而大小变量(e_shnum)可以通过数学运算来处理。</p>
+<p><strong>结果3</strong>：输入的结构可能不同，程序将使用不同的代码来解析输入。例如，e_machine的变体可能表示不同的数据结构，如figure 1中用红框标记的地址字段的长度。如果在fuzzing过程中发现了新的结构，模糊器应该重新分配能量，并使用相应的格式信息来获得更高的覆盖率。</p>
+<p><strong>AIFORE的架构图Figure 2</strong></p>
+<img src="/2024/08/02/AIFORE：论文阅读/image-20240718104525414.png"  alt="image-20240718104525414" style="zoom: 80%;" />
+
+<p>在模糊化期间，如果种子带来的覆盖增量是可区分的（即增加平均覆盖率的3%），将其标记为有价值的种子。对于每个有价值的种子，使用AIFORE分析其格式和模糊的格式模型，包括字段边界和字段类型的提取知识的文件。AIFORE的核心是，输入格式信息可以从处理输入文件的BB模式中推断出来。因此，**AIFORE利用污点分析来构建输入字节和处理它们(输入字节)的BB之间的映射。**Figure 3演示从readelf中获取的两个BB，它们解析先前示例中的输入格式。每条指令末尾的注释列出了它所处理的输入字节的偏移量，这些偏移量由污点分析引擎跟踪。</p>
+<img src="/2024/08/02/AIFORE：论文阅读/image-20240725094331734.png"  alt="image-20240725094331734" style="zoom:50%;" />
+
+<p>Figure 2 中存在三个模块联合逆向输入格式并平衡种子的模糊能量 </p>
+<ul>
+<li><strong>Field Boundary Analysis</strong><ul>
+<li>第一个模块是分析字段边界并将输入分割为字段，即连续字节。连续字节的意思就是，它们在对程序行为的影响方面具有相同的语义（连续字节将一起被BBs处理）</li>
+</ul>
+</li>
+<li><strong>Field Type Classification</strong><ul>
+<li>第二个模块是通过一个基于CNN的模型预测字段类型信息。该模型经过训练可以理解程序如何解析不同类型的字段。字段边界和字段类型由格式模板(pit文件)组成。<ul>
+<li>格式模板（<strong>Peach Pit文件</strong>） ——— PeachFuzzer的配置文件。<ul>
+<li>一种XML文件，包含多个元素，这些元素描述测试用例生成器的数据模型、数据类型、范围、约束和默认值等信息。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>对于每个字段，记录其<strong>边界</strong>及其起始位置、大小及其类型。</li>
+</ul>
+</li>
+<li><strong>Fuzzing with Power Scheduling</strong><ul>
+<li>决定哪个种子值得进行格式提取，并将那些变异较小的格式重新分配更多的fuzzing power</li>
+</ul>
+</li>
+</ul>
+<p><strong>字段边界分析</strong></p>
+<hr>
+<p>识别不同字段的边界是输入格式逆向工程的一项基本任务。<strong>由连续输入字节组成的字段通常在每个BB中作为整体（之前由readelf示例观察得出结果）</strong>。AIFORE因此使用最小聚类(MC)方法从块级别而非像Tupni和Polyglot从指令级别拆分字段。其过程如<strong>Algorithm 1</strong>所示。</p>
+<img src="/2024/08/02/AIFORE：论文阅读/image-20240725110821542.png"  alt="image-20240725110821542" style="zoom:50%;" />
+
+<p>首先将二进制代码拆分为BB。例如，将Listing 1中源码第四行拆分成两个BB。其次，收集并合并在一个BB中处理的输入字节。例如，Figure 3中的第一个BB处理偏移量为18和19的两个输入字节，第二个BB（Listing 1中的第一行的BYTE_GET）处理偏移量为16-19和40-51的字节。BYTE_GET在程序中很常见，因为它们首先将输入中的不同字段作为一个整体读取到内存中的缓冲区，然后程序将对应地解析它们。第三，根据每个块的污点属性拆分字段，包括一般的bb（例如，BYTE_GET）和特定字段的bb。对于连续字节的每个MC，在所有bb中作为一个整体处理，例如Figure 3中的偏移量为18和19的两个输入字节，将被识别为一个字段。</p>
+<p><strong>MC方法</strong>（蒙特卡洛算法）</p>
+<p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/70024772">https://zhuanlan.zhihu.com/p/70024772</a></p>
+<p>MC方法可以正确地找到大多数输入字段。但是，依然有些例外，字段边界与规范不同。这是因为程序以自己的方式解析字段。例如，程序可以逐个字节而不是整个字节检查幻数。在这种情况下，MC可能无法将字节分组到单个字段。</p>
+<p><strong>字段类型识别</strong></p>
+<hr>
+<p>基于观察结果二，提出对BBs的模式进行分类，以推断它们处理的输入字段的类型。具体来说，给定一个字段类型以及解析和使用该类型字段的代码片段，构建一个CNN模型将代码片段映射到字段类型。因此，需要收集大量的训练数据，包括代码片段和它们处理的字段类型。然后，训练CNN模型来从目标代码片段中预测字段类型。</p>
+<p><strong>字段类型</strong></p>
+<p>考虑语义类型（例如，偏移或校验和）而不是它们的程序变量类型（例如，int或string）。这样的语义类型比变量类型更难识别，但更有利于fuzzing。AIFORE支持六种语义类型。</p>
+<ul>
+<li>Size。Size字段表示由输入文件中的一个或多个字段组成的数据块的长度。例如，Figure 1中偏移量0x28处的e_ehsize字段表示header 大小为0x34.</li>
+<li>Enumeration。此类型的字段只能接受有限的一组有效值。例如，e_type字段指示二进制类型，取ELF格式中定义的七个有效值之一。</li>
+<li>Magic number。此类型的字段通常用作文件的签名。例如，ELF文件的前四个字节是一个值为”\x7fELF”的Magic number。</li>
+<li>String。此类型的字段指示ASCII、Unicode或其他编码形式的字符串文字。</li>
+<li>Checksum。校验和，用于验证输入中部分数据的完整性，常见于媒体文件、压缩文件和字体格式。</li>
+<li>Offset。偏移量，指示输入中另一个数据块的位置。例如，Figure 1中偏移量为0x20的e_shoff字段表示Section头的偏移量。</li>
+</ul>
+<p><strong>模型训练数据收集</strong></p>
+<p>使用010 Editor 工具提供的输入格式信息作为基础。选择一些众所周知的格式和处理它们的程序，然后执行污点分析。给定一个输入字段，根据真实数据确定其类型，定位其偏移量，然后从污点分析结果中过滤出处理过该字段的相关基本块。对于每个相关BB，我们执行前向切片（即Algorithm 2中的第10行）<strong>来合并与给定字段具有重要语义依赖关系的连续子基本块</strong>。</p>
+<img src="/2024/08/02/AIFORE：论文阅读/image-20240725154606906.png"  alt="image-20240725154606906" style="zoom: 50%;" />
+
+<p>以Figure 4中的代码片段为例，<code>size</code>字段在第一个块中被加载并与一个阈值进行比较，接着在下一个块中被<code>malloc</code>函数调用。通过前向切片，将这两个块合并在一起，以便了解<code>size</code>字段会被<code>malloc</code>函数使用，并收集更多有意义的特征。</p>
+<img src="/2024/08/02/AIFORE：论文阅读/image-20240725163803818.png"  alt="image-20240725163803818" style="zoom: 50%;" />
+
+
+
+<p><strong>向量化的数据</strong></p>
+<p>首先，基本块中指令的语义信息对于确定程序如何处理字段至关重要。为了简化分析，将BB中的指令转换为中间表示（IR，例如VEX[21]）。使用独热编码对每个处理给定输入字段的指令进行相应的IR操作向量化。由于VEX中的IR操作数量对于独热编码来说太大，<strong>选择大约100个常用的IR操作。</strong></p>
+<p>此外，将<strong>标准库调用</strong>的使用视为重要的语义信息。首先选择一个常见的标准库函数列表，例如memcpy、strcpy和malloc。对于每个此类库函数的调用，将在独热编码（one-hot）中记录它。最后，记录基本块中使用的<strong>格式字符串</strong>，并将它们计入语义信息的特征中。例如，%x表示一个整数，而%s可能暗示一个字符串字段。此特征也以独热编码(one-hot)的形式呈现。</p>
+<p>以上三部分的特征被连接在一起（Algorithm 2第26行）。如果一个字段由多个代码切片处理，那么这些切片的向量将被加在一起（第26行的左侧）以获得该字段的整体特征向量。因此，使用（特征向量，字段类型）pairs来训练神经网络模型。</p>
+<p><strong>能量调度</strong></p>
+<hr>
+<p>通过字段边界识别和字段类型识别后，在使用这些信息辅助模糊测试时，仍然面临以下两个问题。首先，模糊测试开始，应该对哪个种子进行格式提取（即格式分析的能量调度）？其次，我们如何平衡在变异过程中产生的不同格式变体的fuzzing power（即，用于变异的能量调度）？如Algorithm 3所示的能量调度算法，其基于AFL，以解决上述两个问题。首先，AFLFORE会尝试分析初始种子以构建其格式模型（第3行到第5行）。然后，fuzzer会以格式知识为指导对种子进行变异(第7行)。如果新变异的种子是有价值的，那么我们会重新分析其格式（第19到21行）。当模糊测试陷入困境（即，模糊测试器在给定时间内无法获得新的覆盖率）时，会将fuzzing power分配给那些尚未完全变异的格式（第8到12行）。</p>
+<img src="/2024/08/02/AIFORE：论文阅读/image-20240725173153183.png"  alt="image-20240725173153183" style="zoom:50%;" />
+
+<p><strong>Power scheduling for format analysis</strong></p>
+<p>fuzzer在fuzzing过程中会生成大量种子，识别每个种子的字段边界和类型，不必要也不切实际，因为并非所有种子都有价值，分析所有种子会消耗过多的功率。仅对初始种子和我们认为有价值的种子提取格式信息（字段边界和字段类型）。在设计中，“有价值”的种子是指能够到达更多新的基本块，并且可能属于未见过的格式变体（例如，Figure 1中的新型ELF架构）的输入。如果一个种子被认为“有价值”，我们将在Algorithm 3中通过EXTRACTFORMAT函数提取其字段边界和类型。</p>
+<p><strong>Power scheduling for mutation</strong></p>
+<p>在模糊测试过程中，并非所有格式都会以相同的频率进行变异。模糊测试器使用<code>MUTATEWITHFORMAT</code>函数逐个对种子进行变异。具体而言，它会将每个字段的字节作为一个整体进行变异，并根据字段类型选择合适的变异器。例如，对于Size类型的字段，变异器会尝试具有特殊意义的Size值，而不是简单的位翻转；而对于字符串类型的字段，变异器会尝试插入或删除字节。此外，对于那些没有格式信息的字节，fuzzer会使用默认的变异方法，例如AFL中的方法。</p>
+<p>在变异过程中，每当出现一个有价值的种子时，fuzzer会根据重新分析的格式开始对种子进行变异。然而，如果两个“有价值”的种子紧密相邻出现，那么之前的种子可能会变异不足。为了平衡不同格式变体之间的模糊测试能力，我们设计了一种能量重新分配机制。当fuzzer停滞时，我们将fuzzing power重新分配给那些变异程度较低的格式变体绑定的种子，并跳过那些与已完全变异的格式变体绑定的种子。</p>
+<p><strong>实现</strong></p>
+<p>AIFORE基于Vuzzer和libdft使用C++构建了污点分析引擎，以64位程序和字节级污点分析。重新编写了每种指令的污点传播组件，大约有5000行代码用于检查操作数是否被输入字节污染，并获取指令映射和由它们处理的输入字节。我们开发了两个格式分析模块，包含7000行Python代码。使用Angr[27]作为后端来支持静态分析。为了训练模型，使用Keras 2.2.4实现了机器学习组件。为了收集真值数据，编写了一个自动化脚本，借助Autolt[28]从010 Editor 导出模板结果。将提取的格式信息转换为一个Peach pit 文件。</p>
+<blockquote>
+<p>Angr 是一款开源的Python框架，是一个多架构开源二进制分析工具包，能够对二进制文件执行动态符号执行（如Mayhem、KLEE等）和各种静态分析。 直接<code>pip install angr</code>就可以安装。</p>
+<p>Autolt 是一款类似BASIC脚本语言，且完全免费用于自动化Windows操作系统的脚本语言和工具集。它利用模拟键盘，鼠标移动和窗口&#x2F;控件的组合来实现各类自动化任务，包括自动化软件安装、登录、数据自动录入、界面自动化测试、数据抓取等。</p>
+</blockquote>
+<p><strong>评估</strong></p>
+<p>我们对AIFORE进行评估以回答以下四个研究问题：</p>
+<ul>
+<li>RQ1:AIFORE的每个格式提取模块性能如何？</li>
+<li>RQ2:与其他最先进的格式逆向工程工作相比，AIFORE的格式分析性能如何？</li>
+<li>RQ3:与其他最先进的模糊测试器相比，AIFORE在代码覆盖率和漏洞检测方面的性能如何？</li>
+<li>RQ4:AIFORE的每个模块对模糊测试效率的贡献如何？</li>
+</ul>
+<p>在配备24核CPU和128GB内存的机器上运行所有实验。使用Tesla P100 GPU训练模型。模型训练完成后，AIFORE仅在预测字段类型时使用GPU，而且使用频率较低。</p>
+<p><strong>RQ1：AIFORE的格式提取表现</strong></p>
+<p>近年来，平均有7个真实世界的程序被32篇不同的论文评估过。在本论文中，我们收集了17个程序来评估AIFORE，以及15种格式，其中13种是文件输入（包括图像、可执行文件、压缩文件和复合文件），2种是网络协议（附录A）。Table 2展示了我们用来评估AIFORE每个模块的所有格式和程序（以及参数）。</p>
+<img src="/2024/08/02/AIFORE：论文阅读/image-20240727100539531.png"  alt="image-20240727100539531" style="zoom: 67%;" />
+
+<p>根据以下因素选择目标输入和程序。首先，这些格式多样且广泛使用。其次，当给定一种类型的输入时，程序可以解析尽可能多的字段，因为AIFORE基于动态污点追踪来分析输入格式，无法识别未被处理的输入字段。我们尽可能将这些程序编译成不同的优化级别（从-O0到-Os）以评估AIFORE的鲁棒性。</p>
+<p><strong>真实数据</strong></p>
+<p>首先，给定一个测试输入，我们使用010 Editor 的公共格式模板解析文件并导出所有包含边界和类型信息的字段记录。这些模板由专家编写，并经过社区验证。</p>
+<p>然后，我们手动预处理记录，以获取字段边界的真值数据，具体分为两个步骤：（1）从针织数据中删除冗余定义。例如，Table 3 显示了ELF格式的签名字段。应删除file_identification[0]到[3]的字段记录，因为file_identification[4]作为一个整体字段存在。（2）删除目标程序未解析的字段记录。例如，readelf不会处理Figure 1种ELF格式的ei_pad字段。我们跳过这些字段，因为所有基于程序行为反向推断输入格式的方法都无法识别它们。</p>
+<p>最后，我们手动检查记录以更正字段的歧义语义类型。例如，PNG文件模板种的char cname[4]字段指示类型为字符串。但是，它在pngtest程序中用作魔数类型。另一个例子，某些格式可能包含一个版本字段，它可能被误标为字符串或整数。为了解决这个问题，我们手动分析模板中每个字段的语义类型，并删除那些具有歧义语义类型标签的字段，从而提高模型训练的准确性。</p>
+
+
+<p><strong>字段边界准确性</strong></p>
+<p>我们将边界信息的真值数据记为BoundaryT。我们从互联网或目标程序的测试套件中选择5个样本。这些样本具有不同的特征，例如不同文件大小、不同的压缩级别或特定格式中的不同枚举。对于每个样本，我们手动构建边界信息的真值数据，如真值数据部分所述。对于每个格式，我们选择一个程序，该程序可以尽可能完整地解析输入文件，如Table 2的“Boundary”列所示。然后我们使用AIFORE推断其字段边界（记为BoundaryA）。</p>
+<p>我们使用准确率作为指标，即AIFORE正确识别的字段数量除以真值数据中字段的总数。</p>
+<p>请注意，BoundaryT可能是粗粒度的，即010 editor的模板可能会遗漏一些细粒度的字段。例如PCAP的模板只描述了从数据链路层到传输层（即TCP&#x2F;UDP）的字段，而没有包含应用层（例如HTTP&#x2F;DNS）的字段信息。然而，目标程序tcpdump会更详细地解析数据包，导致AIFORE生成更</p>
+<p>细粒度的边界信息。在计算准确率时，我们将跳过这些字段。为了确保实验的公平性，在计算其他所有解决方案的准确率时，我们也会移除这些字段。尽管AIFORE在我们手动移除的字段中可能表现更差（或者更好），但我们认为结果只会受到轻微影响，因为在我们分析过程中，这种情况很少见。此外，我们在5.2中的结果表明AIFORE的准确率远高于其他解决方案。</p>
+<p>结果如Table 4所示，得出两个结论。</p>
+
+
+<p>首先，准确率与编译器优化级别无关。这是因为MC方法是从语义块的角度考虑的，而语义块很少受到编译器优化的影响。对于7z和zip的目标，输入中的字段总数较小，因此即使一个错误的字段也可能导致准确率出现较大波动（约10%）。</p>
+<p>其次，我们手动调查了那些准确率较低的测试目标，发现原因是程序以其自己的方式解析字段。例如，readelf分别比较了前四个字节（即魔数）在4个基本块中的值，如Figure 5所示。使用MC方法，我们将魔数拆分为四个单字节字段，因为它们在不同的基本块中被解析。但是它们在规范中被定义为一个整体。虽然结果与规范不同，但我们认为这不会影响（甚至有利于）模糊测试效率，因为模糊测试的目的是测试程序的实现，而不是提取与规范相比准确的字段边界。</p>
+<p><strong>字段类型准确率</strong></p>
+<p>基于4个实验评估CNN模型的性能。</p>
+<p><strong>实验一：CNN模型在训练集和验证集上是否表现良好？</strong></p>
+<p>我们从8种格式中收集了10582个字段，并选择对应的程序来解析这些输入以训练模型。训练集在Table 2的”Type”列中标记为⊙。我们使用的训练集和验证集的比例为4：1.然后，我们将六种语义类型标记为标签，并将相应的（向量化的）污点追踪作为输入数据来训练CNN模型。平均而言，为一种格式标记训练数据需要2-3小时的手动工作量。这需要为每种格式完成一次，我们认为这是合理的。</p>
+<p>为了验证模型是否能够在不同的编译器优化下表现良好，我们分别使用从-O0到-Os的训练数据训练模型。为了进一步调查模型是否适用于现实情况（即目标程序的编译器优化选择未知），我们还评估了使用混合优化时的模型准确率。我们花费了12个小时收集训练集中所有样本的污点追踪，模型的训练时间平均为20分钟。模型训练完成后，我们评估其Top-1准确率，即判断最高得分预测结果是否正确。</p>
+<p>Figure 14展示了这些结果。我们得出以下结论：（1）不同编译器优化级别（即-O0到-Os）下的性能表现不同，平均准确率超过85%；（2）即使使用混合编译器优化，准确率结果仍然稳定，这意味着该模型适用于现实情况。</p>
+<p><strong>实验二：我们需要多少数据来训练一个足够可靠的CNN模型？</strong></p>
+<p>为了进一步分析训练CNN模型所需的数据量，我们还计算了在不同数据量下训练的模型所达到的准确率。我们将10582个字段设定为单位（即1.0）尺度，并使用不同的尺度（即0.2到2.0）来相应地训练模型。对于每个组，我们随机选择训练数据并重复实验5次。结果如Figure 6所示。</p>
+<p>从结果中可以得出结论，更大的训练数据量会导致更高的模型准确率。然而，当尺度大于1.0时，增长率很快就会停滞。</p>
+<p><strong>实验三：对于已训练的程序，模型能否预测未知格式的字段类型？</strong></p>
+<p>我们定义一个格式对于某个程序而言是未知的，如果（Program,Format）Pairs 对不在AIFORE的训练集中。在本实验中，我们将AIFROE应用于已经使用特定格式训练过的程序，并验证AIFORE是否能够识别这些程序的未知格式（在Table 2中标记为X*）。具体而言，对于训练集中的程序，我们收集了一些它们支持的新文件格式，并将我们训练的模型应用于预测这些新格式的字段类型。</p>
+<p>Table 5的上半部分显示了评估结果。我们考虑Top-2准确率，因为模型的Top-K建议仍然对模糊测试很有价值。具体而言，Top-K字段类型知识可以帮助模糊测试器缩小变异空间并更快地找到高质量的测试用例。</p>
+<p>我们从该表中得出两个结论：</p>
+<p>（1）AIFROE能够以高准确率预测未知格式的字段类型，平均而言，Top-1 准确率超过80%，Top-2准确率超过90%；（2）模型性能与程序的优化级别无关。虽然编译器优化可能会改变代码的特征，但我们的模型在不同的优化级别上学习了稳定的模式。</p>
+<p><strong>实验四：对于未训练的程序，模型能否预测它们的（未知）输入格式？</strong></p>
+<p>我们将上述训练好的模型应用于分析未训练的程序（在Table 2中标记为X）并预测它们的输入格式。我们选择了7个未训练的程序（以及附录中所示的2个协议）和相应的格式来测试AIFORE的准确率。这些未训练的程序是根据以下两个标准选择的：</p>
+<p>（1）它们应该能够解析所选格式；（2）它们不与训练集中的程序共享用于处理所选格式的库。</p>
+<p>后一个要求是为了公平比较。请注意，所选格式（例如ELF）可能被训练集中其他已训练的程序（例如readelf）处理。但它们对于未训练的程序（例如elfutils-readelf）来说仍然是未知的。</p>
+<p>Table 5的下半部分显示了评估结果。我们了解到，AIFORE能够以平均81%的Top-1准确率和88%的Top-2准确率预测字段类型。即使我们使用来自不同编译器优化级别的混合测试数据，AIFORE也能够根据程序如何解析字段来预测字段类型。</p>
+<p><strong>RQ2：格式提取比较</strong></p>
+<p>我们将AIFORE与使用混合优化（即-O0 到 -Os）的程序训练的CNN模型进行比较，并与现有的输入格式逆向工程方法进行比较，例如Polyglot[3]、Protocol Informatics(PI)项目[30]、ProFuzzer[8]、AFL-Analyze[14]和TIFF-fuzzer[6]，以衡量格式逆向性能。</p>
+<p>我们收集了AIFORE的字段边界和类型结果，并将结果与ProFuzzer、AFL-Analyze和TIFF-fuzzer进行比较。还有一些其他共军，例如WEIZZ[9]，可以提取输入格式。但是我们没有将AIFORE的字段边界准确率与它们进行比较，因为即使目标程序已经解析了字段，它们也无法提取所有字段边界。我们在附录B中分析了具体的案例，以解释这种假阴性的原因。</p>
+<p><strong>评估指标</strong>，对于字段边界分析，我们计算不同解决方案的准确率，即正确识别的字段数量除以真值数据中字段的总数。</p>
+<p>对于字段类型分析，我们仔细处理结果，因为不同的解决方案侧重于不同的字段类型。例如，ProFuzzer将字段类型分为6类，而AFL-Analyze仅识别3中语义类型。我们手动检查不同解决方案产生的结果，并相应地计算准确率。对于AFL-Analyze，我们只检查其结果是否与它们定义的3中语义类型匹配（即原始数据、魔数和长度）。对于ProFuzzer，我们也类似的方式检查其结果。对于AIFORE，我们手动检查Top-1结果是否与我们在 §3.2.1中定义的6种语义类型匹配。此外，我们还衡量了每个解决方案分析一个输入格式的平均时间成本。</p>
+<p><strong>测试目标</strong>，为了公平起见，我们分别从训练集（Table 4）和未知格式和程序（Table 5）中选择4种格式和程序，这些格式和程序具有不同的准确率水平。我们旨在调查其他解决方案在AIFORE下对不同准确率水平的目标的性能。所选目标如Table 6所示。对于程序，我们使用其默认编译器优化编译所有目标。关于输入样本，我们为已训练的程序选择不在训练集中的样本，并为未训练的程序随机选择一些输入样本。字段类型预测的训练集和验证集的详细信息在5.1.2的第一部分中描述。</p>
+<p><strong>输入大小</strong>，输入大小会影响格式逆向工程的运行时性能。AIFORE、ProFuzzer和AFL-Analyze都依赖于动态分析来预测字段类型，但使用不同的方法。ProFuzzer和AFL-Analyze都对每个输入字节进行编译，并重新运行程序以获得覆盖位图作为当前执行的概要文件。根据该概要文件的变化，它们可以分析每个字节的类型特征，并将具有类似特征的连续字节组合成具有对应类型的字段。因此，较大的文件可能需要更多时间才能获得结果。AIFORE基于污点追踪和CNN模型来推断字段边界和字段类型。虽然模型只训练一次，但污点分析需要耗时的分析。为了更好地理解输入大小如何影响每项工作的性能，我们将输入文件根据其大小划分为不同的组，并观察每个组完成分析所需的时间。</p>
+<p><strong>结果</strong>，Table 6展示了字段边界和类型分析的准确率，Table 7展示了解析一个输入的平均时间成本。</p>
+<p>从Table 6中，我们可以了解到AIFORE在字段边界识别和字段类型预测方面都取得了更高的准确率。此外，AIFORE在已训练的程序中表现优于未训练的程序。这与我们的经验一致，因为该模型已经学习了这些程序如何准确地解析不同字段类型的模式。</p>
+<p>使用AIFORE（和TIFF-fuzzer）解析文件的平均时间在不同的尺寸类别中没有显著差异，而 ProFuzzer 和 AFL-Analyze 在解析较大的文件时花费了更多的时间。在表 7 中，B  代表边界识别，计数包括污点分析所需的时间（这占用了大部分总时间）。T  代表类型预测，其时间成本在测试过程中保持稳定，因为我们有一个具有稳定预测时间的训练模型。我们发现，在 Profuzzer 和  AFL-Analyze 中，概要分析阶段消耗了大部分时间，这与输入大小密切相关。然而，AIFORE（和  TIFF-fuzzer）中的污点分析对输入大小并不敏感。由于 AFL-Analyze 和 TIFF-fuzzer  执行了一些粗略的分析，它们具有更好的执行时间，但平均而言，它们的准确率低于 AIFORE。</p>
+<p>此外，我们还在两个协议上进行了逆向工程。详细结果在附录A中给出。与其他工具相比，AIFORE不仅在字段边界和类型方面提供了更准确的格式知识，而且还提供了更多细节。</p>
+<p><strong>RQ3：模糊测试性能比较</strong></p>
+<p>已经有一些模糊测试器尝试提取格式知识并执行能量调度以优化模糊测试过程。我们将AIFORE与它们进行比较，以调查我们的格式分析和能量调度在多大程度上可以提高模糊测试效率。请注意，对于字段类型分类，一旦模型构建完成，我们就不需要再模糊测试过程中重新训练模型。</p>
+<p><strong>目标程序和种子</strong>，对于程序，我们使用15个程序来解析文件，如Table 2所示，其中6个是已训练的，9个是AIFORE没有见过的。对于每种文件类型，我们随机选择一个输入文件作为所有模糊测试器的初始种子。</p>
+<p><strong>模糊测试器</strong>，我们将AIFORE与6个模糊测试器进行比较，包括格式感知模糊测试器、格式不感知但流行的模糊测试器以及能量调度优化模糊测试器，即ALF、AFLFast、ProFuzzer、TIFF-fuzzer、WEIZZ和EcoFuzz。AFL是最流行的灰盒模糊测试工具之一，并且有许多模糊测试器在AFL之上。AFLFast和EcoFuzz通过优先考虑可能导致新覆盖率的种子来优化AFL。ProFuzzer具有一个动态探测阶段来推断字段边界和字段类型，以提高模糊测试效率。TIFF-fuzzer和WEIZZ使用格式信息来提高模糊测试效率。</p>
+<p><strong>代码覆盖率结果</strong></p>
+<p>对于每个目标程序，我们运行所有模糊测试器24小时，重复5次。然后我们测量平均BB覆盖率，而不是路径覆盖率，因为并非所有模糊测试器都使用相同的指标来计算路径。</p>
+<p>从Table 8中的结果，我们可以得出以下结论：</p>
+<ol>
+<li>除了 pngtest 之外，AIFORE 显著提高了大多数目标的覆盖率，WEIZZ 在 pngtest 上表现最佳。原因是 WEIZZ  不仅可以检测到文件中的校验和字段，还可以纠正校验和值。然而，即使 AIFORE  可以识别该字段是校验和字段，它也不支持校验和值的纠正。对于所有目标，AIFORE（B+T+P）（即启用字段边界、类型分析，并利用功率调度算法）与 ProFuzzer 和 WEIZZ 相比，平均分别提高了 6% 和 26%，如图 7 所示。</li>
+<li>即使目标程序和文件格式是未知的，AIFORE 的覆盖率提升也很显著。</li>
+<li>AIFORE 实现了最佳性能。对于  TIFF-fuzzer，由于它的目标是最大限度地提高触发错误的可能性，我们发现它不擅长提高代码覆盖率。虽然 ProFuzzer  在大多数情况下也比格式不感知的模糊测试器（如 AFL 和  AFLFast）表现更好，但它的分析时间与输入大小成正比，这使其不能扩展到大型输入。观察到 ProFuzzer 在 XLS 中表现最差，除了  TIFF-fuzzer。原因是 XLS 种子的最小大小超过 1k 字节，这对 ProFuzzer 来说太大了。</li>
+</ol>
+<p><strong>Related Work</strong></p>
+<ul>
+<li><p>Format-Aware Fuzzing 格式感知模糊测试</p>
+<ul>
+<li>格式感知模糊测试器试图理解输入的格式以提高模糊测试效率。TIFF-fuzzer通过推断输入字段的一些程序变量类型（例如，int、char*）来执行bug引导变异。ProFuzzer使用预定义规则来推断字段和相应的类型。然而，添加更多数据类型是劳动密集型的。此外，这些规则可能不够准确，无法涵盖所有情况。Steelix识别输入中的Magic number以通过值验证。但它不分析其他类型的字段。Intriguer利用轻量级污点分析来查找程序中指令处理的多字节字段，然后使用字段级知识来优化符号执行。从文件格式的角度来看，由于它的跟踪不完整，它只能提取一小部分字段。WEIZZ根据输入字节和比较指令之间的依赖关系将输入拆分为字段，这忽略了不影响程序控制流的字节。</li>
+<li>AIFORE提取了更准确、具体和完整的字段边界和语义类型的格式知识，这提高了模糊测试效率。此外，AIFORE利用一种新颖的能量调度算法来平衡不同格式的power。</li>
+</ul>
+</li>
+<li><p>Input Format Reverse Engineering 输入格式逆向工程</p>
+<ul>
+<li>输入格式逆向工程工作可以根据它们解决的问题分为两大类<ul>
+<li><strong>字段边界识别</strong>，识别输入中不同字段的边界是逆向格式的基础。一些工作尝试基于污点分析或少量网络消息的跟踪分析将输入拆分为字段。与AIFORE最接近的工作是Tupni，它使用指令中的加权污点信息，以及贪婪算法来识别不同的字段。然而，指令级污点信息可能会产生误报，因为它没有考虑语义。此外，Tupni是一种粗粒度的方法，它识别的记录可能包含多个字段，而不是单个字段。AIFORE将BB视为最小功能单元，而不是指令。AutoFormat将动态污点分析和调用栈结合起来构建字段树。它更多地依赖于令牌化和树本身的操作，而不是程序如何处理不同的字段。MIMID和AUTOGRAM也依赖于动态污点分析和调用栈分析。它们用于提取基于文本输入的上下文无关语法，而不是基于二进制的上下文敏感输入，后者更加复杂。Reverx通过预定义的分隔符将输入拆分成字段，它不能用于二进制消息。还有一些其他工作试图通过分析大量高质量输入来识别字段。然而，AIFORE只需要一个输入就可以提取字段知识。</li>
+<li><strong>字段类型识别</strong>，识别不同字段的类型也是一个重要的问题。当前的工作主要利用动态程序分析和预定义规则将输入字段分类为不同的类型。Dispatcher利用污点分析和启发式规则来识别字段类型，类似于TIFF-fuzzer。Polyglot尝试识别协议消息中的关键字和分隔符。它还尝试通过启发式规则识别长度字段。然而，识别的字段类型是有限的，当消息不严格时，启发式规则也有局限性。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Binary Analysis with AI 利用AI进行二进制分析</p>
+<ul>
+<li>与基于AI的二进制分析最接近的工作包括二进制相似性检测和语义信息恢复。</li>
+</ul>
+</li>
+<li><p><strong>Limitation</strong></p>
+<ul>
+<li>虽然AIFORE在字段边界检测和类型分析方面具有良好的准确性，但仍存在一些局限性。正如描述的那样，我们的方法从根本上依赖于动态污点分析。因此，AIFORE的主要限制是程序如何解析输入会极大地影响结果。例如，如果一个程序没有解析某些字段，AIFORE就无法提取格式知识。此外，如果一个程序分别解析一个字段的单个字节，AIFORE可能会产生误报。然而，我们可以通过将输入提供给多个可以解析此格式的程序来克服这个问题。</li>
+<li>第二个限制是我们的分析以字节粒度运行，这意味着无法分析位级字段。支持位级分析在技术上是可行的，但需要进一步的工程和优化。字节级分析也表明AIFORE不支持基于文本的输入。基于文本的输入的最小单位是关键字，而不是字节。第三，AIFORE难以分析输入加密或代码混淆的情况（例如，在恶意软件或勒索软件中）。加密输入中没有明显的格式信息，开发人员也可能使用混淆代码来隐藏解析文件的操作模式。有一些正交工作，例如Reformat，尝试逆向加密输入的格式。</li>
+</ul>
+</li>
+</ul>
+<p><strong>Case Study</strong></p>
+<p>在本节中，我们将一些具体的例子，以帮助理解AIFORE如何从字段边界识别和字段类型分类的角度超越其他最先进的工作。我们以ELF为例进行说明。</p>
+<ul>
+<li><p><strong>Field Boundary Case</strong></p>
+<ul>
+<li>以两个能够识别输入中字段的格式感知模糊测试工具为例。模糊测试期间的字段提取结果如Figure 10所示。</li>
+</ul>
+<img src="/2024/08/02/AIFORE：论文阅读/image-20240728142518357.png"  alt="image-20240728142518357" style="zoom:50%;" />
+
+<ul>
+<li>从结果可以看出，TIFF-fuzzer和AIFORE将前四个字节（即magic_number字段）拆分为单个字节字段。然而，由于程序逐个解析字节，因此最好对每个字节进行模糊测试，而不是作为一个整体进行模糊测试。对于WEIZZ，存在一些假阴性。原因是WEIZZ在提取字段时依赖cmp指令，这并不充分。在AIFORE中，我们对有价值的输入执行完整的污点分析，而不是像WEIZZ那样，这是的AIFORE在字段时别方面获得了更高的准确性，因此可以比其他模糊测试器更好地提高模糊测试效率。</li>
+</ul>
+</li>
+<li><p><strong>Field Type Case</strong></p>
+<ul>
+<li>对于字段类型识别，最先进的技术通常依赖于特定规则，并且它们识别的字段类型通常是程序类型，而不是字段的语义类型。例如，TIFF-fuzzer基于库中的API(strcmp、strcpy)推断字段类型，然后将字段拆分为几个程序变量类型，例如char* 和int。然而，这些规则和类型可能不足。以ELF文件中的section名称s_name为例。这些字段是字符串类型。但是，TIFF-fuzzer将它们视为连续的int字节。原因是readelf使用repe cmpsb指令而不是strcmp调用来解析s_name。在AIFORE中，它将此字段标记为魔数，这也是合理的，因为程序试图将section名称和硬编码字符串进行比较。然后，我们调查AIFORE中的模型为何将该字段预测为魔数。我们利用Grad-cam，它用于解释模型为何做出特定决策。它帮助人类了解分类模型的内部工作原理。</li>
+<li>为了解释模型的决策，我们将魔数字段的向量化语义特征（IR操作、库调用和格式字符串）输入Grad-cam。然后，我们观察哪个特征在决策中起着最重要的作用。我们选择Grad-cam的前5个特征进行观察[‘CmpLT32U’, ’128to64’, ‘CmpLE64S’, ‘And8’, ‘CmpLE32U’]。结果表明，当模型将字段预测为magic number时，cmp 特征起着最重要的作用，这是合理的。</li>
+<li>另一个能够识别字段语义类型的工作是ProFuzzer。我们以Figure 10中偏移量为0x10的字段e_type为例。它代表文件类型（例如，ET_EXEC），这是一个枚举类型。在探测阶段，ProFuzzer将其视为错误的偏移量类型。然后，我们调查原因，发现这是由于代码覆盖位图的限制。ProFuzzer对e_type中的每个字节进行变异，以观察位图的相似性。但从Figure 11中我们了解到，不同的switch case共享相同的位图，这导致ProFuzzer做出了错误的决策。然而，在AIFORE中，它根据程序如何解析特定字段来预测字段类型。并且我们还使用前向切片来合并 BB 以获得更多代码特征，这使得它能够正确识别此字段。</li>
+</ul>
+<img src="/2024/08/02/AIFORE：论文阅读/image-20240728144306607.png"  alt="image-20240728144306607" style="zoom: 50%;" /></li>
+</ul>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>Lobo Q1ng</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="https://loboq1ng.github.io/2024/08/02/AIFORE%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">https://loboq1ng.github.io/2024/08/02/AIFORE%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2019 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Do you believe in <strong>DESTINY</strong>?</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Paper-Reading/"># Paper Reading</a>
+                    
+                        <a href="/tags/Fuzz/"># Fuzz</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2024/08/07/ShapFuzz%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">ShapFuzz：论文阅读</a>
+            
+            
+        </section>
+
+
+    </article>
+</div>
+
+            </div>
+            <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© Lobo Q1ng | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+
+</html>
