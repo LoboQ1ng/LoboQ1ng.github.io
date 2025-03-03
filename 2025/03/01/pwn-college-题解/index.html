@@ -846,7 +846,7 @@
 
 <h4 id="29-Server-State-python"><a href="#29-Server-State-python" class="headerlink" title="29. Server State (python)"></a>29. Server State (python)</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">url = <span class="string">&quot;http://127.0.0.1:80&quot;</span></span><br><span class="line"></span><br><span class="line">response = requests.get(url)</span><br><span class="line"><span class="built_in">print</span>(response.text)</span><br></pre></td></tr></table></figure>
 
-
+<img src="/2025/03/01/pwn-college-%E9%A2%98%E8%A7%A3/image-20250303120441856.png" class="" title="image-20250303120441856">
 
 <p>得益于，requests模块的get请求会自动跟踪重定向，因此执行一次脚本发现302重定向，会自动跟踪。则自动发送了4个请求，达到题目要求，获得flag。</p>
 <h4 id="30-Listening-Web"><a href="#30-Listening-Web" class="headerlink" title="30. Listening Web"></a>30. Listening Web</h4><p>把第一关的Server代码copy到这儿，然后修改端口并运行即可。</p>
