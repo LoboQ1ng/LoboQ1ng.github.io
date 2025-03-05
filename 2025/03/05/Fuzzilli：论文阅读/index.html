@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="Lobo Q1ng">
+
+
+    <meta name="subtitle" content="天空是为蓝色~">
+
+
+
+
+<title>Fuzzilli：论文阅读 | Lobo Q1ng&#39;s Blog</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    <script>
+        // this function is used to check current theme before page loaded.
+        (() => {
+            const currentTheme = window.localStorage && window.localStorage.getItem('theme') || '';
+            const isDark = currentTheme === 'dark';
+            const pagebody = document.getElementsByTagName('body')[0]
+            if (isDark) {
+                pagebody.classList.add('dark-theme');
+                // mobile
+                document.getElementById("mobile-toggle-theme").innerText = "· Dark"
+            } else {
+                pagebody.classList.remove('dark-theme');
+                // mobile
+                document.getElementById("mobile-toggle-theme").innerText = "· Light"
+            }
+        })();
+    </script>
+
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">Q1ng&#39;s Blog</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">Q1ng&#39;s Blog</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+            <div class="main">
+                <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    var tocbot_timer;
+    var DEPTH_MAX = 6; // 为 6 时展开所有
+    var tocbot_default_config = {
+        tocSelector: '.tocbot-list',
+        contentSelector: '.post-content',
+        headingSelector: 'h1, h2, h3, h4, h5',
+        orderedList: false,
+        scrollSmooth: true,
+        onClick: extend_click,
+    };
+
+    function extend_click() {
+        clearTimeout(tocbot_timer);
+        tocbot_timer = setTimeout(function() {
+            tocbot.refresh(obj_merge(tocbot_default_config, {
+                hasInnerContainers: true
+            }));
+        }, 420); // 这个值是由 tocbot 源码里定义的 scrollSmoothDuration 得来的
+    }
+
+    document.ready(function() {
+        tocbot.init(obj_merge(tocbot_default_config, {
+            collapseDepth: 1
+        }));
+    });
+
+    function expand_toc() {
+        var b = document.querySelector('.tocbot-toc-expand');
+        var expanded = b.getAttribute('data-expanded');
+        expanded ? b.removeAttribute('data-expanded') : b.setAttribute('data-expanded', true);
+        tocbot.refresh(obj_merge(tocbot_default_config, {
+            collapseDepth: expanded ? 1 : DEPTH_MAX
+        }));
+        b.innerText = expanded ? 'Expand all' : 'Collapse all';
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    function obj_merge(target, source) {
+        for (var item in source) {
+            if (source.hasOwnProperty(item)) {
+                target[item] = source[item];
+            }
+        }
+        return target;
+    }
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">Fuzzilli：论文阅读</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">Lobo Q1ng</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">March 5, 2025&nbsp;&nbsp;16:47:03</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/Fuzz/">Fuzz</a>
+                            
+                                <a href="/categories/Fuzz/Paper-Reading/">Paper Reading</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <h1 id="FUZILLI-Fuzzing-for-javaScript-JIT-Compiler-Vulnerabilities"><a href="#FUZILLI-Fuzzing-for-javaScript-JIT-Compiler-Vulnerabilities" class="headerlink" title="FUZILLI: Fuzzing for javaScript JIT Compiler Vulnerabilities"></a>FUZILLI: Fuzzing for javaScript JIT Compiler Vulnerabilities</h1><h2 id="全文翻译"><a href="#全文翻译" class="headerlink" title="全文翻译"></a>全文翻译</h2><h3 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h3><p>JavaScript 已经成为互联网基础设施不可或缺的一部分，并且如果没有这种编程语言，当今的交互式Web应用程序将是无法想象的。但不利的一面是，这种交互性意味着Web应用程序依赖于越来越多的计算密集型JavaScript代码，这给负责高效执行代码的JavaScript引擎带来了负担。为了满足这些日益增长的性能需求，现代JavaScript引擎都配备了复杂的<strong>即时编译器（JIT）</strong>。然而，JIT编译器是一项复杂的技术，因此为潜在的漏洞（甚至可能是致命的漏洞）提供了广泛的攻击面。在JavaScript引擎中发现软件漏洞的已有工作中，大部分是模糊测试。不幸的是，这些模糊测试策略并不是为生成实际触发JIT语义的源代码而设计的。因此，JIT漏洞不太可能被现有策略发现。在本文中，我们填补了这一空白，并提出了第一个Fuzzer，重点是JIT漏洞。更具体地说，我们提出了一个中间表示（IR）的设计和实现，重点是发现JIT编译器的漏洞。我们实现了所提出方法的完整原型，并在六个月的时间内对我们的Fuzzer进行了评估。我们总共发现了17个已确认的安全漏洞。我们的结果表明，有针对性的<strong>JIT Fuzzing</strong>是可能的，并且在JavaScript引擎的Fuzzing覆盖率中存在一个被忽视的危险问题。</p>
+<h3 id="1-介绍"><a href="#1-介绍" class="headerlink" title="1. 介绍"></a>1. 介绍</h3><p>如果没有JavaScirpt（JS），现代Web是不可想象的。在AngularJS、React或JQuery等强大的JavaScript框架的推动下，现代Web内容通常完全在客户端创建，而不是以HTML的形式交付。这种演变给现有仅依赖解释JS代码的JS引擎带来了越来越多的性能问题。因此，为了实现动态的Web体验，现代Web浏览器积极转向JS代码的即时即使编译（JIT）和优化。虽然JIT引擎提供了令人满意的性能改进，但它们使JS代码的执行变得更加复杂，并且本质上暴露了一个很大的攻击面。基于JIT编译器缺陷的软件漏洞对攻击者很有吸引力，因为它们提供了强大的利用原语，并且通常允许基于单个漏洞的代码执行。攻击者可以将一次成功的攻击与浏览器**沙箱逃逸（sandbox）**链接起来，通过引诱受害者访问恶意网站来获得未经授权的权限。</p>
+<p>JavaScript作为一种编程语言，其本质上是灵活和动态的。由于这种灵活性，JIT优化需要对引擎的全局状态、相关对象组，甚至参与优化代码段的单个对象做出假设。这些假设必须被证明为真，或者收到复杂的运行时机制的保护，这些机制在先前做出的假设被违反时通知引擎。任何被证明为假但在执行期间仍然未被检测到的假设都代表着一个重大漏洞，例如CVE-2018-4233，这是WebKit的JIT编译器中的一个错误。因此，JIT编译错误应该是软件测试的重点。一种在JavaScript引擎等复杂软件系统中查找错误的流行方法是模糊测试（简称Fuzzing）。模糊测试涉及使用许多不同的输入来测试软件，并评估软件如何响应这些输入。其根本目的是在软件中找到导致重要崩溃的边缘情况。然后，分析人员可以进一步调查这些崩溃，以创建一个概念验证，用于利用可能突破JavaScript 沙箱的漏洞。过去，模糊测试主要用于查找JavaScript引擎中的漏洞，并且已经发现了JavaScript引擎的一些关键问题。然而，以前的模糊测试方法针对JavaScript引擎，而没有侧重于特定组件，或者仅侧重于运行时API。这种方法可以发现范围广泛的漏洞，但很少发现需要多个前提条件同时满足的更复杂漏洞。特别是，JIT编译漏洞正是这种类型的漏洞。</p>
+<p>为了使得<strong>JIT优化</strong> 出现，必须满足某些条件：引擎必须频繁执行有问题的代码，并且代码在观察期间必须表现出可预测的行为，因为只有这样JIT编译才会启动。这些条件意味着，不仅必须以一种特殊的方式构造JS代码以突出显示缺陷，而且还必须以类似的方式多次执行它，然后以不可预测的方式更改其行为，以便JS引擎遇到错误。对于通过突变或多或少随机生成代码片段的Fuzzer来说，这种行为很难重现。传统的JS fuzzer生成JS构造并将每个语句包装在try-catch块中，因为它们无法保证语义正确性。**遗憾的是，JIT 编译器对待包装在try-catch中的代码与未包装的代码不同，因此许多JIT 错误都无法通过这些方法检测到。**其他工作从现有的JS语料库生成测试用例。依赖于预先存在的语料库需要足够多样化的特定漏洞集合，才能推断出类似的漏洞。这种要求限制了发现与现有测试用例不同的漏洞的能力。**总之，开发一种有针对性的模糊测试方法来检测JIT编译中的新缺陷是一项尚未解决的挑战。**在本文中，我们弥补了模糊测试覆盖范围中的这一研究空白，并提出了第一个使用中间表示（IR）的模糊器，该中间表示专注于发现JavaScript引擎中的JIT漏洞。我们的IR允许我们生成没有初始输入语料库的新JavaScript程序，从而针对JIT编译器。此外，我们的IR允许实现语义上有意义的突变操作，例如拼接多个输入程序，同时重新连接指令操作数，这是基于AST的常见模糊测试方法中缺少的功能。</p>
+<p>我们实施了所提出的方法，并对我们的原型在主要的JS引擎Apple JavaScriptCore、Google V8和Mozilla SpiderMonkey上进行了全面的评估。我们发现，在所有的引擎上，我们的Fuzzer都与最先进的开源模糊器Superion相比毫不逊色。此外，我们发现，当提供一个全面的输入语料库时，Superion无法实现显著的代码覆盖率提升。相比之下，我们的方法在不同的设置中表现良好，并且我们发现了17个严重（Critical）漏洞。</p>
+<p>总之，我们的主要贡献是：</p>
+<ul>
+<li>我们提出了基于IR的模糊测试方法的设计和实现，该方法对现代Web浏览器JS引擎中的JIT漏洞。</li>
+<li>在一个全面的评估中，我们通过我们的原型实现发现了17个安全关键型漏洞。对已识别漏洞的更详细分析证实，大多数缺陷确实与JIT编译器有关。</li>
+<li>我们对现代浏览器Fuzzer进行了全面的比较，发现我们的方法优于称为Superion的最先进方法。</li>
+</ul>
+<h3 id="2-背景和相关工作"><a href="#2-背景和相关工作" class="headerlink" title="2. 背景和相关工作"></a>2. 背景和相关工作</h3><p>模糊测试是一个受欢迎的研究领域，在过去几年中收到了广泛关注。在下文中，我们将简要介绍该领域，并讨论与我们工作密切相关的工作。鉴于该领域的范围非常广泛，我们无法提供所有相关工作的全面概述，因此主要关注改进JavaScript模糊测试的相关工作。有关模糊测试领域的介绍和概述，我们请读者参考关于<a target="_blank" rel="noopener" href="https://koasas.kaist.ac.kr/bitstream/10203/289589/1/111726.pdf">模糊测试</a>和<a target="_blank" rel="noopener" href="https://szu-se.github.io/FuzzingPaper/Paper/Arxiv20_SoK.pdf">灰盒模糊测试</a>的综述。有关最近模糊测试出版物的完整列表，我们请读者参考维护该领域已发表论文列表的在线存储库。</p>
+<h4 id="A-模糊测试概述"><a href="#A-模糊测试概述" class="headerlink" title="A. 模糊测试概述"></a>A. 模糊测试概述</h4><p>模糊测试可以在高层次上划分为几种不同的方法，我们将在下面简要解释。这些通用方法提供了一个粗略的分类，在实践中，使用了许多混合方法，因此并不总是能够进行清晰的区分。</p>
+<p>**a) 生成式模糊测试：**基于生成的方法使用生成器函数从头开始生成每个输入，这些生成器函数输出相关数据。生成方法的主要优点是，生成的输入在设计上是语法正确的，因为生成器函数尊重被测程序所期望的基础语法。</p>
+<p>**b) 基于变异的模糊测试：**基于变异的方法使用种子文件，并根据某些规则对其进行操作，然后继续将略微修改的文件作为新的种子文件。突变可以是随机和任意的，例如位&#x2F;字节翻转或消息部分的随机添加&#x2F;删除，或者更有针对性，例如用已知过去存在问题的数据点（例如，MAX INT或MIN INIT等魔术值）替换整数或字符串。</p>
+<p>**c) 引导式模糊测试：**引导式模糊测试扩展了基于变异的模糊测试中使用的方法，并根据某些指标（例如，覆盖率引导的模糊测试）基于相关性来修剪突变的文件。在langue fuzzing（用编程语言实现的程序）中，用于修剪的一个流行指标是分支覆盖率。使用分支覆盖率的fuzzer收集关于执行目标程序的分支的数据，并且如果它们在执行期间没有发现任何新的分支，则删除&#x2F;忽略新的突变文件以供进一步考虑。这种方法确保了模糊测试过程保持一定的势头，并且不会陷入僵局。</p>
+<h4 id="B-JavaScript模糊测试"><a href="#B-JavaScript模糊测试" class="headerlink" title="B. JavaScript模糊测试"></a>B. JavaScript模糊测试</h4><p>之前的几篇出版物涵盖了JavaScript浏览器引擎或独立的JavaScript引擎的一般模糊测试，但到目前为止，还没有任何出版物专注于JIT编译器中的漏洞。因此，在Javascript模糊器覆盖范围中存在一个空白，我们用我们的方法来填补。请注意，以前的JavaScript模糊测试工作涉及使用中间表示来进行JavaScript fuzzing或语义上正确的JavaScript模糊测试，这两种属性我们的fuzzer为了在fuzzing JIT编译器漏洞中取得成功而具备（并且需要）。因此，我们在下面讨论我们的方法如何与该领域以前的工作相关。</p>
+<p>Holler 等人提出了该主题的早期工作之一，它们建议使用抽象语法树（AST）作为中间表示。在fuzzing期间，AST的子节点被获取并替换为来自其他程序的节点（甚至新生成的代码），然后转换回实际的fuzz语言。请注意，此过程生成符合fuzz语言语法的代码。然而，没有关注任何特定的错误类别或生成代码的语义有效性。在我们的工作中，我们不使用AST作为中间表示。相反，我们开发了自己的中间语言，该语言代表JavaScript的一个子集。最重要的是，它能够专注于JIT错误和生成代码的语义有效性。</p>
+<p>最近，He等人提出了SoFi，一种语义感知的fuzzing策略。为了确保生成测试用例的有效性，作者建议使用细粒度的程序分析来识别变量，并推导出这些变量的类型以进行突变。此外，SoFi使用自动修复策略来修复无效测试用例中的语法和语义错误。遗憾的是，SoFi的完整源码没有公开提供，因此我们无法直接将我们的方法与Sofi进行比较。此外，我们保留对SoFi发现的错误是否确实具有critical级别的疑问。</p>
+<p>Saxena等人开发了一种中间语言，用于将不同的JavaScript指令（例如，拆分字符串）规范化为单个动作，以改进模糊测试。通过这种方式，实现的细微细节被抽象成更高级别、更易于处理的表示。他们的重点是检测JavaScript应用程序中的客户端验证漏洞，而不是浏览器本身的JavaScript引擎。因此，他们的模糊测试是基于JavaScript程序的输入，而不是JavaScript引擎的输入（即，JavaScript代码）本身。</p>
+<p>本着类似的精神，Hodov’an等人创建了JavaScript 引擎API的基于图的表示，并使用该图来生成用于模糊测试的输入数据。然而，他们专注于JavaScript引擎提供的API，并且不生成超出它的代码。因此，生成的代码侧重于语义正确性，但不太可能检测到JIT编译器错误。</p>
+<p>Lee等人提出了Montage，一种基于神经网络语言模型（NNLM）的fuzzer。他们将AST转换为可以直接用于训练NNLM的AST子树。使用Montage，作者发现37个漏洞，包括3个CVE。尽管他们发现了一个与JIT相关的漏洞，但总体方法与我们的方法是正交的，因为他们在AST上使用机器学习。相比之下，我们在IR上使用预定义的突变。此外，他们不以JIT为目标，而是对JavaScript引擎进行广泛的模糊测试。</p>
+<p>最近，Ta Dinh等人提出了Favocado，一种专门用于模糊测试JavaScript代码中绑定层的fuzzer。他们报告说，模糊测试此类绑定需要句法和语法上的正确性，才能达到预期的测试区域。这种方法与我们在fuzzing JIT相关代码部分时面临的挑战类似，这些代码部分也需要高度的语义和句法正确性。然而，Javascript引擎的目标方面与我们的方法不可比，因为我们专注于JIT编译器中的软件缺陷。</p>
+<p>为了提高fuzz输入的语义正确性，Dewey等人研究了如何在该领域中使用约束逻辑编程（CLP）。作者使用CLP来生成语义上有效的代码，这与我们的重点类似，但他们并不关注JIT编译器漏洞，因为这类软件缺陷尤其难以处理。</p>
+<p>Wang等人提出了Skyfire，一种用于模糊测试的种子生成工具，它需要一个输入语料库和一个语法。基于此输入，Skyfire学习概率上下文相关语法，并使用此语法生成种子输入。作者表明，他们的方法对于结构化程度很高的语言（例如XML）效果很好。然而，他们只提供了关于JavaScript模糊测试的初步结果，将未来的工作留给扩展他们的方法“以更好地支持更复杂的语言，例如JavaScript和SQL”。</p>
+<p>Han等人提出了CodeAlchemist，一种用于JavaScript的生成式fuzzer。</p>
+<p>Park等人提出了一种新颖的方法DIE，用于利用输入语料库中的隐藏信息，他们称之为aspects。这种方法使fuzzer能够生成更复杂，因此也更深刻的测试程序。他们分析给定的输入种子文件，不仅提取代码片段，还提取代码片段的aspects，例如结构和运行时类型。然后，所提出的fuzzing方法使用此信息来生成包含提取方面的新代码片段。尽管该工作具有类似于我们的类型系统，但类型信息应用于AST层而不是IR。</p>
+<p>一般来说，AST能够表示任何有效的JavaScript程序，但这个抽象层面对于突变来说并不理想。类似于现代编译器使用的代码转换，我们将突变应用于IR层。这种设计决策使得能够实现语义上有意义的突变，从而产生高度多样化的生成的JavaScript程序，这是fuzzing的关键方面。</p>
+<p>在一个正交的方法中，Aschermann等人提出了Nautilus，一种将输入语法于代码覆盖率相结合的多语言fuzzer。突变应用于AST层，因此收到上述限制。最近一项关于多语言fuzzing的工作称为Polyglot，它通过将种子语料库翻译成与语言无关的IR来改进 Nautilus。 遗憾的是，适用于 IR 的突变非常有限，例如，甚至像变量定义这样的基本语言特性也不容易进行突变。 相比之下，我们的专业化使我们能够包含高度专业化的突变器和生成器，这些突变器和生成器专门针对代码以触发 JIT 例程。因此，我们在主要Web浏览器中使用的真实JIT引擎中发现了明显更多的Critical软件漏洞。</p>
+<p>关于没有特别关注模糊测试的Javascript相关安全研究，我们参考两篇最新的调查论文。</p>
+<h3 id="3-JIT-编译器漏洞"><a href="#3-JIT-编译器漏洞" class="headerlink" title="3. JIT 编译器漏洞"></a>3. JIT 编译器漏洞</h3><p>在本节中，我们首先简要概述现代浏览器中用于JavaScript的JIT编译，然后通过一个JIT漏洞的案例研究来说明技术挑战。</p>
+<h4 id="A-JIT"><a href="#A-JIT" class="headerlink" title="A. JIT"></a>A. JIT</h4><p>我们使用一个小的、直观的例子来简要介绍当前设计和实现高效JS JIT编译器的方法。更具体地说，我们解释了混合模式JIT 编译器架构的基本概念，即以解释器作为基线，然后是一系列连续更高优化的JIT编译器。有关不同JIT编译方法的更详细和全面的解释，包括基于模板和基于跟踪的JIT编译，我们请读者参考常见的编译器和解释器文献。</p>
+<p>浏览器中使用的JavaScript引擎包含解析器、字节码编译器、解释器，通常还包含JIT编译器。首次遇到JavaScript代码时，引擎的解析器会构建相应的AST，该AST由字节码编译器编译为引擎特定的字节码。该字节码由解释器使用。然而，字节码解释速度很慢，这是由于调度开销以及每个字节码处理程序执行的众多（通常是冗余的）类型检查。如果代码被频繁执行，则最好通过将JavaScript代码编译为机器代码并在编译过程中对其进行优化来优化执行。</p>
+<p>与经典的提前编译编译器（例如，clang）相比，JavaScript JIT 编译器面临的挑战的一个直观示例可以在<strong>图1</strong>中看到：给定的C代码可以直接编译成汇编代码，因为所有需要的信息都存在。与C相反，JavaScript是动态类型的，并非所有生成机器代码所需的信息都存在。因此，如果需要性能，JIT编译器不能简单地将JavaScript代码编译成机器代码。执行必须首先确认使用的类型，然后根据手头的类型进行处理。这些类型可以从原始整数到高度复杂的对象，当与相同功能一起使用时，所有这些类型都表现出不同的行为。</p>
+<img src="/2025/03/05/Fuzzilli：论文阅读/image-20250305221800781.png"  alt="image-20250305221800781" style="zoom:80%;" />
+
+<p>然而，在执行期间，使用模式变得明显。例如，让我们假设观察到<code>add</code>操作只被用作整数调用。基于这种观察，可以执行推测性优化：编译器专门为推断出的类型配置文件编译JavaScript代码。最后，添加类型保护，表示优化类型假设。保护措施会检查给定的值是否属于假设的类型（在我们的示例中为整数）。只要保护措施有效，代码就会继续使用现在已优化的函数。如果保护失败，代码将”退出“，并且JavaScript代码的执行将返回到解释器，该解释器执行未优化的、速度较慢的函数。生成的抽象汇编代码将类似于编译后的C代码，但区别在于包含类型保护，并且，由于我们谈论的是整数加法，所以还包含溢出检查。我们可以将此类优化总结为以下步骤，从而生成正在审查的函数的已编译和优化版本：（1）收集使用模式数据，（2）推断类型模式，（3）针对这些类型优化代码，（4）在优化代码之前部署类型保护。</p>
+<p>引擎不立即使用JIT编译网页的JavaScript代码的原因有两个：首先，分析器必须收集执行信息才能使JIT优化起作用。其次，JIT优化非常耗时，因为优化给定JavaScript程序的各个方面可能消耗的时间比通过执行速度增益节省的时间还要多。</p>
+<p>为了在触发JIT编译之前收集所需的信息，分析器（引擎的一部分）收集已执行代码的执行信息。达到内部指定的阈值后，引擎会安排代码进行JIT编译。以后的执行直接调用优化后的代码，而不是通过字节码解释来执行函数。因此，典型的现代JIT编译器管道包括<strong>图2</strong>中可视化的步骤。</p>
+
+
+<p>(a) 引擎将源代码转换为AST。</p>
+<p>(b) 引擎将AST编译为自定义VM的字节码</p>
+<p>(c) 引擎将字节码传递给JIT编译器，JIT编译器将其转换为编译器特定的IR。字节码旨在由解释器执行，而JIT IR旨在促进各种程序优化的实现。</p>
+<p>(d) JIT编译器优化IR并添加类型保护，这实际上是将类型信息添加到IR。</p>
+<p>(e) 最后，JIT编译器将IR降低为机器代码，该代码直接在主机CPU上直接。</p>
+<h4 id="B-JIT漏洞案例研究"><a href="#B-JIT漏洞案例研究" class="headerlink" title="B. JIT漏洞案例研究"></a>B. JIT漏洞案例研究</h4><p><code>CVE-2018-4233</code>是我们在初步探索JIT编译器漏洞期间发现的首批漏洞之一。JIT编译器尝试合并多个类型保护，但未能识别出被检查变量的类型可能会在两者之间发生变化。</p>
+<ol>
+<li><p>**保护冗余消除：**JIT代码部署保护措施，以确保在编译期间做出的所有类型假设在运行时确实成立。遗漏任何违反的假设都可能产生严重的后果，从崩溃到可利用的漏洞。但是，根据代码的不同，保护措施可能是冗余的。JIT编译器可以删除冗余检查以进一步优化代码。为了确保保护措施可能是冗余的。JIT编译器会分析保护措施之间的代码是否存在潜在的副作用。这种分析可能是有缺陷的，正如<code>CVE-2018-4233</code>的情况一样。对被认为是无副作用的函数的调用可能会导致调用用户定义的JavaScript回调，而这反过来可能会更改变量的类型。</p>
+</li>
+<li><p>**具体的漏洞：**编译器假定<code>CreateThis</code>操作（负责在构造函数中创建一个新对象）不会导致任何副作用。但是，通过将构造函数包装在Proxy中，此假设被违反。通过能够更改参数对象的类型（在本例中，从浮点数数组更改为JavaScript值数组），可以在发出的机器代码中实现类型混淆。</p>
+<p><strong>图3</strong>显示了一个触发此行为的概念验证。JIT编译器假定构造函数始终接收一个以双精度浮点数作为第一个参数的数组。它在发出的机器代码的开头使用类型检查来保护此假设。但是，CreateThis操作是在对参数对象进行类型检查之后执行的，并且当检索构造函数的<code>prototype</code>属性时，通过<code>Proxy</code>回调调用JavaScript。在回调中更改参数数组的参数类型，然后在构造函数恢复并访问数组时会导致类型混淆。</p>
+<img src="/2025/03/05/Fuzzilli：论文阅读/image-20250305232316947.png"  alt="image-20250305232316947" style="zoom:80%;" /></li>
+</ol>
+<p>由于执行了概念验证代码，因此存储为<code>0x414141414141</code>的双精度浮点值<code>3.54484805889626e-310</code>被错误地用作指针，由于在取消引用地址时发生访问冲突，导致一个攻击者可控制的崩溃。</p>
+<h3 id="4-方法"><a href="#4-方法" class="headerlink" title="4. 方法"></a>4. 方法</h3><p>JIT编译漏洞的模糊测试是一个尚未详细探索的领域，并且需要特别考虑语义正确性。在本节中，我们将介绍我们填补当前JIT编译器fuzzing漏洞空白的方法。我们首先定义一组我们认为成功fuzzing JIT编译器引擎所必须的要求，然后展示基于自定义IR突变的fuzzer如何满足这些要求。</p>
+<h4 id="A-要求"><a href="#A-要求" class="headerlink" title="A. 要求"></a>A. 要求</h4><ol>
+<li><p>**语法正确性：**与代码库的其余部分相比，JavaScript引擎的解析器简单易懂，我们对此不感兴趣。此外，解析器不影响JIT编译器。因此，我们的fuzzing方法需要针对解析器后面的组件。以这些组件为目标需要发出的程序的语法正确性。由于解析阶段拒绝语法无效的示例，因此我们确保程序语法正确。</p>
+</li>
+<li><p>**引导式模糊测试：**JIT编译器深深嵌入在JavaScript引擎中。与代码接触的引擎的第一个元素是解析器，然后是解释器，只有在以正确的模式执行代码时，才会触发JIT编译器。为了深入到引擎中，我们需要反馈来生成越来越复杂的输入，强调不同的特性，最终达到JIT编译器。</p>
+</li>
+<li><p>**语义正确性：**如第3节所示，只有在重复且可靠地执行代码的情况下才会触发JIT编译器优化。为了使此类执行发生，我们需要发送代码的语义正确性。发生异常会阻止后续代码的执行，并完全阻止JIT编译，因为引擎没有足够频繁地执行代码。通常，fuzzer通过使用try-catch块包装每个生成的语句来解决此问题。此方法确实可以确保在执行遇到异常后执行后续代码。遗憾的是，这会大大改变程序的语义，因为引入了额外的控制流。因此，JIT编译器以不同的方式处理生成的示例，而不是插入任何try-catch语句。实际上，当控制流图碎片化时（就像插入的try-catch块一样），JIT编译器无法执行许多优化。我们通过将try-catch构造添加到在fuzzing期间找到的程序中来证实了这一假设，之后在大多数情况下停止触发bugs。因此，很明显，成功fuzzing JIT编译器的核心要求是能够以很高的可能性生成语义上正确的代码。</p>
+</li>
+<li><p>**语义代码突变：**我们确定我们想使用反馈方法，并且需要语义正确性才能获得成功的fuzzing框架。仍然缺少一个基本组件：代码的基础语义。JIT编译器只处理代码的语义属性，例如控制流和数据流。这是因为JIT编译器通常在其自己的字节码IR上运行，而对初始AST和语法没有任何了解。因此，希望在该级别执行突变并结合引导式fuzzing提供的反馈。使用反馈的最简单方法是使用基于突变的fuzzing。通过此过程，fuzzer可以动态地将样本添加到语料库中，从而产生新的覆盖范围，并在将来进一步对其进行突变。现有的基于突变的解释器fuzzer（例如LangFuzz）使用AST等表示形式来突变代码的语法元素。但是，句法元素与我们的方法所针对的组件（即JIT编译器）无关。此外，AST可能是模棱两可的。因此，仅语义突变更难实现，因为立即突变可能只会导致程序的句法更改，而不是语义更改。</p>
+<p><strong>图4</strong>显示了一个示例，其中具有不同AST的两个代码片段表达了相同的计算。基于AST的突变可能只是这两个代码片段之间的转换。为了解决这个问题，我们选择使用一个接近编译器使用的表示的中间表示。在这种IR上进行的突变避免了语义上无意义的突变，并提高了fuzzing的有效性。通过在IR上执行一组不同的突变我们可以更快地检测到不同的缺陷。我们注意到，可以限制AST突变以对抗无意义的突变，但实际上它会变成自己的IR。</p>
+<img src="/2025/03/05/Fuzzilli：论文阅读/image-20250306002445823.png"  alt="image-20250306002445823" style="zoom:80%;" /></li>
+</ol>
+<h4 id="B-专为Fuzzing设计的中间表示（IR）"><a href="#B-专为Fuzzing设计的中间表示（IR）" class="headerlink" title="B. 专为Fuzzing设计的中间表示（IR）"></a>B. 专为Fuzzing设计的中间表示（IR）</h4>
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>Lobo Q1ng</span>
+                    </p>
+                
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2025 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Hello~,<strong>DESTINY</strong></span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Fuzz/"># Fuzz</a>
+                    
+                        <a href="/tags/Paper-Reading/"># Paper Reading</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+            
+            <a class="next" rel="next" href="/2025/03/01/pwn-college-%E9%A2%98%E8%A7%A3/">pwn.college 题解</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+            </div>
+            <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© Lobo Q1ng | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+
+</html>
