@@ -292,7 +292,8 @@
 <p><strong>图4</strong>显示了一个示例，其中具有不同AST的两个代码片段表达了相同的计算。基于AST的突变可能只是这两个代码片段之间的转换。为了解决这个问题，我们选择使用一个接近编译器使用的表示的中间表示。在这种IR上进行的突变避免了语义上无意义的突变，并提高了fuzzing的有效性。通过在IR上执行一组不同的突变我们可以更快地检测到不同的缺陷。我们注意到，可以限制AST突变以对抗无意义的突变，但实际上它会变成自己的IR。</p>
 <img src="/2025/03/05/Fuzzilli：论文阅读/image-20250306002445823.png"  alt="image-20250306002445823" style="zoom:80%;" /></li>
 </ol>
-<h4 id="B-专为Fuzzing设计的中间表示（IR）"><a href="#B-专为Fuzzing设计的中间表示（IR）" class="headerlink" title="B. 专为Fuzzing设计的中间表示（IR）"></a>B. 专为Fuzzing设计的中间表示（IR）</h4>
+<h4 id="B-专为Fuzzing设计的中间表示（IR）"><a href="#B-专为Fuzzing设计的中间表示（IR）" class="headerlink" title="B. 专为Fuzzing设计的中间表示（IR）"></a>B. 专为Fuzzing设计的中间表示（IR）</h4><p>正如上一节所解释的，我们的模糊测试方法使用自己的IR。因此，我们将fuzzer的设计集中在自定义中间表示IR中对代码进行突变，然后将IR代码转换为JavaScript以供执行的想法上</p>
+
         </div>
 
         
