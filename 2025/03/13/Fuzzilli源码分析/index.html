@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="Lobo Q1ng">
+
+
+    <meta name="subtitle" content="天空是为蓝色~">
+
+
+
+
+<title>Fuzzilli源码分析 | Lobo Q1ng&#39;s Blog</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    <script>
+        // this function is used to check current theme before page loaded.
+        (() => {
+            const currentTheme = window.localStorage && window.localStorage.getItem('theme') || '';
+            const isDark = currentTheme === 'dark';
+            const pagebody = document.getElementsByTagName('body')[0]
+            if (isDark) {
+                pagebody.classList.add('dark-theme');
+                // mobile
+                document.getElementById("mobile-toggle-theme").innerText = "· Dark"
+            } else {
+                pagebody.classList.remove('dark-theme');
+                // mobile
+                document.getElementById("mobile-toggle-theme").innerText = "· Light"
+            }
+        })();
+    </script>
+
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">Q1ng&#39;s Blog</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">Q1ng&#39;s Blog</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+            <div class="main">
+                <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    var tocbot_timer;
+    var DEPTH_MAX = 6; // 为 6 时展开所有
+    var tocbot_default_config = {
+        tocSelector: '.tocbot-list',
+        contentSelector: '.post-content',
+        headingSelector: 'h1, h2, h3, h4, h5',
+        orderedList: false,
+        scrollSmooth: true,
+        onClick: extend_click,
+    };
+
+    function extend_click() {
+        clearTimeout(tocbot_timer);
+        tocbot_timer = setTimeout(function() {
+            tocbot.refresh(obj_merge(tocbot_default_config, {
+                hasInnerContainers: true
+            }));
+        }, 420); // 这个值是由 tocbot 源码里定义的 scrollSmoothDuration 得来的
+    }
+
+    document.ready(function() {
+        tocbot.init(obj_merge(tocbot_default_config, {
+            collapseDepth: 1
+        }));
+    });
+
+    function expand_toc() {
+        var b = document.querySelector('.tocbot-toc-expand');
+        var expanded = b.getAttribute('data-expanded');
+        expanded ? b.removeAttribute('data-expanded') : b.setAttribute('data-expanded', true);
+        tocbot.refresh(obj_merge(tocbot_default_config, {
+            collapseDepth: expanded ? 1 : DEPTH_MAX
+        }));
+        b.innerText = expanded ? 'Expand all' : 'Collapse all';
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    function obj_merge(target, source) {
+        for (var item in source) {
+            if (source.hasOwnProperty(item)) {
+                target[item] = source[item];
+            }
+        }
+        return target;
+    }
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">Fuzzilli源码分析</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">Lobo Q1ng</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">March 13, 2025&nbsp;&nbsp;20:09:57</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/Fuzz/">Fuzz</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <h1 id="Fuzzilli源码分析"><a href="#Fuzzilli源码分析" class="headerlink" title="Fuzzilli源码分析"></a>Fuzzilli源码分析</h1><h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p>分析与调试环境为</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dog@dog:~/swift/usr/bin$ lldb --version</span><br><span class="line">lldb version 17.0.0 (https://github.com/swiftlang/llvm-project.git revision 3a02857b159678d97e33f8c5032541c3ddd5f1f6)</span><br><span class="line">Swift version 6.2-dev (LLVM 3a02857b159678d, Swift c91e29523420c00)</span><br></pre></td></tr></table></figure>
+
+<p>使用swift编译Fuzzilli时，使用debug模式：<code>swift build -c debug</code>，这种情形下，才能对其进行调试。</p>
+<blockquote>
+<p>Vscode调试swift项目时会存在BUG，调试时无法获取变量的值，也无法获得任何有用信息。即鼠标悬停在变量时，出现<code>Unable to determine byte size</code>，解决方案：<a target="_blank" rel="noopener" href="https://github.com/vadimcn/codelldb/wiki/Swift">Codelldb Debugging problems</a></p>
+</blockquote>
+<p>以下是使用vscode调试时的<code>launch.json</code>文件：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="comment">// Use IntelliSense to learn about possible attributes.</span></span><br><span class="line">    <span class="comment">// Hover to view descriptions of existing attributes.</span></span><br><span class="line">    <span class="comment">// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387</span></span><br><span class="line">    <span class="attr">&quot;version&quot;</span><span class="punctuation">:</span> <span class="string">&quot;0.2.0&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;configurations&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line"></span><br><span class="line">        <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;lldb&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;request&quot;</span><span class="punctuation">:</span> <span class="string">&quot;launch&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;sourceLanguages&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;swift&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Debug swift-executable&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;program&quot;</span><span class="punctuation">:</span> <span class="string">&quot;$&#123;workspaceFolder&#125;/.build/debug/FuzzilliCli&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;args&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;--profile=qjs&quot;</span><span class="punctuation">,</span><span class="string">&quot;Targets/QJS/quickjs/qjs&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;cwd&quot;</span><span class="punctuation">:</span> <span class="string">&quot;$&#123;workspaceFolder&#125;&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="comment">// &quot;preLaunchTask&quot;: &quot;Build for debug&quot;</span></span><br><span class="line">        <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Fuzzilli-工作原理"><a href="#Fuzzilli-工作原理" class="headerlink" title="Fuzzilli 工作原理"></a>Fuzzilli 工作原理</h2><p>Fuzzilli具有两个主要的模糊测试引擎：mutation引擎和Hybrid引擎。后者本质上是纯生成组件与现有变异的结合。</p>
+<p>在解释这些引擎的工作原理之前，首先解释FuzzIL，这是Fuzzilli构建的基础的自定义中间语言。</p>
+<p>可以通过使用<code>--inspect</code>CLI标志来观察文档中描述的所有机制的实际运行情况。如果启用，所有写入磁盘的程序（本质上是语料库中的程序以及Crash）都将有一个额外的.history文件，描述程序的“历史记录”，即为生成程序而执行的确切变异、拼接、代码生成等步骤。</p>
+<h3 id="Fuzzilli的目标"><a href="#Fuzzilli的目标" class="headerlink" title="Fuzzilli的目标"></a>Fuzzilli的目标</h3><p>除了生成”interesting”的JavaScript代码这个核心目标外，Fuzzilli还必须处理以下两个问题。</p>
+<h4 id="语法正确性"><a href="#语法正确性" class="headerlink" title="语法正确性"></a>语法正确性</h4><p>如果一个程序在语法上无效，它将在引擎中被解析器在处理的早期阶段拒绝。 由于 Fuzzilli 不尝试查找语言解析器中的错误，因此这样的执行将有效地被浪费。 因此，Fuzzilli 致力于实现 100% 的句法正确率。 这是通过使用 FuzzIL（接下来讨论）来构建实现的，FuzzIL 只能表达在语法上有效的 JavaScript 代码。</p>
+<h4 id="语义正确性"><a href="#语义正确性" class="headerlink" title="语义正确性"></a>语义正确性</h4><p>在 Fuzzilli 中，引发未捕获异常的程序被认为是语义上不正确的，或简称为无效。 虽然可以将每个（或大多数）语句包装到 try-catch 块中，但这将从根本上改变生成的程序的控制流，从而改变 JIT 编译器的优化方式。 许多 JIT 错误无法通过这样的程序触发。 因此，至关重要的是，Fuzzilli 生成具有相当高程度的语义有效的样本（作为基准，Fuzzilli 应以高于 50% 的正确率为目标）。</p>
+<p>这个挑战取决于每个模糊测试引擎，因此将分别针对每个引擎进行讨论。</p>
+<h3 id="FuzzIL-中间语言"><a href="#FuzzIL-中间语言" class="headerlink" title="FuzzIL 中间语言"></a>FuzzIL 中间语言</h3><p>源码位于：Sources&#x2F;Fuzzilli&#x2F;FuzzIL</p>
+<p>Fuzzilli基于一种名为FuzzIL的自定义中间语言。FuzzIL的设计具有四个核心目标：</p>
+<ul>
+<li>促进有意义的代码变异</li>
+<li>易于静态推理（参见关于类型系统的章节）</li>
+<li>易于提升（lift）到JavaScript</li>
+<li>确保生成的JavaScript代码的某些正确性属性，例如语法正确性以及在使用变量之前定义变量</li>
+</ul>
+<p>Fuzzilli 内部专门对 FuzzIL 程序进行操作，并且仅为了执行才将其提升到 JavaScript。 因此，使用 FuzzIL 的高级模糊测试管道如下所示：</p>
+
+
+<p>提升由 <code>JavaScriptLifter</code> 执行，而 JavaScript 代码的执行通过 REPRL（读取-求值-打印-重置-循环）机制进行，这本质上是 JS 引擎的持久模糊测试的实现，它还提供有关执行是否成功的反馈（如果执行因未捕获的异常而终止，则执行失败）。</p>
+<p>FuzzIL 程序可以序列化为 protobuf，这用于将它们存储到磁盘或在分布式模糊测试的情况下通过网络发送它们。 可以使用 <code>FuzzILTool</code> 将 protobuf 格式的 FuzzIL 程序转换为 JavaScript 或 FuzzIL 的文本表示形式：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">swift run FuzzILTool --liftToFuzzIL path/to/program.protobuf</span><br></pre></td></tr></table></figure>
+
+<p>FuzzIL 致力于实现大部分自解释性。 例如，一个假想的 FuzzIL 样本可能如下所示</p>
+<figure class="highlight smali"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">v0 &lt;- BeginPlainFunctionDefinition -&gt; v1, v2, v3</span><br><span class="line">    v4 &lt;- BinaryOperation v1 &#x27;+&#x27; v2</span><br><span class="line">    SetProperty v3, &#x27;foo&#x27;, v4</span><br><span class="line">EndPlainFunctionDefinition</span><br><span class="line">v5 &lt;- LoadString <span class="string">&quot;Hello World&quot;</span></span><br><span class="line">v6 &lt;- CreateObject [&#x27;bar&#x27;: v5]</span><br><span class="line">v7 &lt;- LoadFloat 13.37</span><br><span class="line">v8 &lt;- CallFunction v0, [v7, v7, v6]</span><br></pre></td></tr></table></figure>
+
+<p>当内联中间表达式时，提升到 JavaScript 代码的同一个程序可能如下所示</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">f0</span>(<span class="params">a1, a2, a3</span>) &#123;</span><br><span class="line">  a3.<span class="property">foo</span> = a1 + a2;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">const</span> v6 = &#123; <span class="attr">bar</span>: <span class="string">&quot;Hello World&quot;</span> &#125;;</span><br><span class="line"><span class="title function_">f0</span>(<span class="number">13.37</span>, <span class="number">13.37</span>, v6);</span><br></pre></td></tr></table></figure>
+
+<p>或者，当使用简单的提升算法时，可能如下所示：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">f0</span>(<span class="params">a1, a2, a3</span>) &#123;</span><br><span class="line">  <span class="keyword">const</span> v4 = a1 + a2;</span><br><span class="line">  a3.<span class="property">foo</span> = v4;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">const</span> v5 = <span class="string">&quot;Hello World&quot;</span>;</span><br><span class="line"><span class="keyword">const</span> v6 = &#123; <span class="attr">bar</span>: v5 &#125;;</span><br><span class="line"><span class="keyword">const</span> v7 = <span class="number">13.37</span>;</span><br><span class="line"><span class="keyword">const</span> v8 = <span class="title function_">f0</span>(v7, v7, v6);</span><br></pre></td></tr></table></figure>
+
+<p>最终，使用的提升算法可能并不重要，因为无论代码的语法表示形式如何，JavaScript 引擎的字节码和 JIT 编译器都会产生几乎相同的结果。</p>
+<p>FuzzIL 有一个“受保护”操作的概念，这些操作通过 try-catch 保护免受运行时异常的影响。 例如，如果 <code>CallFunction</code> 操作可能合理地引发异常（例如，因为参数类型不正确），则可以将其标记为受保护：<code>CallFunction v3, [v5, v6] (guarded)</code>。 在这种情况下，它将提升到如下所示的 JavaScript 代码</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">  <span class="title function_">v3</span>(v5, v6);</span><br><span class="line">&#125; <span class="keyword">catch</span> &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>由于为受保护操作生成的 try-catch 块会对程序的行为产生负面影响（如上所述），因此应谨慎使用它们。 此外，Fuzzilli 尝试在 Minimization 期间以及通过 <code>FixupMutator</code> 将受保护操作转换为不受保护的操作，这两者将在本文档后面进一步讨论。</p>
+<p>FuzzIL 具有许多属性：</p>
+<ul>
+<li>一个 FuzzIL 程序只是一个指令列表。</li>
+<li>每个 FuzzIL 程序都可以提升为语法上有效的 JavaScript 代码。</li>
+<li>一个 FuzzIL 指令是一个操作，以及输入和输出变量，并且可能有一个或多个参数（在上面的表示法中用单引号括起来）。</li>
+<li>每个变量在使用之前都已定义，并且变量编号是递增且连续的。</li>
+<li>控制流通过“块”来表达，这些块至少具有一个 <code>Begin</code> 和一个 <code>End</code> 操作，但也可能具有中间操作，例如 <code>BeginIf</code>、<code>BeginElse</code>、<code>EndIf</code>。</li>
+<li>块指令可以具有内部输出（在上面的表示法中，<code>-&gt;</code> 后面的那些），这些输出仅在新打开的作用域中可见（例如函数参数）。</li>
+<li>指令的输入始终是变量，没有立即值。</li>
+<li>指令的每个输出都是一个新变量，并且只能通过专用操作（例如 <code>Reassign</code> 指令）来重新分配现有变量。</li>
+</ul>
+<h3 id="变异FuzzIL代码"><a href="#变异FuzzIL代码" class="headerlink" title="变异FuzzIL代码"></a>变异FuzzIL代码</h3><p>FuzzIL 旨在促进各种有意义的代码变异。 在本节中，将解释核心变异。</p>
+<p>应该注意的是，Fuzzilli 中的程序是不可变的，这使得推理它们更容易。 因此，当一个程序被变异时，它实际上是在将变异应用到它的同时被复制。 这是通过 <code>ProgramBuilder</code> 类完成的，它是 Fuzzilli 中的一个核心组件，允许生成新指令或从另一个程序复制指令，并公开关于正在构建的程序的各种信息，例如哪些变量当前可见。</p>
+<h4 id="Input-Mutator"><a href="#Input-Mutator" class="headerlink" title="Input Mutator"></a>Input Mutator</h4><p>实现：<code>InputMutator.swift</code></p>
+<p>这是核心数据流变异。 本质上，它只是将指令的输入替换为另一个随机选择的输入：</p>
+<figure class="highlight armasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="symbol">SetProperty</span> <span class="built_in">v3</span>, <span class="string">&#x27;foo&#x27;</span>, <span class="built_in">v4</span></span><br></pre></td></tr></table></figure>
+
+<p>可能变成</p>
+<figure class="highlight armasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="symbol">SetProperty</span> <span class="built_in">v3</span>, <span class="string">&#x27;foo&#x27;</span>, <span class="built_in">v2</span></span><br></pre></td></tr></table></figure>
+
+<p>由于 FuzzIL 的设计，特别是所有指令的输入都是变量这一事实，这种变异只需要少量 LOC 即可实现。</p>
+<h4 id="Operation-Mutator"><a href="#Operation-Mutator" class="headerlink" title="Operation Mutator"></a>Operation Mutator</h4><p>实现：<code>OperationMutator.swift</code></p>
+<p>另一种基本变异，它会变异操作的参数（在 FuzzIL 的文本表示形式中用单引号括起来的值）。 例如：</p>
+<figure class="highlight smali"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">v4 &lt;- BinaryOperation v1 &#x27;+&#x27; v2</span><br></pre></td></tr></table></figure>
+
+<p>可能变成</p>
+<figure class="highlight smali"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">v4 &lt;- BinaryOperation v1 &#x27;/&#x27; v2</span><br></pre></td></tr></table></figure>
+
+<h4 id="Splicing"><a href="#Splicing" class="headerlink" title="Splicing"></a>Splicing</h4><p>实现：<code>SpliceMutator</code></p>
+<p>拼接背后的想法是将一个程序中自我包含的一部分复制到另一个程序中，以便组合来自不同程序的特性。 考虑以下程序：</p>
+<figure class="highlight clean"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">v0 &lt;- LoadInt <span class="string">&#x27;42&#x27;</span></span><br><span class="line">v1 &lt;- LoadFloat <span class="string">&#x27;13.37&#x27;</span></span><br><span class="line">v2 &lt;- LoadBuiltin <span class="string">&#x27;Math&#x27;</span></span><br><span class="line">v3 &lt;- CallMethod v2, <span class="string">&#x27;sin&#x27;</span>, [v1]</span><br><span class="line">v4 &lt;- CreateArray [v3, v3]</span><br></pre></td></tr></table></figure>
+
+<p>以其最简单的形式，从 <code>CallMethod</code> 指令进行拼接将导致三个中间指令被复制到当前程序中。 这还需要重命名变量，以便它们不与现有变量冲突：</p>
+<figure class="highlight clean"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">... 现有代码</span><br><span class="line">v13 &lt;- LoadFloat <span class="string">&#x27;13.37&#x27;</span></span><br><span class="line">v14 &lt;- LoadBuiltin <span class="string">&#x27;Math&#x27;</span></span><br><span class="line">v15 &lt;- CallMethod v14, <span class="string">&#x27;sin&#x27;</span>, [v13]</span><br><span class="line">... 现有代码</span><br></pre></td></tr></table></figure>
+
+<p>也可以进行更复杂的拼接。 例如，Fuzzilli 将概率性地将正在拼接的程序中的一些变量重新映射到宿主程序中的“兼容”变量，以组合两个程序的数据流，因此也可能最终产生以下结果：</p>
+<figure class="highlight clean"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">... 现有代码</span><br><span class="line">v14 &lt;- LoadBuiltin <span class="string">&#x27;Math&#x27;</span></span><br><span class="line">v15 &lt;- CallMethod v14, <span class="string">&#x27;sin&#x27;</span>, [v3]</span><br><span class="line">... 现有代码</span><br></pre></td></tr></table></figure>
+
+<p>在这里，拼接算法已决定用现有变量 (v3) 替换 <code>LoadFloat</code> 操作，例如因为该变量也包含一个浮点数。</p>
+<p>拼接变异的一个简单的变体是 <code>CombineMutator</code>，它只是将另一个程序完整地插入到当前变异的程序中。 在这种情况下，拼接本质上是整个程序。</p>
+<h4 id="Code-Generation"><a href="#Code-Generation" class="headerlink" title="Code Generation"></a>Code Generation</h4><p>实现：<code>CodeGenMutator.swift</code></p>
+<p>最终的基本变异是代码生成。 这种变异器在变异程序的单个或多个随机位置生成新的随机代码。</p>
+<p>代码生成是通过“CodeGenerators”执行的：小函数，用于生成特定的代码片段，通常只是单个 FuzzIL 指令，同时（通常）根据需要将现有变量用作输入。 一个非常简单的代码生成器如下所示：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">CodeGenerator</span>(<span class="string">&quot;IntegerGenerator&quot;</span>) &#123; b <span class="keyword">in</span></span><br><span class="line">    b.loadInt(b.genInt())</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>此生成器发出一个 <code>LoadInteger</code> 指令，该指令创建一个包含随机整数值的新变量（从技术上讲，并不完全随机，因为 <code>genInt()</code> 将倾向于一些“有趣的”整数）。 另一个示例代码生成器可能是：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">CodeGenerator</span>(<span class="string">&quot;ComparisonGenerator&quot;</span>, inputs: (.anything, .anything)) &#123; b, lhs, rhs <span class="keyword">in</span></span><br><span class="line">    b.compare(lhs, with: rhs, using: chooseUniform(from: allComparators))</span><br><span class="line">&#125;,</span><br></pre></td></tr></table></figure>
+
+<p>此生成器发出一个比较指令（例如 <code>==</code>），比较两个现有变量（任意类型）。</p>
+<p>默认代码生成器可以在 <code>CodeGenerators.swift</code> 中找到，而自定义代码生成器可以为特定引擎添加，例如触发不同级别的 JITing。</p>
+<p>代码生成器存储在加权列表中，因此使用不同的（当前手动选择的）权重来选择它们。 这允许对生成的代码的分布进行某种程度的控制，例如，大致上执行算术运算或方法调用的频率，或者生成多少控制流（if-else、循环等），相对于数据流。 此外，<code>CodeGenerators</code> 提供了一种简单的方法，通过添加生成过去经常导致错误的特定代码片段（例如原型更改、自定义类型转换回调（例如 valueOf）或索引访问器）的 <code>CodeGenerators</code>，来引导 Fuzzilli 寻找某些错误类型。</p>
+<p>通过代码生成器，最终将生成所有相关的语言功能（例如，对象操作、一元和二元操作等），然后将其保存在语料库中（因为它们触发了新的覆盖范围）并在此后进行进一步变异。</p>
+<h4 id="Exploration"><a href="#Exploration" class="headerlink" title="Exploration"></a>Exploration</h4><p>实现：<code>ExplorationMutator.swift</code></p>
+<p>这种高级变异器使用 JavaScript 中可用的运行时类型信息来执行更智能的变异，特别是确定可以对现有值执行的可能操作。 它执行以下操作：</p>
+<ol>
+<li>它为要变异的程序中的随机现有变量插入 <code>Explore</code> 操作</li>
+<li>它执行生成的（临时）程序。 <code>Explore</code> 操作将被提升为一段代码，该代码在运行时检查变量（使用 JavaScript 中的“typeof”和“Object.getOwnPropertyNames”等功能），并选择要对其执行的“有用”操作（例如，加载属性、调用方法等），然后报告它做了什么</li>
+<li>变异器处理步骤 2 的输出，并将一些 <code>Explore</code> 变异替换为运行时选择的具体操作。 所有其他 <code>Explore</code> 操作都将被丢弃。</li>
+</ol>
+<p>结果是一个程序，即使在静态未知其类型的情况下，也可以对一些现有变量执行有用的操作。 结果程序也是确定性的和“JIT 友好”的，因为它不再依赖于任何类型的运行时对象检查。</p>
+<h4 id="Probing"><a href="#Probing" class="headerlink" title="Probing"></a>Probing</h4><p>实现：<code>ProbingMutator.swift</code></p>
+<p>这是另一种运行时辅助变异器，它试图确定现有值的使用方式。 特别是，它试图确定某个对象上是否应该存在某些属性。 这种变异器执行以下操作：</p>
+<ol>
+<li>它为要变异的程序中的随机现有变量插入 <code>Probe</code> 操作</li>
+<li>它执行生成的（临时）程序。 <code>Probe</code> 操作将被提升为一段代码，该代码将对象（实际上是对象的原型）替换为 <code>Proxy</code>，然后记录对不存在的属性的所有访问。 然后将这些列表发送回 Fuzzilli。</li>
+<li>变异器处理步骤 2 的输出并安装一些缺失的属性和回调。</li>
+</ol>
+<p>这种变异器因此实现了几件事：</p>
+<ul>
+<li>它可以自动检测操作是否触发回调，然后可以安装回调函数。 例如，这可以帮助查找与意外回调相关的错误。</li>
+<li>它可以确定内置 API 的工作方式以及它期望的参数类型。 例如，许多 API 需要“配置”对象，这些对象应该具有某些键。 这种变异器可以确定这些键是什么，从而可以以一种有用的方式调用这些 API。</li>
+<li>它可以使现有代码更有用。 例如，我们可能已经有一个在对象参数上运行但访问不存在的属性的 jit 优化函数，这可能不是很有用。 这种变异器可以确保这些属性存在，从而使整个程序更有意义。</li>
+</ul>
+<h4 id="FixupMutator"><a href="#FixupMutator" class="headerlink" title="FixupMutator"></a>FixupMutator</h4><p>实现：<code>FixupMutator.swift</code></p>
+<p>这是最后的运行时辅助变异器。 它的目标是修复&#x2F;改进现有代码。 特别是，它想要</p>
+<ul>
+<li>删除不必要的 try-catch 块和保护</li>
+<li>修复对不存在的属性和元素的访问（待办）</li>
+<li>修复无效的函数、方法或构造函数调用（待办）</li>
+<li>修复导致 NaN 的算术运算，这通常表明没有执行有意义的操作（待办）</li>
+</ul>
+<p>除了第一个之外，所有这些都尚未实现，因此此变异器仍在开发中。</p>
+<p><code>FixupMutator</code> 是将受保护操作转换为不受保护操作的两种方式之一（通常首选后者）。</p>
+<h3 id="类型系统和类型推断"><a href="#类型系统和类型推断" class="headerlink" title="类型系统和类型推断"></a>类型系统和类型推断</h3><p>实现：<code>TypeSystem.swift</code> 和 <code>JSTyper.swift</code></p>
+<p>到目前为止，代码生成器只是一个简单的函数，它获取零个或多个随机输入变量并生成一些新的 FuzzIL 指令来对它们执行一些操作。 现在考虑以下假想的代码生成器：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">CodeGenerator</span>(<span class="string">&quot;FunctionCallGenerator&quot;</span>) &#123; b <span class="keyword">in</span></span><br><span class="line">    <span class="keyword">let</span> function <span class="operator">=</span> b.randomVariable()</span><br><span class="line">    <span class="keyword">let</span> arguments <span class="operator">=</span> [b.randomVariable(), b.randomVariable(), b.randomVariable()]</span><br><span class="line">    b.callFunction(f, with: arguments)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>此生成器选择一个随机的、当前可见的变量，然后将其作为带有三个随机参数的函数调用。</p>
+<p>这里的问题是，由于在任何给定时间只有少量变量实际上是函数，因此此生成器最终会生成大量无效的函数调用，例如以下内容：</p>
+<figure class="highlight clean"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">v3 &lt;- LoadString <span class="string">&quot;foobar&quot;</span></span><br><span class="line">v4 &lt;- CallFunction v3, []</span><br><span class="line"><span class="comment">// TypeError: v3 is not a function</span></span><br></pre></td></tr></table></figure>
+
+<p>这将导致抛出运行时异常，然后导致程序的其余部分不被执行，并且该程序被认为是无效的。</p>
+<p>为了解决这个问题，Fuzzilli 实现了相对简单的类型推断，它尝试在 <code>ProgramBuilder</code> 构建程序时推断每个变量的可能类型。 这（可能）比听起来容易，因为解释器只需要在大多数时候是正确的（它基本上是一种优化），而不是总是正确的。 这大大简化了实现，因为许多具有复杂效果的操作（例如原型更改）在很大程度上可以忽略。 例如，考虑推断 typeof、instanceof 和比较操作结果的规则：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> <span class="keyword">is</span> <span class="type">TypeOf</span>:</span><br><span class="line">    <span class="keyword">set</span>(instr.output, environment.stringType)</span><br><span class="line"></span><br><span class="line"><span class="keyword">case</span> <span class="keyword">is</span> <span class="type">InstanceOf</span>:</span><br><span class="line">    <span class="keyword">set</span>(instr.output, environment.booleanType)</span><br><span class="line"></span><br><span class="line"><span class="keyword">case</span> <span class="keyword">is</span> <span class="type">Compare</span>:</span><br><span class="line">    <span class="keyword">set</span>(instr.output, environment.booleanType)</span><br></pre></td></tr></table></figure>
+
+<p>为了正确推断内置对象、方法和函数的类型，类型推断依赖于 JavaScript 运行时环境的静态模型，该模型可以例如告诉解释器 eval 内置函数是一个期望单个参数的函数，Object 内置函数是一个具有各种方法的对象，或者 Uint8Array 内置函数是一个返回 Uint8Array 实例的构造函数，然后该实例具有一组特定的属性和方法。</p>
+<p>FuzzIL 的设计旨在使类型推断尽可能简单。 例如，考虑 ES6 类的实现。 在 FuzzIL 中，它们看起来大致像这样：</p>
+<figure class="highlight clean"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">v0 &lt;- BeginClassDefinition</span><br><span class="line">ClassAddInstanceProperty <span class="string">&quot;foo&quot;</span>, v5</span><br><span class="line">BeginClassInstanceMethod <span class="string">&quot;bar&quot;</span> -&gt; v8 (this), v9</span><br><span class="line">    ... <span class="keyword">implementation</span> <span class="keyword">of</span> method <span class="string">&quot;bar&quot;</span></span><br><span class="line">EndClassInstanceMethod</span><br><span class="line">BeginClassInstanceMethod <span class="string">&quot;baz&quot;</span> -&gt; v6 (this)</span><br><span class="line">    ... <span class="keyword">implementation</span> <span class="keyword">of</span> method <span class="string">&quot;baz&quot;</span></span><br><span class="line">EndClassInstanceMethod</span><br><span class="line">EndClassDefinition</span><br></pre></td></tr></table></figure>
+
+<p>根据这些，从 FuzzIL 代码推断类实例的类型相当简单：<code>.object(withProperties: [&quot;foo&quot;], withMethods: [&quot;bar&quot;, &quot;baz&quot;])</code>。</p>
+<p>有了可用的类型信息，上面的 <code>CodeGenerator</code> 现在可以请求一个包含函数的变量，并且还可以尝试查找与函数的参数类型兼容的变量：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">CodeGenerator</span>(<span class="string">&quot;FunctionCallGenerator&quot;</span>) &#123; b <span class="keyword">in</span></span><br><span class="line">    <span class="keyword">let</span> function <span class="operator">=</span> b.randomVariable(ofType: .function())</span><br><span class="line">    <span class="keyword">let</span> arguments <span class="operator">=</span> b.randomArguments(forCalling: function)</span><br><span class="line">    b.callFunction(f, with: arguments)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>但是，即使进行了此更改，如果参数值具有错误的类型，函数调用仍然会引发异常。 Fuzzilli 尝试通过两种方式来处理这个问题：</p>
+<ol>
+<li>如果函数的类型已知（即其签名已知），<code>randomArguments(forCalling:)</code> 将尝试查找合适的参数。</li>
+<li>如果没有找到匹配的参数（或者如果签名未知），生成器可以选择将调用操作标记为“受保护”。 这将导致在提升期间将其包装在 try-catch 中。</li>
+</ol>
+<p>重要的是要注意，对于基于变异的模糊测试，<code>JSTyper</code> 和类型系统应被视为优化，而不是基本功能，因此模糊器仍然应该能够在没有类型信息的情况下运行。 此外，虽然使用类型信息进行变异可以提高模糊器的性能（产生较少明显不正确的样本），但过度依赖它可能会限制模糊器，从而对性能产生负面影响（产生较少多样化的样本）。 一个例子是 <code>InputMutator</code>，它可以选择是类型感知的，在这种情况下，它将尝试找到“兼容的”替换变量。 为了不过多地限制模糊器，Fuzzilli 的 <code>MutationEngine</code> 目前配置为同时使用非类型感知的 <code>InputMutator</code> 和类型感知的 <code>InputMutator</code>。</p>
+<h4 id="类型系统"><a href="#类型系统" class="headerlink" title="类型系统"></a>类型系统</h4><p>实现：<code>TypeSystem.swift</code></p>
+<p>为了完成它的工作，<code>JSTyper</code> 需要一个类型系统。 FuzzIL 的类型系统旨在支持两个主要用例：</p>
+<ol>
+<li>确定可以对给定变量执行的操作。 例如，类型系统需要说明对象上哪些属性和方法可用，以及它们的类型和签名是什么。</li>
+<li>为给定操作找到一个兼容的变量。 例如，一个函数可能需要某种参数类型，例如 <code>Number</code> 或 <code>Uint8Array</code>。 类型系统必须能够表达这些类型，并且能够识别存储这种类型或子类型的值的变量。 例如，当需要 <code>Uint8Array</code> 时，可以使用具有附加属性的 <code>Uint8Array</code>，当需要父类时，可以使用子类的对象。</li>
+</ol>
+<p>这两种操作都需要高效，因为它们将经常执行。</p>
+<p>类型系统围绕位集构建，基本类型分别由 32 位整数中的单个位表示：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">let</span> nothing     <span class="operator">=</span> <span class="type">BaseType</span>([])</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">let</span> undefined   <span class="operator">=</span> <span class="type">BaseType</span>(rawValue: <span class="number">1</span> <span class="operator">&lt;&lt;</span> <span class="number">0</span>)</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">let</span> integer     <span class="operator">=</span> <span class="type">BaseType</span>(rawValue: <span class="number">1</span> <span class="operator">&lt;&lt;</span> <span class="number">1</span>)</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">let</span> bigint      <span class="operator">=</span> <span class="type">BaseType</span>(rawValue: <span class="number">1</span> <span class="operator">&lt;&lt;</span> <span class="number">2</span>)</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">let</span> float       <span class="operator">=</span> <span class="type">BaseType</span>(rawValue: <span class="number">1</span> <span class="operator">&lt;&lt;</span> <span class="number">3</span>)</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">let</span> boolean     <span class="operator">=</span> <span class="type">BaseType</span>(rawValue: <span class="number">1</span> <span class="operator">&lt;&lt;</span> <span class="number">4</span>)</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">let</span> string      <span class="operator">=</span> <span class="type">BaseType</span>(rawValue: <span class="number">1</span> <span class="operator">&lt;&lt;</span> <span class="number">5</span>)</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">let</span> regexp      <span class="operator">=</span> <span class="type">BaseType</span>(rawValue: <span class="number">1</span> <span class="operator">&lt;&lt;</span> <span class="number">6</span>)</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">let</span> object      <span class="operator">=</span> <span class="type">BaseType</span>(rawValue: <span class="number">1</span> <span class="operator">&lt;&lt;</span> <span class="number">7</span>)</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">let</span> function    <span class="operator">=</span> <span class="type">BaseType</span>(rawValue: <span class="number">1</span> <span class="operator">&lt;&lt;</span> <span class="number">8</span>)</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">let</span> constructor <span class="operator">=</span> <span class="type">BaseType</span>(rawValue: <span class="number">1</span> <span class="operator">&lt;&lt;</span> <span class="number">9</span>)</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">let</span> iterable    <span class="operator">=</span> <span class="type">BaseType</span>(rawValue: <span class="number">1</span> <span class="operator">&lt;&lt;</span> <span class="number">10</span>)</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">let</span> anything    <span class="operator">=</span> <span class="type">BaseType</span>([.undefined, .integer, .float, .string, .boolean, .object, .function, .constructor, .bigint, .regexp, .iterable])</span><br></pre></td></tr></table></figure>
+
+<p>每个基本类型都表示可以在其类型的某个值上执行某些操作（用例 1）。 例如，数值类型表示可以在其值上执行算术运算，<code>.iterable</code> 类型表示可以迭代该值（例如，通过 for-of 循环或使用扩展运算符），<code>.object</code> 类型表示该值具有可以访问的属性和方法，<code>.function</code> 类型表示可以使用函数调用来调用该值。</p>
+<p>附加类型信息，例如属性和方法、函数的签名或数组的元素类型，存储在“类型扩展”对象中，这些对象可以在多个 <code>Type</code> 结构之间共享（以减少内存消耗）。</p>
+<p>可以使用三个运算符组合基本类型以形成更复杂的类型：并集、交集和合并。 接下来将讨论这些。</p>
+<h5 id="Union-Operator"><a href="#Union-Operator" class="headerlink" title="Union Operator"></a>Union Operator</h5>
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>Lobo Q1ng</span>
+                    </p>
+                
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2025 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>Hello~,<strong>DESTINY</strong></span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Fuzz/"># Fuzz</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+            
+            <a class="next" rel="next" href="/2025/03/12/CVE-2020-9802-JSC%E7%BC%96%E8%AF%91%E4%BC%98%E5%8C%96%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/">CVE-2020-9802 JSC编译优化漏洞复现</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+            </div>
+            <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© Lobo Q1ng | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+
+</html>
