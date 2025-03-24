@@ -233,7 +233,7 @@
 <p>以下是使用vscode调试时的<code>launch.json</code>文件：</p>
 <figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="comment">// Use IntelliSense to learn about possible attributes.</span></span><br><span class="line">    <span class="comment">// Hover to view descriptions of existing attributes.</span></span><br><span class="line">    <span class="comment">// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387</span></span><br><span class="line">    <span class="attr">&quot;version&quot;</span><span class="punctuation">:</span> <span class="string">&quot;0.2.0&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;configurations&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line"></span><br><span class="line">        <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;lldb&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;request&quot;</span><span class="punctuation">:</span> <span class="string">&quot;launch&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;sourceLanguages&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;swift&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Debug swift-executable&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;program&quot;</span><span class="punctuation">:</span> <span class="string">&quot;$&#123;workspaceFolder&#125;/.build/debug/FuzzilliCli&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;args&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;--profile=qjs&quot;</span><span class="punctuation">,</span><span class="string">&quot;Targets/QJS/quickjs/qjs&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;cwd&quot;</span><span class="punctuation">:</span> <span class="string">&quot;$&#123;workspaceFolder&#125;&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="comment">// &quot;preLaunchTask&quot;: &quot;Build for debug&quot;</span></span><br><span class="line">        <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
 
-<h2 id="Fuzzilli-工作原理"><a href="#Fuzzilli-工作原理" class="headerlink" title="Fuzzilli 工作原理"></a>Fuzzilli 工作原理</h2><p>Fuzzilli具有两个主要的模糊测试引擎：mutation引擎和Hybrid引擎。后者本质上是纯生成组件与现有变异的结合。</p>
+<h2 id="Fuzzilli-工作原理"><a href="#Fuzzilli-工作原理" class="headerlink" title="Fuzzilli 工作原理"></a>Fuzzilli 工作原理</h2><p>Fuzzilli具有两个主要的模糊测试引擎：Mutation Engine和Hybrid Engine。后者本质上是纯生成组件与现有变异的结合。</p>
 <p>在解释这些引擎的工作原理之前，首先解释FuzzIL，这是Fuzzilli构建的基础的自定义中间语言。</p>
 <p>可以通过使用<code>--inspect</code>CLI标志来观察文档中描述的所有机制的实际运行情况。如果启用，所有写入磁盘的程序（本质上是语料库中的程序以及Crash）都将有一个额外的.history文件，描述程序的“历史记录”，即为生成程序而执行的确切变异、拼接、代码生成等步骤。</p>
 <h3 id="Fuzzilli的目标"><a href="#Fuzzilli的目标" class="headerlink" title="Fuzzilli的目标"></a>Fuzzilli的目标</h3><p>除了生成”interesting”的JavaScript代码这个核心目标外，Fuzzilli还必须处理以下两个问题。</p>
@@ -391,7 +391,216 @@
 <p>每个基本类型都表示可以在其类型的某个值上执行某些操作（用例 1）。 例如，数值类型表示可以在其值上执行算术运算，<code>.iterable</code> 类型表示可以迭代该值（例如，通过 for-of 循环或使用扩展运算符），<code>.object</code> 类型表示该值具有可以访问的属性和方法，<code>.function</code> 类型表示可以使用函数调用来调用该值。</p>
 <p>附加类型信息，例如属性和方法、函数的签名或数组的元素类型，存储在“类型扩展”对象中，这些对象可以在多个 <code>Type</code> 结构之间共享（以减少内存消耗）。</p>
 <p>可以使用三个运算符组合基本类型以形成更复杂的类型：并集、交集和合并。 接下来将讨论这些。</p>
-<h5 id="Union-Operator"><a href="#Union-Operator" class="headerlink" title="Union Operator"></a>Union Operator</h5>
+<h5 id="Union-Operator"><a href="#Union-Operator" class="headerlink" title="Union Operator"></a>Union Operator</h5><p>Operator: <code>|</code> (按位或)</p>
+<p>并集表示变量具有一种类型或另一种类型：类型 <code>t1 | t2</code> 表示值是 <code>t1</code> 或 <code>t2</code>。</p>
+<p>在 Fuzzilli 中，并集类型经常作为函数的输入或输出类型出现。 例如，<code>String.prototype.replace</code> 方法可以将正则表达式对象或字符串作为第一个参数：<code>&quot;replace&quot; : [.string | .jsRegExp, .string] =&gt; .jsString</code>。 此外，由于条件执行，也会出现并集类型：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> v4 = <span class="number">42</span>; 		<span class="comment">// .integer</span></span><br><span class="line"><span class="keyword">if</span> (v2) &#123;</span><br><span class="line">    v4 = <span class="string">&quot;foobar&quot;</span>; 	<span class="comment">// .string</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// v4 = .integer | .string</span></span><br></pre></td></tr></table></figure>
+
+<h5 id="Intersection-Operator"><a href="#Intersection-Operator" class="headerlink" title="Intersection Operator"></a>Intersection Operator</h5><p>运算符：<code>&amp;</code>（按位与）</p>
+<p>交集运算符计算两个（并集）类型之间的交集。 例如，<code>t1 | t2</code> 与 <code>t1 | t3</code> 的交集是 <code>t1</code>。</p>
+<p>在 Fuzzilli 中，此运算符用于确定变量是否可能具有某种类型，例如它是否可能是 <code>BigInt</code>，在这种情况下，许多算术运算符的结果类型也应包括 <code>BigInt</code>。</p>
+<h5 id="Merge-Operator"><a href="#Merge-Operator" class="headerlink" title="Merge Operator"></a>Merge Operator</h5><p>运算符：<code>+</code> (加号)</p>
+<p>这个运算符可能是最不直观的，并且可能对这个类型系统来说是独一无二的。</p>
+<p>本质上，如果一个变量具有合并类型 <code>t1 + t2</code>，那么它同时是两种输入类型。 因此，只要需要原始类型之一，就可以使用它。 为了理解为什么这可能有用，请考虑一些常见的 JavaScript 值：</p>
+<ul>
+<li><strong>字符串：<code>&quot;foobar&quot;</code></strong> 虽然 JavaScript 字符串显然是“字符串”类型，这意味着例如它可以用于进行字符串连接，但它也是一个具有属性（例如 <code>.length</code>）和方法（例如 <code>.charCodeAt</code>）的对象。 此外，它也表现为数组，因为它可以迭代和扩展。 因此，JavaScript 字符串的类型将是 <code>.string + .object(...) + .array</code></li>
+<li><strong>函数：<code>function foo(...) &#123; ... &#125;</code></strong> JavaScript 函数既是函数（可以调用），又是对象（具有属性和方法）。 因此，类型将是 <code>.function(...) + .object(...)</code></li>
+<li><strong>数组：<code>[ ... ]</code></strong> JavaScript 数组是可迭代的，但也包含属性和方法，因此表示为 <code>.array + .object(...)</code>。</li>
+</ul>
+<p>本质上，合并类型允许 FuzzIL 对 JavaScript 语言的动态特性进行建模，特别是经常执行的隐式类型转换以及许多事物（也）是对象这一事实。</p>
+<h5 id="Type-Subsumption"><a href="#Type-Subsumption" class="headerlink" title="Type Subsumption"></a>Type Subsumption</h5><p>运算符：<code>&lt;=</code> 和 <code>&gt;=</code></p>
+<p>为了支持类型查询（用例 2），类型系统实现了类型之间的蕴含关系。 这可以被认为是“是”关系，并且通常应该在搜索给定类型约束的“兼容”变量时使用。</p>
+<p>一般的蕴含规则是：</p>
+<ul>
+<li>基本类型只蕴含自身（整数是整数但不是字符串）</li>
+<li>并集 <code>t1 | t2</code> 蕴含 <code>t1</code> 和 <code>t2</code>（字符串是“字符串或数字”）</li>
+<li>合并类型 <code>t1 + t2</code> 被 <code>t1</code> 和 <code>t2</code> 蕴含（JavaScript 函数既是函数又是具有属性和方法的对象）</li>
+<li>继承关系（包括添加的属性&#x2F;方法）按预期工作：具有附加属性的 <code>Uint8Array</code> 仍然是 <code>Uint8Array</code>。 子类的实例也是父类的实例。</li>
+</ul>
+<h5 id="Implementation-Details"><a href="#Implementation-Details" class="headerlink" title="Implementation Details"></a>Implementation Details</h5><p>类型实现为两个 32 位整数，一个存储明确类型，一个存储可能类型。 根据经验，明确类型通过合并增长，而可能类型通过并集增长。</p>
+<p>由于这种表示形式，类型通常只能是并集类型或合并类型。 例如，不可能（如果尝试，将会导致运行时错误）合并并集类型，因为这无法正确表示。 然而，在实践中，这是不需要的，因此没有问题。 支持Union Merged types，但是，结果通常太宽泛。 例如，类型 <code>(t1 + t2) | (t3 + t4)</code> 将与类型 <code>t1 | t2 | t3 | t4</code> 无法区分。 因此，结果类型比必要的更宽泛，但仍然是正确的，因为结果类型蕴含两个输入类型。 同样，在实践中，这并不重要，因为这种情况仅在条件执行期间发生，在这种情况下，结果类型可能无论如何都无法以有意义的方式使用（它不能保证是任何类型，因此在需要其中一种类型时不能使用）。</p>
+<h5 id="Type-Examples"><a href="#Type-Examples" class="headerlink" title="Type Examples"></a>Type Examples</h5><p>为了更好地理解 FuzzIL 的类型系统，本节展示了一些常见的 JavaScript 值以及它们在 FuzzIL 中对应的类型。 也可以通过使用 <code>--inspect=types</code> 标志来检查这一点。 如果启用，写入磁盘的程序将包含变量类型的注释。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> v0 = <span class="string">&quot;foobar&quot;</span>;</span><br><span class="line"><span class="comment">// .string + .object(...) + .array</span></span><br><span class="line"><span class="comment">// the object part contains all the standard string methods and properties</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> v0 = &#123; <span class="title function_">valueOf</span>(<span class="params"></span>) &#123; ...; <span class="keyword">return</span> <span class="number">13.37</span>; &#125;&#125;;</span><br><span class="line"><span class="comment">// .object(...) + .float</span></span><br><span class="line"><span class="comment">// The object can be used for numerical operations since it has a meaningful</span></span><br><span class="line"><span class="comment">// conversion operator defined (a custom valueOf method with known signature).</span></span><br><span class="line"><span class="comment">// Note: this is not yet implemented, currently the type would just be .object</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> v0 = [...];</span><br><span class="line"><span class="comment">// .array + .object(...)</span></span><br><span class="line"><span class="comment">// the JavaScript array is clearly an array (can be iterated over) but also</span></span><br><span class="line"><span class="comment">// exposes properties and methods and as such is also an object</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">v0</span> &#123; ... <span class="title function_">foo</span>(<span class="params"></span>) &#123; ... &#125;; <span class="title function_">bar</span>(<span class="params"></span>) &#123; ... &#125; &#125;;</span><br><span class="line"><span class="comment">// .constructor([...] =&gt; .object(...))</span></span><br><span class="line"><span class="comment">// The variable v0 is a constructor with the parameters indicated by its</span></span><br><span class="line"><span class="comment">// constructor and which returns an object of the v0 &quot;group&quot; with certain</span></span><br><span class="line"><span class="comment">// properties and methods (e.g. foo and bar)</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="The-Mutation-Engine"><a href="#The-Mutation-Engine" class="headerlink" title="The Mutation Engine"></a>The Mutation Engine</h3><p>实现: <code>MutationEngine.swift</code>（–engine&#x3D;mutation）</p>
+<p>本节将解释 Fuzzilli 的变异引擎是如何工作的。 为此，它首先介绍变异引擎的三个缺失组件，即最小化器、语料库和覆盖率收集，然后解释变异引擎使用的高级模糊测试算法。</p>
+<h4 id="Minimization"><a href="#Minimization" class="headerlink" title="Minimization"></a>Minimization</h4><p>实现：<code>Minimization/</code> </p>
+<p>Fuzzilli 执行的变异都有一个共同点：它们只能增加 FuzzIL 程序的大小（指令数量），而永远不会减小它。 因此，经过多轮变异后，程序最终会变得太大而无法在时限内执行。 此外，如果不从有趣的程序中删除不必要的功能，未来变异的效率会降低，因为许多变异将被“浪费”在变异不相关的代码上。 因此，Fuzzilli 需要一个最小化器，在程序插入语料库之前删除程序中不必要的代码。</p>
+<p>最小化在概念上很简单：<strong>Fuzzilli 尝试识别和删除触发新发现的覆盖边缘不需要的指令</strong> 。 在最简单的情况下，这意味着删除单个指令，然后重新运行程序以查看它是否仍然触发新的边缘。 还有一些专门的最小化过程。 例如，有一个内联简化器，它尝试将函数内联到它们的调用点。 这是必要的，否则代码模式，例如</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">v1</span>(<span class="params">...</span>) &#123;</span><br><span class="line">    <span class="keyword">function</span> <span class="title function_">v2</span>(<span class="params">...</span>) &#123;</span><br><span class="line">        <span class="keyword">function</span> <span class="title function_">v3</span>(<span class="params">...</span>) &#123;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="title function_">v3</span>(...);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="title function_">v2</span>(...);</span><br><span class="line">&#125;</span><br><span class="line"><span class="title function_">v1</span>(...);</span><br></pre></td></tr></table></figure>
+
+<p>会随着时间的推移而构建，例如当从另一个程序中拼接函数调用和定义到当前程序中时。</p>
+<p>可以想象，最小化非常昂贵，经常需要超过一百次执行。 然而，虽然最小化开销在模糊测试的早期阶段（当经常发现有趣的样本时）占主导地位，但在模糊测试的后期阶段（当很少发现新的、有趣的程序时），它接近于零。</p>
+<p>可以通过 <code>--minimizationLimit=N</code> CLI 标志来调整最小化器以减少代码的积极程度。 这样，可以强制最小化器使最小化的程序保持在给定的指令数量之上。 这有助于保留一些可能有助于未来变异的额外代码片段。 这也可以稍微加快最小化速度，因为需要删除的指令更少。 但是，将此值设置得太高可能会导致与最小化器尝试首先解决的相同类型的问题。</p>
+<p>除了删除指令，最小化器还尝试以其他方式简化程序。 例如，它尝试将受保护的操作转换为不受保护的操作，删除函数调用中不必要的参数，合并包含相同值的变量，并将一些复杂的指令转换为更简单的指令（例如，将扩展调用转换为常规调用）。</p>
+<h4 id="Corpus"><a href="#Corpus" class="headerlink" title="Corpus"></a>Corpus</h4><p>实现：<code>Corpus.swift</code></p>
+<p>Fuzzilli 将“有趣的”样本保存在其语料库中以供未来变异。 在默认语料库实现中，样本被添加、然后随机变异，并在它们被变异至少一定次数后（通过 <code>--minMutationsPerSample</code> 标志控制）最终“退役”。 也可以实现其他语料库管理算法。 例如，已经实现了一种基于马尔可夫链的语料库管理算法。</p>
+<p>如果使用 <code>--storagePath</code> CLI 标志，Fuzzilli 会将其添加到语料库中的所有样本以 protobuf 格式写入磁盘。 例如，这些可以通过 <code>--resume</code> 恢复之前的模糊测试会话，或者可以使用 FuzzILTool 进行检查。</p>
+<h4 id="Compiler"><a href="#Compiler" class="headerlink" title="Compiler"></a>Compiler</h4><p>实现：<code>Compiler/</code></p>
+<p>默认情况下，Fuzzilli 始终从语料库中单个任意选择的程序开始。 可能希望从现有的程序语料库开始，例如查找过去错误的变体。 在 Fuzzilli 中，这需要从 JavaScript 到 FuzzIL 的编译器，因为 Fuzzilli 只能对 FuzzIL 程序进行操作。 Fuzzilli 附带了这样一个编译器，它使用 babel.js 来解析 JavaScript 代码，然后使用一个相对简单的编译器来处理生成的 AST 并从中生成 FuzzIL 程序。 该编译器尚未完成所有功能，需要支持更多的语言结构。</p>
+<h4 id="Coverage"><a href="#Coverage" class="headerlink" title="Coverage"></a>Coverage</h4><p>实现：<code>Evaluation/</code> 子目录</p>
+<p>为了确定是否应将生成的程序添加到语料库中，Fuzzilli 依赖于代码覆盖率作为指导指标。 为了获得覆盖率信息，目标 JavaScript 引擎使用 <code>-fsanitize-coverage=trace-pc-guard</code> 进行编译，并且向其中添加了一个小代码存根，该代码存根通过 REPRL 接口在每次执行 JavaScript 程序期间收集边缘覆盖率信息。 在每次执行新生成的程序之后，都会处理覆盖率位图，以确定是否发现了 JavaScript 引擎控制流图中的任何新分支（因此覆盖率增加）。 如果是这样，则该样本被确定为有趣的，并在最小化后添加到语料库中。</p>
+<p><strong>应该注意的是，在 JIT 编译器的情况下，Fuzzilli 仅收集编译器代码上的覆盖率信息，而不收集生成代码上的覆盖率信息。 这比尝试检测生成的代码（如果原始 JavaScript 代码被变异，生成的代码将迅速改变）要简单得多。 此外，通常应该是这种情况，JIT 编译器仅编译已经执行多次的代码。 因此，生成的 JIT 代码之后也被执行的可能性应该相当高。 无论如何，研究是否可以将关于发出的 JIT 代码的覆盖率指导用作指导指标仍然是未来研究的主题。</strong></p>
+<h4 id="关于确定性的一点说明"><a href="#关于确定性的一点说明" class="headerlink" title="关于确定性的一点说明"></a>关于确定性的一点说明</h4><p>现代 JavaScript 引擎在后台线程上执行各种任务，例如 JIT 编译或垃圾回收。 除其他原因外，这可能导致非确定性行为：一个样本可能触发一次 JIT 编译器或 GC 边缘，但在随后的执行期间不会触发。 如果 Fuzzilli 保留了这样的样本，它将对变异引擎的有效性产生负面影响，例如因为 Fuzzilli 将无法最小化该样本，并且随后会“浪费”许多执行来尝试变异它。 为了处理这个问题，Fuzzilli 默认情况下确保新发现的样本能够确定性地触发新的边缘。 这是通过重复执行样本并形成触发边缘的交集来实现的，直到该交集变得稳定为止。 此外，在使用分布式模糊测试时，worker 实例在导入样本时会重新执行样本，从而也确保了确定性行为。</p>
+<p>由于与非确定性行为相关的崩溃可能难以重现但仍然可能很有趣，因此 Fuzzilli 在重现器样本中包含了原始失败消息（例如，断言失败消息和堆栈跟踪）以及退出代码作为注释，以帮助进行分析。</p>
+<h4 id="变异算法"><a href="#变异算法" class="headerlink" title="变异算法"></a>变异算法</h4><p>Fuzzilli 的变异引擎遵循基于变异的模糊器的典型过程：从语料库中获取一个样本（在 Fuzzilli 的例子中是一个 FuzzIL 程序），并变异给定的次数。 在变异期间，变量的类型通过 JSTyper 进行近似，以允许更智能的变异。 如果在任何时候，变异后的样本触发了新的覆盖率，则在最小化后将其添加到语料库中。 然而，为了实现高度的语义正确性，如果变异导致无效的程序，变异引擎将恢复变异。 这确保了高度的语义正确性，因为只有有效的程序被变异，并且因为每个变异只有相对较低的概率将有效的程序变为无效的程序。</p>
+<p>变异引擎实现的高级算法总结在下图。</p>
+<img src="/2025/03/13/Fuzzilli源码分析/mutation_engine.png"  alt="mutation_engine" style="zoom: 67%;" />
+
+<h3 id="当前变异引擎的局限性"><a href="#当前变异引擎的局限性" class="headerlink" title="当前变异引擎的局限性"></a>当前变异引擎的局限性</h3><p>免责声明：本节主要基于思维实验、现有的模糊测试研究、直觉、已发现（尤其是未发现）的漏洞以及偶尔的语料库检查，而不是专门的实验或测量。</p>
+<p>本节试图从理论的角度讨论变异引擎的局限性。</p>
+<p>可以将模糊器视为从可能的输入宇宙中进行采样的工具。 从这个角度来看，Fuzzilli 将从所有语法上有效的 JavaScript 程序的宇宙中进行采样。 Fuzzilli 的一个通用原则是，它不应该尝试（均匀地）从所有语法上有效的 JavaScript 程序的整个宇宙中进行采样，因为那个宇宙太大了。 因此，需要某种形式的指导来（希望）将模糊器引导到更有可能触发错误的样本。 在 MutationEngine 中，这种指导（主要）来自覆盖率反馈，它自动将模糊器引导到具有高复杂度的代码区域。 可以使用额外的、手动的指导来偏向模糊器，例如通过旨在触发 JIT 编译的特定 CodeGenerators。 这样，变异引擎基本上从可以通过将 N 个连续的变异应用于语料库中的程序而到达的程序集合中进行采样，而语料库中的程序是那些触发新覆盖率的程序。 此外，应该存在这样的情况：一个样本离语料库“越远”，就越不可能被发现，因为导致它的长度为 N 的可能变异“路径”的数量减少（即，一个非常接近语料库中样本的样本可能可以通过许多不同的变异来找到，而一个遥远的样本需要特定的变异序列才能到达）。</p>
+<p>然后，MutationEngine 将能够找到与语料库中的错误有些“接近”的错误，但不能找到远离语料库的错误。</p>
+<p>那么，关键问题是语料库中样本的分布可能是什么样子，因为它极大地影响了生成的样本的总体分布。 这里的论点是，语料库中的样本通常只会触发引擎的一个或几个特性，因为一个新程序不太可能一次触发多个新的、复杂的优化。 这可以通过查看典型语料库中样本的新发现的边缘数量（<code>--inspect</code> 将包含它）来在一定程度上进行测量。 下表显示了针对 JavaScriptCore 进行的具有大约 20000 个样本的模糊测试运行的结果：</p>
+<table>
+<thead>
+<tr>
+<th>新边的数量</th>
+<th>样本数量</th>
+<th>占总数的百分比</th>
+<th>平均大小（以JS LoC为单位）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>9631</td>
+<td>48%</td>
+<td>40</td>
+</tr>
+<tr>
+<td>2-5</td>
+<td>5999</td>
+<td>30%</td>
+<td>61</td>
+</tr>
+<tr>
+<td>6-10</td>
+<td>1580</td>
+<td>8%</td>
+<td>69</td>
+</tr>
+<tr>
+<td>10+</td>
+<td>2849</td>
+<td>14%</td>
+<td>74</td>
+</tr>
+</tbody></table>
+<p>因此，MutationEngine 可能最大的缺点之一是它很难找到需要对相关对象执行多个不同操作的漏洞。 虽然覆盖率指导会奖励模糊器第一次触发每个操作的实现，但将它们组合成单个数据流不会有额外的奖励。 类似地，一旦模糊器触发了一次回调机制（例如 valueOf 回调或 Proxy 陷阱），它可能不会因为在不同的上下文（例如不同的内置函数）中触发相同的回调机制而获得奖励，尽管这可能会导致有趣的错误。</p>
+<p>对此问题有许多可能的解决方案：</p>
+<ul>
+<li>设计一种替代指导指标，作为纯代码覆盖率的替代或补充，该指标引导模糊器发现现有指标难以发现的错误。 例如，该指标可以尝试将覆盖率反馈与某种形式的数据流分析相结合，以奖励模糊器在同一数据流上触发多个不同的特性。 这是未来研究的主题。</li>
+<li>从旧漏洞的概念验证代码或回归测试中为模糊器播种，以找到可以通过有些类似的代码触发的剩余错误。 这可以通过使用上面讨论的 FuzzIL 编译器将现有的 JavaScript 代码编译成 FuzzIL 语料库来实现。 这种方法本质上仅限于寻找与过去漏洞至少有些相似的错误。</li>
+<li>改进代码生成基础设施并使用它从头开始创建新程序，可能针对目标 JavaScript 引擎的特定错误类型或组件。 本文档的其余部分讨论了这种方法和实现它的 HybridEngine。</li>
+</ul>
+<h3 id="The-HybridEngine"><a href="#The-HybridEngine" class="headerlink" title="The HybridEngine"></a>The HybridEngine</h3><p>实现：<code>HybridEngine.swift</code>（<code>--engine=hybrid</code>）</p>
+<p>HybridEngine 背后的核心思想是将代码生成与现有的变异和拼接机制相结合。 这实现了许多目标：</p>
+<ul>
+<li>通过配置生成的程序的形状和方面（例如，强调 JavaScript 引擎的某些区域或特定 API），可以实现手动模糊器指导。</li>
+<li>允许纯代码生成器保持相当简单，而是依赖于变异器使生成的代码更有趣或更正确。 特别是，FixupMutator 专门设计用于帮助 HybridEngine 生成正确且有意义的程序。</li>
+<li>它可以防止过度专业化，并提高发出的代码的多样性，因为变异（主要是输入和操作变异）是完全随机且无偏的（例如，它们忽略任何类型信息）。 因此，它们也经常导致语义上无效的样本。</li>
+<li>它使代码生成引擎能够“学习”有趣的代码片段，因为这些片段将被添加到语料库中（由于覆盖率反馈），然后用于拼接。 因此，即使在生成式模糊测试模式下，仍然使用代码覆盖率反馈。</li>
+</ul>
+<p>与 MutationEngine 相比，HybridEngine 主要缺乏覆盖率指导。 因此，它需要以不同的方式解决许多问题：</p>
+<h4 id="1-正确性问题"><a href="#1-正确性问题" class="headerlink" title="1. 正确性问题"></a>1. 正确性问题</h4><p>由于变异引擎会恢复无效的变异（那些导致引发运行时异常的变异），因此变异期间的代码生成可能有些激进，因此导致更多无效的样本。 然而，当从头开始生成整个程序时，生成的样本的正确率更为重要。 因此，代码生成器需要小心不要生成无效的代码。 这通过多种方式实现：</p>
+<ul>
+<li>代码生成器应选择正确类型的输入变量。 例如，发出函数调用的生成器应确保所选变量包含可调用的值。</li>
+<li>当代码生成器无法证明在运行时不会抛出异常时（这可能由于多种原因发生，包括当前没有所需类型的变量可用），可以使用受保护的指令（或显式的 try-catch 块）。 如上所述，FixupMutator 和 Minimizer 都会负责删除不必要的保护。</li>
+<li>还有一些其他的临时机制，试图防止无效程序的常见来源。 例如，ProgramBuilder 支持“递归保护”，它可以防止琐碎的递归。</li>
+</ul>
+<h4 id="2-意义性问题"><a href="#2-意义性问题" class="headerlink" title="2. 意义性问题"></a>2. 意义性问题</h4><p>考虑以下代码：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> v0 = ...;</span><br><span class="line"><span class="keyword">let</span> v1 = v0 / &#123;&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>虽然语义上有效（运行时不会抛出异常），但该代码在很大程度上是语义上无意义的，因为它只会产生 NaN（非数字）值。 因此，无论 v0 的实际值如何，此代码的输出状态空间都是 1。 （大多数）无意义操作的其他示例包括加载或删除不存在的属性（这将始终导致未定义）、对没有自定义 toPrimitive 转换运算符的对象或非数字字符串执行任何类型的数学运算（算术运算符或 Math 函数）、将不正确类型的值作为参数传递给内置函数，或在非对象上存储属性。</p>
+<p>理想情况下，“无意义”很可能被定义为始终导致引擎的相同内部状态转换，而不管输入类型和周围代码如何。 由于这很难衡量，Fuzzilli 对该术语的解释在很大程度上是模糊的近似值，因此 Fuzzilli 认为无意义的某些操作实际上会在某些引擎中引起一些有趣的行为。 然而，由于执行的变异，“无意义”的代码仍然会被生成（只是不是以不合理的高概率），希望允许发现相关的错误。</p>
+<p>在变异引擎中，代码覆盖率与最小化器相结合有效地解决了这个问题：无意义的代码片段不会触发任何新的覆盖率，因此会在包含在语料库中之前被最小化器删除。 因此，语料库包含的主要是<em>有意义的代码片段，因此生成的代码也主要是</em>有意义的。</p>
+<p>然而，生成式引擎没有依赖于覆盖率反馈的奢侈（除了拼接）。 因此，代码生成引擎的主要设计目标是努力以高频率生成有意义的代码，其中有意义的宽松定义是，对于给定的输入类型，输出可以根据输入值具有不同的值。 在实践中，这个例子意味着执行按位运算的 CodeGenerator 应该需要数值输入值而不是完全任意的输入值：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">CodeGenerator</span>(<span class="string">&quot;BitOp&quot;</span>, inputs: .preferred(.number, .number)) &#123; b, lhs, rhs <span class="keyword">in</span></span><br><span class="line">    b.binary(lhs, rhs, with: chooseUniform(from: allBitwiseOperators))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>此外，FixupMutator（最终）也旨在通过检测运行时无意义的操作并将它们更改为更有意义的操作来解决此问题。</p>
+<h4 id="3-前瞻性问题"><a href="#3-前瞻性问题" class="headerlink" title="3. 前瞻性问题"></a>3. 前瞻性问题</h4><p>考虑 Fuzzilli 生成函数定义的情况（例如通过 PlainFunctionGenerator）：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">foo</span>(<span class="params">v4, v5</span>) &#123;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在这里，当生成函数体时，v4 和 v5 的类型是未知的，因为它们只能在稍后调用该函数时由 JSTyper 观察到。 然而，如果参数只是设置为未知类型（FuzzIL 类型系统中的 .anything），那么主体中的代码将无法有意义地使用它们。</p>
+<p>因此，解决方案是每次生成函数时都生成一个随机但非平凡的函数签名。 例如，在伪代码中：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">foo</span>(<span class="params">v4: <span class="built_in">Number</span>, v5: JSArray</span>) -&gt; <span class="title class_">JSArray</span> &#123;</span><br><span class="line">    <span class="comment">// 可以在这里有意义地使用 v4 和 v5</span></span><br><span class="line">    ...;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这样，主体中的代码可以有意义地使用参数，并且它的返回值也可以被使用。 该函数将具有存储在其类型中的签名（就像内置函数和方法一样），因此将来对其进行的任何调用都将尝试获取正确类型的参数值。 生成签名时，会考虑当前可用的变量，以使生成无法满足的签名的概率非常低。</p>
+<p>一个相关的问题是如何处理自定义对象类型，例如生成如下代码：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">foo</span>(<span class="params">v3</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> v3.<span class="property">a</span>.<span class="property">b</span>.<span class="property">c</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>为了使这成为可能，Fuzzilli 不仅必须知道 v3 的类型，还必须知道其属性的类型。</p>
+<p>这可以通过预先生成许多自定义对象类型并在生成器中使用它们来类似地解决。 例如，以下类型可能用于上面的 v3：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">v3 = .<span class="title function_">object</span>(<span class="string">&quot;ObjType1&quot;</span>, [</span><br><span class="line">    .<span class="property">a</span>: .<span class="title function_">object</span>(<span class="string">&quot;ObjType2&quot;</span>, [</span><br><span class="line">        .<span class="property">b</span>: .<span class="title function_">object</span>(<span class="string">&quot;ObjType3&quot;</span>, [</span><br><span class="line">            .<span class="property">c</span>: .<span class="property">integer</span></span><br><span class="line">        ])</span><br><span class="line">    ])</span><br><span class="line">])</span><br></pre></td></tr></table></figure>
+
+<p>为了使此方法有效，生成对象或属性存储的代码生成器必须遵守这些属性类型。</p>
+<h4 id="程序模板"><a href="#程序模板" class="headerlink" title="程序模板"></a>程序模板</h4><p>如前所述，需要某种指导机制将模糊器引导到代码的特定区域。 在 HybridEngine 中，这通过 ProgramTemplates 实现：程序结构的高级描述，然后从中生成具体的程序。 这有效地限制了搜索空间，因此可以更有效地发现漏洞。</p>
+<p>接下来显示 ProgramTemplate 的示例。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ProgramTemplate</span>(<span class="string">&quot;JITFunction&quot;</span>) &#123; b <span class="keyword">in</span></span><br><span class="line">    <span class="comment">// 从一个随机前缀和一些随机代码开始。</span></span><br><span class="line">    b.buildPrefix()</span><br><span class="line">    b.build(n: <span class="number">5</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成一个较大的函数并为其生成一个签名</span></span><br><span class="line">    <span class="keyword">let</span> f <span class="operator">=</span> b.buildPlainFunction(with: b.randomParameters()) &#123; args <span class="keyword">in</span></span><br><span class="line">        <span class="built_in">assert</span>(args.count <span class="operator">&gt;</span> <span class="number">0</span>)</span><br><span class="line">        b.build(n: <span class="number">30</span>)</span><br><span class="line">        b.doReturn(b.randomVariable())</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 触发 JIT 优化</span></span><br><span class="line">    b.buildRepeatLoop(n: <span class="number">100</span>) &#123; <span class="keyword">_</span> <span class="keyword">in</span></span><br><span class="line">        b.callFunction(f, withArgs: b.randomArguments(forCalling: f))</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个相当简单的模板旨在通过生成一个随机函数，强制编译它，然后使用不同的参数再次调用它来搜索 JIT 编译器错误。</p>
+<h4 id="Example"><a href="#Example" class="headerlink" title="Example"></a>Example</h4><p>以下是 HybridEngine 如何基于上述模板生成程序的示例。 请注意，并非所有 CodeGenerators 都已迁移以与 HybridEngine 很好地配合使用（例如，通过在必要时发出受保护的指令），因为这仍在进行中。</p>
+<h5 id="1-前缀代码生成"><a href="#1-前缀代码生成" class="headerlink" title="1. 前缀代码生成"></a>1. 前缀代码生成</h5><p>该模板首先通过 b.buildPrefix() 方法生成一个小的“前缀”。 前缀只是代码片段，其目的是创建一些变量以供后续代码使用。 通常建议从这样的前缀开始，因为它确保 CodeGenerators 具有可见变量以用作输入。 在底层，前缀生成执行代码生成，但只使用标记为“值生成器”的一小部分代码生成器。 这些必须始终生成新变量并且不得失败。 结果可能是一段代码，例如</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">v0 &lt;- <span class="title class_">LoadInt</span> <span class="string">&#x27;42&#x27;</span></span><br><span class="line">v1 &lt;- <span class="title class_">LoadInt</span> <span class="string">&#x27;1337&#x27;</span></span><br><span class="line">v2 &lt;- <span class="title class_">LoadString</span> <span class="string">&#x27;foo&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<h5 id="2-随机代码生成"><a href="#2-随机代码生成" class="headerlink" title="2. 随机代码生成"></a>2. 随机代码生成</h5><p>模板的下一部分只是使用主代码生成 API：ProgramBuilder.build(n:) 生成几个随机指令。 对于代码生成，ProgramBuilder 将重复选择随机 CodeGenerators 并运行它们，直到至少生成 n 个指令。 例如，CodeGenerator 可以如下所示：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">CodeGenerator</span>(<span class="string">&quot;BinOp&quot;</span>, inputs: .preferred(.number, .number)) &#123; b, lhs, rhs <span class="keyword">in</span></span><br><span class="line">    <span class="keyword">let</span> needGuard <span class="operator">=</span> b.type(of: lhs).<span class="type">MayBe</span>(.bigint) <span class="operator">||</span> b.type(of: rhs).<span class="type">MayBe</span>(.bigint)</span><br><span class="line">    b.binary(lhs, rhs, with: chooseUniform(from: allBinaryOperators), guard: needGuard)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>请注意，生成器如何小心地生成正确且有意义的代码，同时又不对其输入要求过于严格。 它的做法是声明它“希望”接收数字作为输入（这意味着如果有可用的变量，则应使用数字调用它，但也可以使用不同类型的变量调用），然后检查其中一个输入是否可能是 BigInts（在这种情况下，很可能会出现运行时异常：“TypeError: Cannot mix BigInt and other types, use explicit conversions”），如果是，则将操作标记为受保护的（导致在运行时使用 try-catch）。</p>
+<p>在此上下文中，可以使用 v0 和 v1 调用生成器：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">v3 &lt;- <span class="title class_">Binary</span> v0, <span class="string">&#x27;*&#x27;</span>, v1</span><br></pre></td></tr></table></figure>
+
+<p>由于静态已知两个输入的类型都不是 BigInts，因此不需要任何保护。</p>
+<p>此时，只生成了一个新指令，因此代码生成将继续。 然而，为了简洁起见，在本例中我们将在此处停止代码生成并继续到模板的下一部分。</p>
+<h5 id="3-函数生成"><a href="#3-函数生成" class="headerlink" title="3. 函数生成"></a>3. 函数生成</h5><p>模板的下一部分负责生成一个随机函数。 为此，第一步是使用 ProgramBuilder.randomParameters API 生成一个随机签名。 这将查看现有变量及其类型，并基于它们选择签名。 这样，以后很有可能找到合适的参数值。 在此特定情况下，它可以提出诸如 [.string, .int] 之类的签名，因为存在两种类型的现有变量。 请注意，签名尚不包括返回值类型。 这将仅在函数定义结束时根据函数体内部生成的 Return 语句来计算。</p>
+<p>生成签名后，模板将创建函数并使用代码生成机制填充其主体。 这次，我们将使用以下三个代码生成器：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">CodeGenerator</span>(<span class="string">&quot;BuiltinGenerator&quot;</span>) &#123; b <span class="keyword">in</span></span><br><span class="line">    b.loadBuiltin(b.randomBuiltin())</span><br><span class="line">&#125;,</span><br><span class="line"></span><br><span class="line"><span class="type">CodeGenerator</span>(<span class="string">&quot;FunctionCallGenerator&quot;</span>, inputs: .preferred(.function())) &#123; b, f <span class="keyword">in</span></span><br><span class="line">    <span class="keyword">let</span> arguments <span class="operator">=</span> b.randomArguments(forCalling: f)</span><br><span class="line">    <span class="keyword">let</span> needGuard <span class="operator">=</span> b.type(of: f).<span class="type">MayNotBe</span>(.function())  <span class="comment">// 技术上，如果参数类型与签名不匹配，也需要保护</span></span><br><span class="line">    b.callFunction(f, withArgs: arguments, guard: needGuard)</span><br><span class="line">&#125;,</span><br><span class="line"></span><br><span class="line"><span class="type">CodeGenerator</span>(<span class="string">&quot;ComputedPropertyAssignmentGenerator&quot;</span>, inputs: .preferred(.object())) &#123; b, obj <span class="keyword">in</span></span><br><span class="line">    <span class="keyword">let</span> propertyName <span class="operator">=</span> b.randomVariable()</span><br><span class="line">    <span class="keyword">let</span> value <span class="operator">=</span> b.randomVariable()</span><br><span class="line">    <span class="keyword">let</span> needGuard <span class="operator">=</span> b.type(of: obj).<span class="type">MayBe</span>(.nullish)</span><br><span class="line">    b.setComputedProperty(propertyName, of: obj, to: value, guard: needGuard)</span><br><span class="line">&#125;,</span><br></pre></td></tr></table></figure>
+
+<p>运行第一个生成器时，ProgramBuilder.randomBuiltin API 将查询静态环境模型以查找可用的内置函数。 在这种情况下，环境模型可能包含以下内置函数：<code>bar: .function([] =&gt; .anything)</code>，然后选择它。 接下来，代码生成可能会选择 FunctionCallGenerator。 因为它声明它需要 .function() 作为参数，所以 ProgramBuilder 会（可能）选择先前加载的内置函数。 因为它的签名是已知的，所以没有为调用选择任何参数值，并且返回值类型为 .anything。 最后，代码生成可能会选择 ComputedPropertyAssignmentGenerator。 因为当前没有类型为 .object() 的可用值，所以函数调用的返回值（可能）会被选择，因为它具有类型 .anything。 这样，至少有机会使该值在运行时成为对象。 由于不能排除该值不是“nullish”（null 或 undefined）的情况，在这种情况下会引发运行时异常，因此代码生成器将操作标记为受保护的。 将所有内容放在一起，为函数生成以下代码：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">v4 &lt;- <span class="title class_">BeginPlainFunction</span> -&gt; v5, v6</span><br><span class="line">    v7 &lt;- <span class="title class_">LoadBuiltin</span> <span class="string">&#x27;bar&#x27;</span></span><br><span class="line">    v8 &lt;- <span class="title class_">CallFunction</span> v7, []</span><br><span class="line">    <span class="title class_">SetComputedProperty</span> v8, v5, <span class="title function_">v6</span> (guarded)</span><br><span class="line">    <span class="title class_">Return</span> v8</span><br><span class="line"><span class="title class_">EndPlainFunction</span></span><br></pre></td></tr></table></figure>
+
+<h5 id="4-组合各个部分"><a href="#4-组合各个部分" class="headerlink" title="4. 组合各个部分"></a>4. 组合各个部分</h5><p>模板的其余部分只是生成一个循环来调用在步骤 3 中生成的函数。 通常，应该使用不同的参数再次调用该函数几次，并且可能在执行更多随机生成的代码之后。 为了使本示例保持简短，此处省略了这些步骤。</p>
+<p>提升到 JavaScript（使用表达式内联），生成的代码现在将是：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">f4</span>(<span class="params">a5, a6</span>) &#123;</span><br><span class="line">    <span class="keyword">let</span> v8 = <span class="title function_">bar</span>();</span><br><span class="line">    <span class="keyword">try</span> &#123; v8[a5] = a6; &#125; <span class="keyword">catch</span> &#123;&#125;</span><br><span class="line">    <span class="keyword">return</span> v8;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">let</span> v9 = <span class="number">0</span>; v9 &lt; <span class="number">100</span>; v9++) &#123;</span><br><span class="line">    <span class="title function_">f6</span>(<span class="string">&quot;foo&quot;</span>, <span class="number">42</span> * <span class="number">1337</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>生成后，样本将被进一步变异。 由于 FixupMutator 对于 HybridEngine 特别有用，因此它始终用作第一个变异器，以“完善”生成的程序。 在这种情况下，变异器可能会发现不需要 try-catch 保护（如果它在运行时从未触发），因此可以将其删除，从而产生最终的（“完善的”）程序：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">f4</span>(<span class="params">a5, a6</span>) &#123;</span><br><span class="line">    <span class="keyword">let</span> v8 = <span class="title function_">bar</span>();</span><br><span class="line">    v8[a5] = a6;</span><br><span class="line">    <span class="keyword">return</span> v8;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">let</span> v9 = <span class="number">0</span>; v9 &lt; <span class="number">100</span>; v9++) &#123;</span><br><span class="line">    <span class="title function_">f6</span>(<span class="string">&quot;foo&quot;</span>, <span class="number">42</span> * <span class="number">1337</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>随后的变异可能会以各种有趣（和不太有趣）的方式更改生成的程序。</p>
+<h4 id="Code-Generation-Mutations-The-HybridEngine"><a href="#Code-Generation-Mutations-The-HybridEngine" class="headerlink" title="Code Generation + Mutations: The HybridEngine"></a>Code Generation + Mutations: The HybridEngine</h4><p>HybridEngine 将代码生成引擎与现有的变异器结合在一起。 为此，它首先选择一个随机 ProgramTemplate，然后使用如前所述的代码生成引擎从中生成一个程序。 如果生成的程序有效，它将使用 Mutationengine 也使用的算法进一步变异几次。</p>
+<p>混合引擎使用的高级算法总结在下图。</p>
+<img src="/2025/03/13/Fuzzilli源码分析/hybrid_engine.png"  alt="hybrid_engine" style="zoom:67%;" />
+
+<p>HybridEngine 可以通过不同的方式使用。接下来将讨论这些内容。</p>
+<h4 id="Application-Component-Fuzzing"><a href="#Application-Component-Fuzzing" class="headerlink" title="Application: Component Fuzzing"></a>Application: Component Fuzzing</h4><p>通过 ProgramTemplates，可以将模糊器引导到引擎的主要组件，例如 JIT 编译器。 除了对目标代码（以及可能其中的过去错误）有高级别的理解之外，这种模板可能几乎不需要任何努力。</p>
+<p>应用：补丁正确性验证和变体模糊测试</p>
+<p>HybridEngine 的另一个应用是搜索先前错误的变体。</p>
+<p>这种技术的一个很好的例子是 V8MapTransition 模板。 该模板搜索 CVE-2020-16009 的变体（并尝试验证补丁的正确性）。 这个想法只是将代码生成引擎限制为一小组 JavaScript 特性，即对象字面量、属性加载和存储以及函数定义和调用，以减少搜索空间。 该模板成功地在数亿次执行中再次触发了原始漏洞，从而证明了该技术是可行的。</p>
+<h4 id="Application-Targeted-Fuzzing"><a href="#Application-Targeted-Fuzzing" class="headerlink" title="Application: Targeted Fuzzing"></a>Application: Targeted Fuzzing</h4><p>此应用与前一个应用类似，不同之处在于它不是从现有错误开始的。 相反，安全研究人员或开发人员必须首先确定目标引擎中可能容易出现复杂错误的特定功能，然后开发一个模板来尽可能好地强调该组件。</p>
+<p>与第一个应用相比，这种模板需要对目标源代码区域有相当深入的了解，例如，为了确定需要生成哪些类型的代码片段以及不需要生成哪些类型的代码片段。 另一方面，它应该效率更高。</p>
+<h4 id="MutationEngine-vs-HybridEngine"><a href="#MutationEngine-vs-HybridEngine" class="headerlink" title="MutationEngine vs. HybridEngine"></a>MutationEngine vs. HybridEngine</h4><p>本节简要比较Fuzzilli中使用的两种引擎。</p>
+<table>
+<thead>
+<tr>
+<th>MutationEngine</th>
+<th>HybridEngine</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>遵循通用指导算法，几乎不需要手动调整即可生成有趣的 JavaScript 代码</td>
+<td>需要手动指导，以程序模板和代码生成器形式</td>
+</tr>
+<tr>
+<td>生成的样本对控制的余地很小，因为它们主要是由覆盖率反馈决定的。影响代码的可能方法包括代码生成器及其相对权重、突变体以及最小化器的侵略性。</td>
+<td>允许对生成的代码有大量控制，包括对高级结构（例如，一个正在 JIT 编译的函数，然后被调用几次）以及通过代码生成器对低级代码片段的控制</td>
+</tr>
+<tr>
+<td>能够发现与样本“相似”的漏洞，从而触发新的覆盖率（因此被添加到语料库中），但可能难以发现不是这种情况的漏洞。后者可能包括需要通过多个不同的代码路径进行复杂状态操作的漏洞</td>
+<td>能够找到与所使用的 ProgramTemplates 之一“相似”的漏洞，这些模板可能来自过去的漏洞、希望测试特定区域的开发者或希望测试代码库复杂区域的审计员</td>
+</tr>
+</tbody></table>
+<p>由于这两个引擎相互补充，因此可能需要在同一个模糊测试会话中同时运行这两个引擎。 至少在理论上，这两个引擎也应该能够相互受益：变异引擎可以进一步变异来自 HybridEngine 的样本，而 HybridEngine 可以（通过拼接）从由 MutationEngine 构建的更好的语料库中受益。 因此，MultiEngine（<code>--engine=multi</code>）允许在一个模糊测试会话中使用这两个引擎，并允许大致控制每个引擎的调度频率。</p>
+
         </div>
 
         
