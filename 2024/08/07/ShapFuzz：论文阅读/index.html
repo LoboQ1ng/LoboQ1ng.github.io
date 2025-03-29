@@ -1,231 +1,290 @@
+
+
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
 
 <head>
-    <meta charset="UTF-8">
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-<meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta charset="UTF-8">
 
-    <meta name="author" content="Lobo Q1ng">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/Pi.png">
+  <link rel="icon" href="/img/Pi.png">
+  
 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Lobo Q1ng">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="SHAPFUZZ: Efficient Fuzzing via Shapley-Guided Byte SelectionAbstract​		基于变异的模糊测试是一种流行且有效的技术，用于发现程序中的漏洞和未覆盖代码。然而，只有少数研究关注量化输入字节的重要性。每个输入字节的重要性由其在发现新代码中的贡献程度决定。以前的工作往往集中于获取输入字节与路径约束之间的关系，而忽略了并非所有与约束相关的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ShapFuzz：论文阅读">
+<meta property="og:url" content="https://loboq1ng.github.io/2024/08/07/ShapFuzz%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/index.html">
+<meta property="og:site_name" content="Q1ng&#39;s blog">
+<meta property="og:description" content="SHAPFUZZ: Efficient Fuzzing via Shapley-Guided Byte SelectionAbstract​		基于变异的模糊测试是一种流行且有效的技术，用于发现程序中的漏洞和未覆盖代码。然而，只有少数研究关注量化输入字节的重要性。每个输入字节的重要性由其在发现新代码中的贡献程度决定。以前的工作往往集中于获取输入字节与路径约束之间的关系，而忽略了并非所有与约束相关的">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://loboq1ng.github.io/2024/08/07/ShapFuzz%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20240918150542017.png">
+<meta property="og:image" content="https://loboq1ng.github.io/2024/08/07/ShapFuzz%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20240918153625060.png">
+<meta property="og:image" content="https://loboq1ng.github.io/2024/08/07/ShapFuzz%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20240918153959734.png">
+<meta property="og:image" content="https://loboq1ng.github.io/2024/08/07/ShapFuzz%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20240918154941625.png">
+<meta property="og:image" content="https://loboq1ng.github.io/2024/08/07/ShapFuzz%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20240918155507735.png">
+<meta property="og:image" content="https://loboq1ng.github.io/2024/08/07/ShapFuzz%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20240918155413346.png">
+<meta property="article:published_time" content="2024-08-07T05:43:18.000Z">
+<meta property="article:modified_time" content="2025-03-02T06:02:54.229Z">
+<meta property="article:author" content="Lobo Q1ng">
+<meta property="article:tag" content="Fuzz">
+<meta property="article:tag" content="Paper Reading">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://loboq1ng.github.io/2024/08/07/ShapFuzz%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20240918150542017.png">
+  
+  
+  
+  <title>ShapFuzz：论文阅读 - Q1ng&#39;s blog</title>
 
-    <meta name="subtitle" content="天空是为蓝色~">
-
-
-
-
-<title>ShapFuzz：论文阅读 | Lobo Q1ng&#39;s Blog</title>
-
-
-
-    <link rel="icon" href="/favicon.ico">
-
-
-
-
-    <!-- stylesheets list from _config.yml -->
-    
-    <link rel="stylesheet" href="/css/style.css">
-    
-
-
-
-    <!-- scripts list from _config.yml -->
-    
-    <script src="/js/script.js"></script>
-    
-    <script src="/js/tocbot.min.js"></script>
-    
-
-
-
-    
-    
-        
-    
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
 
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"loboq1ng.github.io","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
 <meta name="generator" content="Hexo 7.3.0"></head>
 
+
 <body>
-    <script>
-        // this function is used to check current theme before page loaded.
-        (() => {
-            const currentTheme = window.localStorage && window.localStorage.getItem('theme') || '';
-            const isDark = currentTheme === 'dark';
-            const pagebody = document.getElementsByTagName('body')[0]
-            if (isDark) {
-                pagebody.classList.add('dark-theme');
-                // mobile
-                document.getElementById("mobile-toggle-theme").innerText = "· Dark"
-            } else {
-                pagebody.classList.remove('dark-theme');
-                // mobile
-                document.getElementById("mobile-toggle-theme").innerText = "· Light"
-            }
-        })();
-    </script>
+  
 
-    <div class="wrapper">
-        <header>
-    <nav class="navbar">
-        <div class="container">
-            <div class="navbar-header header-logo"><a href="/">Q1ng&#39;s Blog</a></div>
-            <div class="menu navbar-right">
-                
-                    <a class="menu-item" href="/archives">Posts</a>
-                
-                    <a class="menu-item" href="/category">Categories</a>
-                
-                    <a class="menu-item" href="/tag">Tags</a>
-                
-                    <a class="menu-item" href="/about">About</a>
-                
-                <input id="switch_default" type="checkbox" class="switch_default">
-                <label for="switch_default" class="toggleBtn"></label>
-            </div>
-        </div>
-    </nav>
+  <header>
+    
 
-    
-    <nav class="navbar-mobile" id="nav-mobile">
-        <div class="container">
-            <div class="navbar-header">
-                <div>
-                    <a href="/">Q1ng&#39;s Blog</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
-                </div>
-                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
-            </div>
-            <div class="menu" id="mobile-menu">
-                
-                    <a class="menu-item" href="/archives">Posts</a>
-                
-                    <a class="menu-item" href="/category">Categories</a>
-                
-                    <a class="menu-item" href="/tag">Tags</a>
-                
-                    <a class="menu-item" href="/about">About</a>
-                
-            </div>
-        </div>
-    </nav>
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Q1ng&#39;s blog</strong>
+    </a>
 
-</header>
-<script>
-    var mobileBtn = function f() {
-        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
-        var mobileMenu = document.getElementById("mobile-menu");
-        if(toggleMenu.classList.contains("active")){
-           toggleMenu.classList.remove("active")
-            mobileMenu.classList.remove("active")
-        }else{
-            toggleMenu.classList.add("active")
-            mobileMenu.classList.add("active")
-        }
-    }
-</script>
-            <div class="main">
-                <div class="container">
-    
-    
-        <div class="post-toc">
-    <div class="tocbot-list">
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
     </div>
-    <div class="tocbot-list-menu">
-        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
-        <a onclick="go_top()">Back to top</a>
-        <a onclick="go_bottom()">Go to bottom</a>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/letter.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="ShapFuzz：论文阅读"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-08-07 13:43" pubdate>
+          2024年8月7日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          5.6k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          47 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
     </div>
+  </div>
 </div>
 
-<script>
-    var tocbot_timer;
-    var DEPTH_MAX = 6; // 为 6 时展开所有
-    var tocbot_default_config = {
-        tocSelector: '.tocbot-list',
-        contentSelector: '.post-content',
-        headingSelector: 'h1, h2, h3, h4, h5',
-        orderedList: false,
-        scrollSmooth: true,
-        onClick: extend_click,
-    };
+</div>
 
-    function extend_click() {
-        clearTimeout(tocbot_timer);
-        tocbot_timer = setTimeout(function() {
-            tocbot.refresh(obj_merge(tocbot_default_config, {
-                hasInnerContainers: true
-            }));
-        }, 420); // 这个值是由 tocbot 源码里定义的 scrollSmoothDuration 得来的
-    }
+  </header>
 
-    document.ready(function() {
-        tocbot.init(obj_merge(tocbot_default_config, {
-            collapseDepth: 1
-        }));
-    });
-
-    function expand_toc() {
-        var b = document.querySelector('.tocbot-toc-expand');
-        var expanded = b.getAttribute('data-expanded');
-        expanded ? b.removeAttribute('data-expanded') : b.setAttribute('data-expanded', true);
-        tocbot.refresh(obj_merge(tocbot_default_config, {
-            collapseDepth: expanded ? 1 : DEPTH_MAX
-        }));
-        b.innerText = expanded ? 'Expand all' : 'Collapse all';
-    }
-
-    function go_top() {
-        window.scrollTo(0, 0);
-    }
-
-    function go_bottom() {
-        window.scrollTo(0, document.body.scrollHeight);
-    }
-
-    function obj_merge(target, source) {
-        for (var item in source) {
-            if (source.hasOwnProperty(item)) {
-                target[item] = source[item];
-            }
-        }
-        return target;
-    }
-</script>
+  <main>
     
+      
 
-    
-    <article class="post-wrap">
-        <header class="post-header">
-            <h1 class="post-title">ShapFuzz：论文阅读</h1>
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">ShapFuzz：论文阅读</h1>
             
-                <div class="post-meta">
-                    
-                        Author: <a itemprop="author" rel="author" href="/">Lobo Q1ng</a>
-                    
-
-                    
-                        <span class="post-time">
-                        Date: <a href="#">August 7, 2024&nbsp;&nbsp;13:43:18</a>
-                        </span>
-                    
-                    
-                        <span class="post-category">
-                    Category:
-                            
-                                <a href="/categories/Fuzz/">Fuzz</a>
-                            
-                                <a href="/categories/Fuzz/Paper-Reading/">Paper Reading</a>
-                            
-                        </span>
-                    
-                </div>
             
-        </header>
-
-        <div class="post-content">
-            <h1 id="SHAPFUZZ-Efficient-Fuzzing-via-Shapley-Guided-Byte-Selection"><a href="#SHAPFUZZ-Efficient-Fuzzing-via-Shapley-Guided-Byte-Selection" class="headerlink" title="SHAPFUZZ: Efficient Fuzzing via Shapley-Guided Byte Selection"></a>SHAPFUZZ: Efficient Fuzzing via Shapley-Guided Byte Selection</h1><h2 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h2><p>​		基于变异的模糊测试是一种流行且有效的技术，用于发现程序中的漏洞和未覆盖代码。然而，只有少数研究关注<strong>量化输入字节的重要性</strong>。每个输入字节的重要性由其在发现新代码中的贡献程度决定。以前的工作往往集中于获取输入字节与路径约束之间的关系，而忽略了并非所有与约束相关的字节都能发现新代码的事实。在本文中，作者进行Shapley分析来理解字节位置对模糊测试性能的影响，发现某些字节位置比其他字节位置贡献更大，并且这种特性通常在不同的种子之间保持一致。基于此观察结果，我们提出了一种新颖的解决方案，成为SHAPFUZZ，以指导模糊测试过程中的字节选择变异。具体而言SHAPFUZZ在模糊测试期间每次测试输入时，以低开销更新字节的Shapley值（重要性）。它利用上下文多臂老虎机（CMAB）算法在变异高Shapley值字节和和低频选择字节之间进行权衡。作者基于AFL ++实现该解决方案的原型，即SHAPFUZZ，并针对包括五个字节调度Fuzzer和五个常用的Fuzzer在内的十个最先进的模糊器对其进行评估。与字节调度模糊器相比，SHAPFUZZ发现了更多边。它还在三组不同的初始种子集上暴露了比最佳基线更多的漏洞。SHAPFUZZ比最佳常用的模糊器多暴露20个漏洞，并且在MAGMA上比基线多发现6个CVE。此外，SHAPFUZZ在6个广泛使用的程序的最新版本上发现了11个新漏洞，其中3个漏洞已得到供应商的确认。</p>
+              <div class="markdown-body">
+                
+                <h1 id="SHAPFUZZ-Efficient-Fuzzing-via-Shapley-Guided-Byte-Selection"><a href="#SHAPFUZZ-Efficient-Fuzzing-via-Shapley-Guided-Byte-Selection" class="headerlink" title="SHAPFUZZ: Efficient Fuzzing via Shapley-Guided Byte Selection"></a>SHAPFUZZ: Efficient Fuzzing via Shapley-Guided Byte Selection</h1><h2 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h2><p>​		基于变异的模糊测试是一种流行且有效的技术，用于发现程序中的漏洞和未覆盖代码。然而，只有少数研究关注<strong>量化输入字节的重要性</strong>。每个输入字节的重要性由其在发现新代码中的贡献程度决定。以前的工作往往集中于获取输入字节与路径约束之间的关系，而忽略了并非所有与约束相关的字节都能发现新代码的事实。在本文中，作者进行Shapley分析来理解字节位置对模糊测试性能的影响，发现某些字节位置比其他字节位置贡献更大，并且这种特性通常在不同的种子之间保持一致。基于此观察结果，我们提出了一种新颖的解决方案，成为SHAPFUZZ，以指导模糊测试过程中的字节选择变异。具体而言SHAPFUZZ在模糊测试期间每次测试输入时，以低开销更新字节的Shapley值（重要性）。它利用上下文多臂老虎机（CMAB）算法在变异高Shapley值字节和和低频选择字节之间进行权衡。作者基于AFL ++实现该解决方案的原型，即SHAPFUZZ，并针对包括五个字节调度Fuzzer和五个常用的Fuzzer在内的十个最先进的模糊器对其进行评估。与字节调度模糊器相比，SHAPFUZZ发现了更多边。它还在三组不同的初始种子集上暴露了比最佳基线更多的漏洞。SHAPFUZZ比最佳常用的模糊器多暴露20个漏洞，并且在MAGMA上比基线多发现6个CVE。此外，SHAPFUZZ在6个广泛使用的程序的最新版本上发现了11个新漏洞，其中3个漏洞已得到供应商的确认。</p>
 <h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>基于变异的模糊测试，核心是：**变异哪些字节？**这些字节该用什么值？</p>
 <blockquote>
 <p>作者将Shapley值法应用于模糊测试的havoc变异阶段，指导应当变异哪些字节组合。</p>
@@ -251,7 +310,7 @@
 <p><strong>Shapley Analysis</strong></p>
 <p>​	在合作博弈论中，玩家联盟共同参与游戏并获得收益。关键问题是每个玩家对联盟的贡献程度。为了解决这个问题，人们提出了许多方法。其中最著名的解决方案是Shapley值，这是一种在合作博弈中分配收益的方法。具体来说，Shapley值是每个玩家对所有可能的玩家联盟的边际贡献的加权平均值。此外，Shapley值已应用于许多领域，例如量化深度学习模型中特征的重要性。简单来说，就是一个由玩家组成的联盟参加一场游戏获得收益，那么如何分配收益才是公平的？Shapley值用来解决这个公平分配问题。</p>
 <p>​	本文的核心在于Shapley值法的应用。重要的就是计算每个玩家的边际贡献。如图，举例说明：</p>
-<img src="/2024/08/07/ShapFuzz%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20240918150542017.png" class="" title="image-20240918150542017">
+<img src="/2024/08/07/ShapFuzz%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20240918150542017.png" srcset="/img/loading.gif" lazyload class="" title="image-20240918150542017">
 
 <p>​	现在假设Tom每小时能挣10美元，Mike每小时能挣20美元，他们一起作为一个联盟每小时能挣40美元。那么现在便有个问题，该如何分配这40美元？平均分配显然对Mike来说不公平。通过Shapley值法，先计算各自的边际贡献。A的边际贡献即是A给联盟其他人带来的价值。那么对Tom来说，Mike的边际贡献就是40-10&#x3D;30。对Mike来说，Tom的边际贡献就是40-20&#x3D;20。根据Shapley值法，Tom应该获得的收益为(10+20)&#x2F;2 &#x3D; 15$，Mike应该获得的收益为(20+30)&#x2F;2&#x3D;25$。</p>
 <p>​	在模糊测试中的变异阶段，fuzzer会将选择好的种子进行变异，fuzzer的变异算子会改变某个随机字节或比特位的值（例如，位翻转，字节算术加减随机数等）。变异代价相对执行而言小很多，因此通常对一个种子变异多次，这会形成该次变异的字节组合。具体而言，作者将一次变异中值发生改变的字节作为一个字节组合。<strong>将每个字节组合作为一个联盟，每个字节作为一个玩家，发现新区域（新边）的数量作为收益R，来计算每个字节的临时Shapley值以指导下一次变异该选择哪些字节进行变异。</strong></p>
@@ -263,12 +322,12 @@
 <ul>
 <li><p>使用AFL++对18个程序进行模糊测试。一个程序的corpus只存在一个种子，且不更新种子队列。即持续地变异（<strong>移除改变种子长度的变异器</strong>）所选的初始种子。重复实验六次。</p>
 </li>
-<li><img src="/2024/08/07/ShapFuzz%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20240918153625060.png" class="" title="image-20240918153625060">
+<li><img src="/2024/08/07/ShapFuzz%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20240918153625060.png" srcset="/img/loading.gif" lazyload class="" title="image-20240918153625060">
 </li>
 <li><p>期间，执行恢复策略。即{1,3,4}字节组合发现新边收益为R0，那么将执行其所有子集，得到收益R1~Rn，共同计算各个字节的Shapley值。（为了与Shapley值法的定义保持一致）</p>
 </li>
 <li><p>实验结果如下：</p>
-<img src="/2024/08/07/ShapFuzz：论文阅读/image-20240918153959734.png"  alt="image-20240918153959734" style="zoom:67%;" />
+<img src="/2024/08/07/ShapFuzz：论文阅读/image-20240918153959734.png" srcset="/img/loading.gif" lazyload  alt="image-20240918153959734" style="zoom:67%;" />
 
 <p>每个点表示对于一个程序和一个初始种子，前 X% 的字节贡献了 Y% 的新边。<strong>由实验结果可知，一小部分字节对发现新边的贡献最大。</strong></p>
 </li>
@@ -278,7 +337,7 @@
 <ul>
 <li><p>使用GreyOne的FTI方法分析16个程序中<code>CMP</code>之间相关字节的重叠情况。即，给定一个<code>CMP</code>和种子，如果改变种子的第i个字节会导致<code>CMP j</code>的值发生改变，那么字节i与<code>CMP j</code>相关。实验结果如下图所示：</p>
 </li>
-<li><img src="/2024/08/07/ShapFuzz：论文阅读/image-20240918154941625.png"  alt="image-20240918154941625" style="zoom:67%;" />
+<li><img src="/2024/08/07/ShapFuzz：论文阅读/image-20240918154941625.png" srcset="/img/loading.gif" lazyload  alt="image-20240918154941625" style="zoom:67%;" />
 
 <p>大多数字节与多个CMP指令相关。这个实验表明，CMP之间相关字节的共享是一种普遍现象。换句话说，<strong>少部分字节与多个路径约束相关</strong>。</p>
 </li>
@@ -287,7 +346,7 @@
 </ul>
 <p>​	通过观察实验，作者发现，只有<strong>少部分字节对探索新区域贡献最大</strong>，因此可以利用Shapley分析来获取这些高重要性字节，并在模糊测试期间分配更多能量给它们。由于与约束相关的字节通常与多个CMP指令相关，因此专注于高重要性字节可以提高在未见路径中发现代码的效率。</p>
 <h3 id="Design"><a href="#Design" class="headerlink" title="Design"></a>Design</h3><p>​	SHAPFUZZ专注于字节变异，量化字节位置的重要性。将相同长度的种子理解为一个Shapley分析过程。即，从同一个原始种子保留下来且不改变长度的种子属于同一个合作博弈，并且共享相同的字节Shapley Value。为了将Shapley Analysis融入到Fuzzing中，作者提出以下设计方案。</p>
-<img src="/2024/08/07/ShapFuzz：论文阅读/image-20240918155507735.png"  alt="image-20240918155507735" style="zoom:67%;" />
+<img src="/2024/08/07/ShapFuzz：论文阅读/image-20240918155507735.png" srcset="/img/loading.gif" lazyload  alt="image-20240918155507735" style="zoom:67%;" />
 
 <ul>
 <li><p>Shapley Analysis Among Bytes</p>
@@ -322,7 +381,7 @@
 </li>
 </ul>
 <p>该过程如下图所示：</p>
-<img src="/2024/08/07/ShapFuzz：论文阅读/image-20240918155413346.png"  alt="image-20240918155413346" style="zoom:67%;" /></li>
+<img src="/2024/08/07/ShapFuzz：论文阅读/image-20240918155413346.png" srcset="/img/loading.gif" lazyload  alt="image-20240918155413346" style="zoom:67%;" /></li>
 </ul>
 <p>​	Shapley值的更新可以嵌入到Fuzzing的变异阶段。变异产生的未改变长度的测试实例都是一个Shapley分析中的字节组合。该测试实例执行后，都可以根据执行结果计算收益R。利用这个收益R更新字节的Shapley值。但是更新期间，应该只针对与约束条件相关的字节。换句话说，只更新与约束条件相关字节的Shapley值。那么，在某次字节变异组合{1,3,4}执行后发现了自新边。需要精简该字节变异组合，筛选出其中的必要字节。即，分别执行{1,3},{1,4},{3,4}。倘若{1,3}的执行结果与{1,3,4}的结果相同，那么字节{4}便是冗余字节。此次Shapley值更新将排除字节{4}。</p>
 <p>​	更新过程中，需要计算每个字节Shapley值，也就是每个字节对字节组合的边际贡献。根据Shapley值法的计算方式，需要获得所有子集的收益R，上述例子中必要字节组合{1,3}的值更新过程中，会执行{1},{3}获得其收益R1和R3以计算字节{1},{3}对联盟{1,3}的边际贡献。</p>
@@ -341,7 +400,7 @@
 </ul>
 </li>
 <li><p>在代码中实现的方案</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// before havoc mutation stage.</span></span><br><span class="line"><span class="comment">// centers had been generated.</span></span><br><span class="line"><span class="keyword">for</span>(u32 i = <span class="number">0</span>;i &lt; afl-&gt;centers_num;i++)&#123;</span><br><span class="line">    <span class="comment">// distance: between ancestor seed path and every center path.</span></span><br><span class="line">  <span class="type">double</span> distance = (<span class="type">double</span>)cal_distance(cur, afl-&gt;centers[i], map_size);</span><br><span class="line">    <span class="comment">// input-&gt;feature_vec-&gt;data is the cosine similarity of every center. </span></span><br><span class="line">  afl-&gt;queue_cur-&gt;feature_vec-&gt;data[i] = distance;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// every_score:  one byte of mutation.</span></span><br><span class="line">every_score = r1-&gt;data[<span class="number">0</span>] + m3 + ancestor_node-&gt;mutated_pos[ii].SV;</span><br><span class="line"><span class="comment">// ...</span></span><br><span class="line">score = sum(every_score);</span><br><span class="line"><span class="comment">// generate a random number between 0 and score.</span></span><br><span class="line"><span class="type">double</span> choose = ((<span class="type">double</span>)rand()/RAND_MAX) * score;</span><br><span class="line"><span class="comment">// history_mutation_sequence_idx is the quantity of mutations bytes </span></span><br><span class="line"><span class="keyword">for</span>(u32 i = <span class="number">0</span>;i &lt; afl-&gt;history_mutation_sequence_idx;i++)&#123;</span><br><span class="line">    <span class="comment">// find first byte greater than choose  </span></span><br><span class="line">    <span class="keyword">if</span>(afl-&gt;distribution[i] &gt;= choose)&#123;</span><br><span class="line">        <span class="keyword">return</span> afl-&gt;history_mutation_sequence[i];</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// else return random one position</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">// before havoc mutation stage.</span><br><span class="hljs-comment">// centers had been generated.</span><br><span class="hljs-keyword">for</span>(u32 i = <span class="hljs-number">0</span>;i &lt; afl-&gt;centers_num;i++)&#123;<br>    <span class="hljs-comment">// distance: between ancestor seed path and every center path.</span><br>  <span class="hljs-type">double</span> distance = (<span class="hljs-type">double</span>)cal_distance(cur, afl-&gt;centers[i], map_size);<br>    <span class="hljs-comment">// input-&gt;feature_vec-&gt;data is the cosine similarity of every center. </span><br>  afl-&gt;queue_cur-&gt;feature_vec-&gt;data[i] = distance;<br>&#125;<br><span class="hljs-comment">// every_score:  one byte of mutation.</span><br>every_score = r1-&gt;data[<span class="hljs-number">0</span>] + m3 + ancestor_node-&gt;mutated_pos[ii].SV;<br><span class="hljs-comment">// ...</span><br>score = sum(every_score);<br><span class="hljs-comment">// generate a random number between 0 and score.</span><br><span class="hljs-type">double</span> choose = ((<span class="hljs-type">double</span>)rand()/RAND_MAX) * score;<br><span class="hljs-comment">// history_mutation_sequence_idx is the quantity of mutations bytes </span><br><span class="hljs-keyword">for</span>(u32 i = <span class="hljs-number">0</span>;i &lt; afl-&gt;history_mutation_sequence_idx;i++)&#123;<br>    <span class="hljs-comment">// find first byte greater than choose  </span><br>    <span class="hljs-keyword">if</span>(afl-&gt;distribution[i] &gt;= choose)&#123;<br>        <span class="hljs-keyword">return</span> afl-&gt;history_mutation_sequence[i];<br>	&#125;<br>&#125;<br><span class="hljs-comment">// else return random one position</span><br></code></pre></td></tr></table></figure>
 
 <p>对every_score作如下说明：</p>
 <p>$$r_1 &#x3D; (A^{-1}\times b)^T \times f_s，m_3 &#x3D; 0.5 \times \sqrt{f_s^T \times A^{-1} \times f_s}，SV&#x3D;Shapley Value.$$</p>
@@ -371,72 +430,380 @@
 </li>
 </ul>
 
-        </div>
-
-        
-            <section class="post-copyright">
                 
-                    <p class="copyright-item">
-                        <span>Author:</span>
-                        <span>Lobo Q1ng</span>
-                    </p>
-                
-                
-                
-                    <p class="copyright-item">
-                        <span>License:</span>
-                        <span>Copyright (c) 2025 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
-                    </p>
-                
-                
-                     <p class="copyright-item">
-                         <span>Slogan:</span>
-                         <span>Hello~,<strong>DESTINY</strong></span>
-                     </p>
-                
-
-            </section>
-        
-        <section class="post-tags">
+              </div>
+            
+            <hr/>
             <div>
-                <span>Tag(s):</span>
-                <span class="tag">
-                    
-                    
-                        <a href="/tags/Fuzz/"># Fuzz</a>
-                    
-                        <a href="/tags/Paper-Reading/"># Paper Reading</a>
-                    
-                        
-                </span>
-            </div>
-            <div>
-                <a href="javascript:window.history.back();">back</a>
-                <span>· </span>
-                <a href="/">home</a>
-            </div>
-        </section>
-        <section class="post-nav">
-            
-                <a class="prev" rel="prev" href="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/">二进制安全-基础</a>
-            
-            
-            <a class="next" rel="next" href="/2024/08/02/AIFORE%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">AIFORE：论文阅读</a>
-            
-        </section>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
 
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Fuzz/" class="category-chain-item">Fuzz</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Fuzz/Paper-Reading/" class="category-chain-item">Paper Reading</a>
+  
+  
 
-    </article>
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Fuzz/" class="print-no-link">#Fuzz</a>
+      
+        <a href="/tags/Paper-Reading/" class="print-no-link">#Paper Reading</a>
+      
+    </div>
+  
 </div>
 
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>ShapFuzz：论文阅读</div>
+      <div>https://loboq1ng.github.io/2024/08/07/ShapFuzz：论文阅读/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Lobo Q1ng</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年8月7日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/08/15/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8-%E5%9F%BA%E7%A1%80/" title="二进制安全-基础">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">二进制安全-基础</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/08/02/AIFORE%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/" title="AIFORE：论文阅读">
+                        <span class="hidden-mobile">AIFORE：论文阅读</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
             </div>
-            <footer id="footer" class="footer">
-    <div class="copyright">
-        <span>© Lobo Q1ng | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+
+            
+          </article>
+        </div>
+      </div>
     </div>
-</footer>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
 
     </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
 </body>
-
 </html>

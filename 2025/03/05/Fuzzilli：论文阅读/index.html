@@ -1,231 +1,292 @@
+
+
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
 
 <head>
-    <meta charset="UTF-8">
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-<meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta charset="UTF-8">
 
-    <meta name="author" content="Lobo Q1ng">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/Pi.png">
+  <link rel="icon" href="/img/Pi.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Lobo Q1ng">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="FUZILLI: Fuzzing for javaScript JIT Compiler Vulnerabilities全文翻译摘要JavaScript 已经成为互联网基础设施不可或缺的一部分，并且如果没有这种编程语言，当今的交互式Web应用程序将是无法想象的。但不利的一面是，这种交互性意味着Web应用程序依赖于越来越多的计算密集型JavaScript代码，这给负责高效执行代码的JavaScrip">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Fuzzilli：论文阅读">
+<meta property="og:url" content="https://loboq1ng.github.io/2025/03/05/Fuzzilli%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/index.html">
+<meta property="og:site_name" content="Q1ng&#39;s blog">
+<meta property="og:description" content="FUZILLI: Fuzzing for javaScript JIT Compiler Vulnerabilities全文翻译摘要JavaScript 已经成为互联网基础设施不可或缺的一部分，并且如果没有这种编程语言，当今的交互式Web应用程序将是无法想象的。但不利的一面是，这种交互性意味着Web应用程序依赖于越来越多的计算密集型JavaScript代码，这给负责高效执行代码的JavaScrip">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://loboq1ng.github.io/2025/03/05/Fuzzilli%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20250305221800781.png">
+<meta property="og:image" content="https://loboq1ng.github.io/2025/03/05/Fuzzilli%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20250305223826487.png">
+<meta property="og:image" content="https://loboq1ng.github.io/2025/03/05/Fuzzilli%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20250305232316947.png">
+<meta property="og:image" content="https://loboq1ng.github.io/2025/03/05/Fuzzilli%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20250306002445823.png">
+<meta property="og:image" content="https://loboq1ng.github.io/2025/03/05/Fuzzilli%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20250307103514503.png">
+<meta property="og:image" content="https://loboq1ng.github.io/2025/03/05/Fuzzilli%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20250307115122923.png">
+<meta property="og:image" content="https://loboq1ng.github.io/2025/03/05/Fuzzilli%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20250307152941454.png">
+<meta property="og:image" content="https://loboq1ng.github.io/2025/03/05/Fuzzilli%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20250308152959894.png">
+<meta property="article:published_time" content="2025-03-05T08:47:03.000Z">
+<meta property="article:modified_time" content="2025-03-09T01:31:24.317Z">
+<meta property="article:author" content="Lobo Q1ng">
+<meta property="article:tag" content="Fuzz">
+<meta property="article:tag" content="Paper Reading">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://loboq1ng.github.io/2025/03/05/Fuzzilli%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20250305221800781.png">
+  
+  
+  
+  <title>Fuzzilli：论文阅读 - Q1ng&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
 
-    <meta name="subtitle" content="天空是为蓝色~">
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
 
 
 
 
-<title>Fuzzilli：论文阅读 | Lobo Q1ng&#39;s Blog</title>
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"loboq1ng.github.io","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
 
 
-
-    <link rel="icon" href="/favicon.ico">
-
-
-
-
-    <!-- stylesheets list from _config.yml -->
-    
-    <link rel="stylesheet" href="/css/style.css">
-    
-
-
-
-    <!-- scripts list from _config.yml -->
-    
-    <script src="/js/script.js"></script>
-    
-    <script src="/js/tocbot.min.js"></script>
-    
-
-
-
-    
-    
-        
-    
-
-
+  
 <meta name="generator" content="Hexo 7.3.0"></head>
 
+
 <body>
-    <script>
-        // this function is used to check current theme before page loaded.
-        (() => {
-            const currentTheme = window.localStorage && window.localStorage.getItem('theme') || '';
-            const isDark = currentTheme === 'dark';
-            const pagebody = document.getElementsByTagName('body')[0]
-            if (isDark) {
-                pagebody.classList.add('dark-theme');
-                // mobile
-                document.getElementById("mobile-toggle-theme").innerText = "· Dark"
-            } else {
-                pagebody.classList.remove('dark-theme');
-                // mobile
-                document.getElementById("mobile-toggle-theme").innerText = "· Light"
-            }
-        })();
-    </script>
+  
 
-    <div class="wrapper">
-        <header>
-    <nav class="navbar">
-        <div class="container">
-            <div class="navbar-header header-logo"><a href="/">Q1ng&#39;s Blog</a></div>
-            <div class="menu navbar-right">
-                
-                    <a class="menu-item" href="/archives">Posts</a>
-                
-                    <a class="menu-item" href="/category">Categories</a>
-                
-                    <a class="menu-item" href="/tag">Tags</a>
-                
-                    <a class="menu-item" href="/about">About</a>
-                
-                <input id="switch_default" type="checkbox" class="switch_default">
-                <label for="switch_default" class="toggleBtn"></label>
-            </div>
-        </div>
-    </nav>
+  <header>
+    
 
-    
-    <nav class="navbar-mobile" id="nav-mobile">
-        <div class="container">
-            <div class="navbar-header">
-                <div>
-                    <a href="/">Q1ng&#39;s Blog</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
-                </div>
-                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
-            </div>
-            <div class="menu" id="mobile-menu">
-                
-                    <a class="menu-item" href="/archives">Posts</a>
-                
-                    <a class="menu-item" href="/category">Categories</a>
-                
-                    <a class="menu-item" href="/tag">Tags</a>
-                
-                    <a class="menu-item" href="/about">About</a>
-                
-            </div>
-        </div>
-    </nav>
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Q1ng&#39;s blog</strong>
+    </a>
 
-</header>
-<script>
-    var mobileBtn = function f() {
-        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
-        var mobileMenu = document.getElementById("mobile-menu");
-        if(toggleMenu.classList.contains("active")){
-           toggleMenu.classList.remove("active")
-            mobileMenu.classList.remove("active")
-        }else{
-            toggleMenu.classList.add("active")
-            mobileMenu.classList.add("active")
-        }
-    }
-</script>
-            <div class="main">
-                <div class="container">
-    
-    
-        <div class="post-toc">
-    <div class="tocbot-list">
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
     </div>
-    <div class="tocbot-list-menu">
-        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
-        <a onclick="go_top()">Back to top</a>
-        <a onclick="go_bottom()">Go to bottom</a>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/letter.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Fuzzilli：论文阅读"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-03-05 16:47" pubdate>
+          2025年3月5日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          16k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          134 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
     </div>
+  </div>
 </div>
 
-<script>
-    var tocbot_timer;
-    var DEPTH_MAX = 6; // 为 6 时展开所有
-    var tocbot_default_config = {
-        tocSelector: '.tocbot-list',
-        contentSelector: '.post-content',
-        headingSelector: 'h1, h2, h3, h4, h5',
-        orderedList: false,
-        scrollSmooth: true,
-        onClick: extend_click,
-    };
+</div>
 
-    function extend_click() {
-        clearTimeout(tocbot_timer);
-        tocbot_timer = setTimeout(function() {
-            tocbot.refresh(obj_merge(tocbot_default_config, {
-                hasInnerContainers: true
-            }));
-        }, 420); // 这个值是由 tocbot 源码里定义的 scrollSmoothDuration 得来的
-    }
+  </header>
 
-    document.ready(function() {
-        tocbot.init(obj_merge(tocbot_default_config, {
-            collapseDepth: 1
-        }));
-    });
-
-    function expand_toc() {
-        var b = document.querySelector('.tocbot-toc-expand');
-        var expanded = b.getAttribute('data-expanded');
-        expanded ? b.removeAttribute('data-expanded') : b.setAttribute('data-expanded', true);
-        tocbot.refresh(obj_merge(tocbot_default_config, {
-            collapseDepth: expanded ? 1 : DEPTH_MAX
-        }));
-        b.innerText = expanded ? 'Expand all' : 'Collapse all';
-    }
-
-    function go_top() {
-        window.scrollTo(0, 0);
-    }
-
-    function go_bottom() {
-        window.scrollTo(0, document.body.scrollHeight);
-    }
-
-    function obj_merge(target, source) {
-        for (var item in source) {
-            if (source.hasOwnProperty(item)) {
-                target[item] = source[item];
-            }
-        }
-        return target;
-    }
-</script>
+  <main>
     
+      
 
-    
-    <article class="post-wrap">
-        <header class="post-header">
-            <h1 class="post-title">Fuzzilli：论文阅读</h1>
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Fuzzilli：论文阅读</h1>
             
-                <div class="post-meta">
-                    
-                        Author: <a itemprop="author" rel="author" href="/">Lobo Q1ng</a>
-                    
-
-                    
-                        <span class="post-time">
-                        Date: <a href="#">March 5, 2025&nbsp;&nbsp;16:47:03</a>
-                        </span>
-                    
-                    
-                        <span class="post-category">
-                    Category:
-                            
-                                <a href="/categories/Fuzz/">Fuzz</a>
-                            
-                                <a href="/categories/Fuzz/Paper-Reading/">Paper Reading</a>
-                            
-                        </span>
-                    
-                </div>
             
-        </header>
-
-        <div class="post-content">
-            <h1 id="FUZILLI-Fuzzing-for-javaScript-JIT-Compiler-Vulnerabilities"><a href="#FUZILLI-Fuzzing-for-javaScript-JIT-Compiler-Vulnerabilities" class="headerlink" title="FUZILLI: Fuzzing for javaScript JIT Compiler Vulnerabilities"></a>FUZILLI: Fuzzing for javaScript JIT Compiler Vulnerabilities</h1><h2 id="全文翻译"><a href="#全文翻译" class="headerlink" title="全文翻译"></a>全文翻译</h2><h3 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h3><p>JavaScript 已经成为互联网基础设施不可或缺的一部分，并且如果没有这种编程语言，当今的交互式Web应用程序将是无法想象的。但不利的一面是，这种交互性意味着Web应用程序依赖于越来越多的计算密集型JavaScript代码，这给负责高效执行代码的JavaScript引擎带来了负担。为了满足这些日益增长的性能需求，现代JavaScript引擎都配备了复杂的<strong>即时编译器（JIT）</strong>。然而，JIT编译器是一项复杂的技术，因此为潜在的漏洞（甚至可能是致命的漏洞）提供了广泛的攻击面。在JavaScript引擎中发现软件漏洞的已有工作中，大部分是模糊测试。不幸的是，这些模糊测试策略并不是为生成实际触发JIT语义的源代码而设计的。因此，JIT漏洞不太可能被现有策略发现。在本文中，我们填补了这一空白，并提出了第一个Fuzzer，重点是JIT漏洞。更具体地说，我们提出了一个中间表示（IR）的设计和实现，重点是发现JIT编译器的漏洞。我们实现了所提出方法的完整原型，并在六个月的时间内对我们的Fuzzer进行了评估。我们总共发现了17个已确认的安全漏洞。我们的结果表明，有针对性的<strong>JIT Fuzzing</strong>是可能的，并且在JavaScript引擎的Fuzzing覆盖率中存在一个被忽视的危险问题。</p>
+              <div class="markdown-body">
+                
+                <h1 id="FUZILLI-Fuzzing-for-javaScript-JIT-Compiler-Vulnerabilities"><a href="#FUZILLI-Fuzzing-for-javaScript-JIT-Compiler-Vulnerabilities" class="headerlink" title="FUZILLI: Fuzzing for javaScript JIT Compiler Vulnerabilities"></a>FUZILLI: Fuzzing for javaScript JIT Compiler Vulnerabilities</h1><h2 id="全文翻译"><a href="#全文翻译" class="headerlink" title="全文翻译"></a>全文翻译</h2><h3 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h3><p>JavaScript 已经成为互联网基础设施不可或缺的一部分，并且如果没有这种编程语言，当今的交互式Web应用程序将是无法想象的。但不利的一面是，这种交互性意味着Web应用程序依赖于越来越多的计算密集型JavaScript代码，这给负责高效执行代码的JavaScript引擎带来了负担。为了满足这些日益增长的性能需求，现代JavaScript引擎都配备了复杂的<strong>即时编译器（JIT）</strong>。然而，JIT编译器是一项复杂的技术，因此为潜在的漏洞（甚至可能是致命的漏洞）提供了广泛的攻击面。在JavaScript引擎中发现软件漏洞的已有工作中，大部分是模糊测试。不幸的是，这些模糊测试策略并不是为生成实际触发JIT语义的源代码而设计的。因此，JIT漏洞不太可能被现有策略发现。在本文中，我们填补了这一空白，并提出了第一个Fuzzer，重点是JIT漏洞。更具体地说，我们提出了一个中间表示（IR）的设计和实现，重点是发现JIT编译器的漏洞。我们实现了所提出方法的完整原型，并在六个月的时间内对我们的Fuzzer进行了评估。我们总共发现了17个已确认的安全漏洞。我们的结果表明，有针对性的<strong>JIT Fuzzing</strong>是可能的，并且在JavaScript引擎的Fuzzing覆盖率中存在一个被忽视的危险问题。</p>
 <h3 id="1-介绍"><a href="#1-介绍" class="headerlink" title="1. 介绍"></a>1. 介绍</h3><p>如果没有JavaScirpt（JS），现代Web是不可想象的。在AngularJS、React或JQuery等强大的JavaScript框架的推动下，现代Web内容通常完全在客户端创建，而不是以HTML的形式交付。这种演变给现有仅依赖解释JS代码的JS引擎带来了越来越多的性能问题。因此，为了实现动态的Web体验，现代Web浏览器积极转向JS代码的即时即使编译（JIT）和优化。虽然JIT引擎提供了令人满意的性能改进，但它们使JS代码的执行变得更加复杂，并且本质上暴露了一个很大的攻击面。基于JIT编译器缺陷的软件漏洞对攻击者很有吸引力，因为它们提供了强大的利用原语，并且通常允许基于单个漏洞的代码执行。攻击者可以将一次成功的攻击与浏览器**沙箱逃逸（sandbox）**链接起来，通过引诱受害者访问恶意网站来获得未经授权的权限。</p>
 <p>JavaScript作为一种编程语言，其本质上是灵活和动态的。由于这种灵活性，JIT优化需要对引擎的全局状态、相关对象组，甚至参与优化代码段的单个对象做出假设。这些假设必须被证明为真，或者收到复杂的运行时机制的保护，这些机制在先前做出的假设被违反时通知引擎。任何被证明为假但在执行期间仍然未被检测到的假设都代表着一个重大漏洞，例如CVE-2018-4233，这是WebKit的JIT编译器中的一个错误。因此，JIT编译错误应该是软件测试的重点。一种在JavaScript引擎等复杂软件系统中查找错误的流行方法是模糊测试（简称Fuzzing）。模糊测试涉及使用许多不同的输入来测试软件，并评估软件如何响应这些输入。其根本目的是在软件中找到导致重要崩溃的边缘情况。然后，分析人员可以进一步调查这些崩溃，以创建一个概念验证，用于利用可能突破JavaScript 沙箱的漏洞。过去，模糊测试主要用于查找JavaScript引擎中的漏洞，并且已经发现了JavaScript引擎的一些关键问题。然而，以前的模糊测试方法针对JavaScript引擎，而没有侧重于特定组件，或者仅侧重于运行时API。这种方法可以发现范围广泛的漏洞，但很少发现需要多个前提条件同时满足的更复杂漏洞。特别是，JIT编译漏洞正是这种类型的漏洞。</p>
 <p>为了使得<strong>JIT优化</strong> 出现，必须满足某些条件：引擎必须频繁执行有问题的代码，并且代码在观察期间必须表现出可预测的行为，因为只有这样JIT编译才会启动。这些条件意味着，不仅必须以一种特殊的方式构造JS代码以突出显示缺陷，而且还必须以类似的方式多次执行它，然后以不可预测的方式更改其行为，以便JS引擎遇到错误。对于通过突变或多或少随机生成代码片段的Fuzzer来说，这种行为很难重现。传统的JS fuzzer生成JS构造并将每个语句包装在try-catch块中，因为它们无法保证语义正确性。**遗憾的是，JIT 编译器对待包装在try-catch中的代码与未包装的代码不同，因此许多JIT 错误都无法通过这些方法检测到。**其他工作从现有的JS语料库生成测试用例。依赖于预先存在的语料库需要足够多样化的特定漏洞集合，才能推断出类似的漏洞。这种要求限制了发现与现有测试用例不同的漏洞的能力。**总之，开发一种有针对性的模糊测试方法来检测JIT编译中的新缺陷是一项尚未解决的挑战。**在本文中，我们弥补了模糊测试覆盖范围中的这一研究空白，并提出了第一个使用中间表示（IR）的模糊器，该中间表示专注于发现JavaScript引擎中的JIT漏洞。我们的IR允许我们生成没有初始输入语料库的新JavaScript程序，从而针对JIT编译器。此外，我们的IR允许实现语义上有意义的突变操作，例如拼接多个输入程序，同时重新连接指令操作数，这是基于AST的常见模糊测试方法中缺少的功能。</p>
@@ -259,12 +320,12 @@
 <h4 id="A-JIT"><a href="#A-JIT" class="headerlink" title="A. JIT"></a>A. JIT</h4><p>我们使用一个小的、直观的例子来简要介绍当前设计和实现高效JS JIT编译器的方法。更具体地说，我们解释了混合模式JIT 编译器架构的基本概念，即以解释器作为基线，然后是一系列连续更高优化的JIT编译器。有关不同JIT编译方法的更详细和全面的解释，包括基于模板和基于跟踪的JIT编译，我们请读者参考常见的编译器和解释器文献。</p>
 <p>浏览器中使用的JavaScript引擎包含解析器、字节码编译器、解释器，通常还包含JIT编译器。首次遇到JavaScript代码时，引擎的解析器会构建相应的AST，该AST由字节码编译器编译为引擎特定的字节码。该字节码由解释器使用。然而，字节码解释速度很慢，这是由于调度开销以及每个字节码处理程序执行的众多（通常是冗余的）类型检查。如果代码被频繁执行，则最好通过将JavaScript代码编译为机器代码并在编译过程中对其进行优化来优化执行。</p>
 <p>与经典的提前编译编译器（例如，clang）相比，JavaScript JIT 编译器面临的挑战的一个直观示例可以在<strong>图1</strong>中看到：给定的C代码可以直接编译成汇编代码，因为所有需要的信息都存在。与C相反，JavaScript是动态类型的，并非所有生成机器代码所需的信息都存在。因此，如果需要性能，JIT编译器不能简单地将JavaScript代码编译成机器代码。执行必须首先确认使用的类型，然后根据手头的类型进行处理。这些类型可以从原始整数到高度复杂的对象，当与相同功能一起使用时，所有这些类型都表现出不同的行为。</p>
-<img src="/2025/03/05/Fuzzilli：论文阅读/image-20250305221800781.png"  alt="image-20250305221800781" style="zoom:80%;" />
+<img src="/2025/03/05/Fuzzilli：论文阅读/image-20250305221800781.png" srcset="/img/loading.gif" lazyload  alt="image-20250305221800781" style="zoom:80%;" />
 
 <p>然而，在执行期间，使用模式变得明显。例如，让我们假设观察到<code>add</code>操作只被用作整数调用。基于这种观察，可以执行推测性优化：编译器专门为推断出的类型配置文件编译JavaScript代码。最后，添加类型保护，表示优化类型假设。保护措施会检查给定的值是否属于假设的类型（在我们的示例中为整数）。只要保护措施有效，代码就会继续使用现在已优化的函数。如果保护失败，代码将”退出“，并且JavaScript代码的执行将返回到解释器，该解释器执行未优化的、速度较慢的函数。生成的抽象汇编代码将类似于编译后的C代码，但区别在于包含类型保护，并且，由于我们谈论的是整数加法，所以还包含溢出检查。我们可以将此类优化总结为以下步骤，从而生成正在审查的函数的已编译和优化版本：（1）收集使用模式数据，（2）推断类型模式，（3）针对这些类型优化代码，（4）在优化代码之前部署类型保护。</p>
 <p>引擎不立即使用JIT编译网页的JavaScript代码的原因有两个：首先，分析器必须收集执行信息才能使JIT优化起作用。其次，JIT优化非常耗时，因为优化给定JavaScript程序的各个方面可能消耗的时间比通过执行速度增益节省的时间还要多。</p>
 <p>为了在触发JIT编译之前收集所需的信息，分析器（引擎的一部分）收集已执行代码的执行信息。达到内部指定的阈值后，引擎会安排代码进行JIT编译。以后的执行直接调用优化后的代码，而不是通过字节码解释来执行函数。因此，典型的现代JIT编译器管道包括<strong>图2</strong>中可视化的步骤。</p>
-<img src="/2025/03/05/Fuzzilli%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20250305223826487.png" class="" title="image-20250305223826487">
+<img src="/2025/03/05/Fuzzilli%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20250305223826487.png" srcset="/img/loading.gif" lazyload class="" title="image-20250305223826487">
 
 <p>(a) 引擎将源代码转换为AST。</p>
 <p>(b) 引擎将AST编译为自定义VM的字节码</p>
@@ -277,7 +338,7 @@
 </li>
 <li><p><strong>具体的漏洞：</strong> 编译器假定<code>CreateThis</code>操作（负责在构造函数中创建一个新对象）不会导致任何副作用。但是，通过将构造函数包装在Proxy中，此假设被违反。通过能够更改参数对象的类型（在本例中，从浮点数数组更改为JavaScript值数组），可以在发出的机器代码中实现类型混淆。</p>
 <p><strong>图3</strong>显示了一个触发此行为的概念验证。JIT编译器假定构造函数始终接收一个以双精度浮点数作为第一个参数的数组。它在发出的机器代码的开头使用类型检查来保护此假设。但是，CreateThis操作是在对参数对象进行类型检查之后执行的，并且当检索构造函数的<code>prototype</code>属性时，通过<code>Proxy</code>回调调用JavaScript。在回调中更改参数数组的参数类型，然后在构造函数恢复并访问数组时会导致类型混淆。</p>
-<img src="/2025/03/05/Fuzzilli：论文阅读/image-20250305232316947.png"  alt="image-20250305232316947" style="zoom:80%;" /></li>
+<img src="/2025/03/05/Fuzzilli：论文阅读/image-20250305232316947.png" srcset="/img/loading.gif" lazyload  alt="image-20250305232316947" style="zoom:80%;" /></li>
 </ol>
 <p>由于执行了概念验证代码，因此存储为<code>0x414141414141</code>的双精度浮点值<code>3.54484805889626e-310</code>被错误地用作指针，由于在取消引用地址时发生访问冲突，导致一个攻击者可控制的崩溃。</p>
 <h3 id="4-方法"><a href="#4-方法" class="headerlink" title="4. 方法"></a>4. 方法</h3><p>JIT编译漏洞的模糊测试是一个尚未详细探索的领域，并且需要特别考虑语义正确性。在本节中，我们将介绍我们填补当前JIT编译器fuzzing漏洞空白的方法。我们首先定义一组我们认为成功fuzzing JIT编译器引擎所必须的要求，然后展示基于自定义IR突变的fuzzer如何满足这些要求。</p>
@@ -290,11 +351,11 @@
 </li>
 <li><p><strong>语义代码突变：</strong> 我们确定我们想使用反馈方法，并且需要语义正确性才能获得成功的fuzzing框架。仍然缺少一个基本组件：代码的基础语义。JIT编译器只处理代码的语义属性，例如控制流和数据流。这是因为JIT编译器通常在其自己的字节码IR上运行，而对初始AST和语法没有任何了解。因此，希望在该级别执行突变并结合引导式fuzzing提供的反馈。使用反馈的最简单方法是使用基于突变的fuzzing。通过此过程，fuzzer可以动态地将样本添加到语料库中，从而产生新的覆盖范围，并在将来进一步对其进行突变。现有的基于突变的解释器fuzzer（例如LangFuzz）使用AST等表示形式来突变代码的语法元素。但是，句法元素与我们的方法所针对的组件（即JIT编译器）无关。此外，AST可能是模棱两可的。因此，仅语义突变更难实现，因为立即突变可能只会导致程序的句法更改，而不是语义更改。</p>
 <p><strong>图4</strong>显示了一个示例，其中具有不同AST的两个代码片段表达了相同的计算。基于AST的突变可能只是这两个代码片段之间的转换。为了解决这个问题，我们选择使用一个接近编译器使用的表示的中间表示。在这种IR上进行的突变避免了语义上无意义的突变，并提高了fuzzing的有效性。通过在IR上执行一组不同的突变我们可以更快地检测到不同的缺陷。我们注意到，可以限制AST突变以对抗无意义的突变，但实际上它会变成自己的IR。</p>
-<img src="/2025/03/05/Fuzzilli：论文阅读/image-20250306002445823.png"  alt="image-20250306002445823" style="zoom:80%;" /></li>
+<img src="/2025/03/05/Fuzzilli：论文阅读/image-20250306002445823.png" srcset="/img/loading.gif" lazyload  alt="image-20250306002445823" style="zoom:80%;" /></li>
 </ol>
 <h4 id="B-专为Fuzzing设计的中间表示（IR）"><a href="#B-专为Fuzzing设计的中间表示（IR）" class="headerlink" title="B. 专为Fuzzing设计的中间表示（IR）"></a>B. 专为Fuzzing设计的中间表示（IR）</h4><p>正如上一节所解释的，我们的模糊测试方法使用自己的IR。因此，我们将fuzzer的设计集中在自定义中间表示IR中对代码进行突变，然后将IR代码转换为JavaScript以供执行的想法上。我们根据第4节A中陈述的要求设计了我们的IR：</p>
 <p><strong>IR设计：</strong> 在我们的IR中，程序由指令列表组成，每个指令又由操作以及输入和输出变量列表组成。<strong>图5</strong>显示了一个示例程序，该程序计算从零到九的数字之和。请注意，IR操作可以是参数化的。参数包括操作中的常量、属性和方法名称、二元和一元操作的运算符以及比较。我们使用特殊的块指令实现了控制流，至少存在一个起始块和结束块。我们的IR使用静态单赋值（SSA）形式，这意味着任何变量都只有一个赋值。SSA形式有助于实现我们稍后使用的定义-使用分析。它还提高了类型推断的可靠性并简化了代码生成，例如，输出值将始终分配给新的SSA变量。可以通过Phi操作重新分配JavaScript变量，该操作产生一个可以通过Copy指令重新分配的输出。我们在附录C中给出了已实现的IR操作的完整列表，以及它们涵盖的JavaScript语言特性的描述。</p>
-<img src="/2025/03/05/Fuzzilli：论文阅读/image-20250307103514503.png"  alt="image-20250307103514503" style="zoom:67%;" />
+<img src="/2025/03/05/Fuzzilli：论文阅读/image-20250307103514503.png" srcset="/img/loading.gif" lazyload  alt="image-20250307103514503" style="zoom:67%;" />
 
 <p><strong>所需不变式：</strong> 此外，我们要求以下五个不变式对于我们的IR中的每个程序都必须独立，因此对于从中生成的JavaScript程序也必须成立：</p>
 <ul>
@@ -336,7 +397,7 @@
 <h4 id="E-IR的模糊测试"><a href="#E-IR的模糊测试" class="headerlink" title="E. IR的模糊测试"></a>E. IR的模糊测试</h4><p>我们的模糊测试方法通常遵循基于突变的模糊器的标准进行设计。在每次迭代中，模糊器从现有语料库（以单行JavaScript程序为种子）中选择程序<code>P</code>，并随机对其进行突变以生成新程序<code>Pm</code>。然后，模糊器将<code>Pm</code>提升为JavaScript代码，该代码随后在目标引擎上执行，同时收集覆盖率统计信息，例如，通过<code>Clang</code>的<code>sanitizercoverage</code>功能。如果<code>Pm</code>的执行增加了目标程序的覆盖率，则<code>Pm</code>被认为是<code>interesting</code>并保留以供将来进行突变。</p>
 <p>但是，由于我们的突变只能增加程序的大小而不能缩小程序的大小，因此必须在将<code>Pm</code>添加到语料库之前对其进行最小化。否则，语料库中程序的大小补将不断增加并减慢模糊测试的速度。通过定点迭代可以简单地进行最小化，该迭代连续删除指令，同时确保结果程序仍然显示相同的覆盖率增加。</p>
 <p>由于两个<code>interesting</code>的程序之间的距离通常大于单个突变可以桥接的举例，因此我们连续多次突变一个程序。但是，为了防止不必要的资源投入，如果最后一次突变产生了无效程序，则会还原最后一次突变。<code>Algorithm 1</code>中给出了高级模糊测试算法的伪代码。</p>
-<img src="/2025/03/05/Fuzzilli：论文阅读/image-20250307115122923.png"  alt="image-20250307115122923" style="zoom: 80%;" /></li>
+<img src="/2025/03/05/Fuzzilli：论文阅读/image-20250307115122923.png" srcset="/img/loading.gif" lazyload  alt="image-20250307115122923" style="zoom: 80%;" /></li>
 </ol>
 <h3 id="5-实验"><a href="#5-实验" class="headerlink" title="5. 实验"></a>5. 实验</h3><p>我们在Swift编程语言中实现了一个名为Fuzzilli的工具，其中包含前一节中概述的fuzzer设计。我们使用此原型实现进行评估，并针对三种最先进的JavaScript引擎的检测JavaScript引擎代码运行它：<code>Google V8</code>、<code>Apple JavaScript</code>和<code>Mozilla SpiderMonkey</code>。</p>
 <h4 id="A-模糊测试的时间"><a href="#A-模糊测试的时间" class="headerlink" title="A. 模糊测试的时间"></a>A. 模糊测试的时间</h4><p>本节报告中的漏洞是连续六个月的模糊测试会话的结果。每个会话持续约一周，并使用约500个CPU核心。对于每个会话，使用当时的最新源代码版本，或者如果可用，则使用当前Beta版本的源代码。我们在Google Compute Engine(GCE)上运行模糊测试，并且主要使用多个N1standard-4机器类型（4个CPU，15GB RAM）。此外，我们选择使用抢占式示例来降低成本。</p>
@@ -345,7 +406,7 @@
 <p>许多发现的漏洞首先体现为失败的断言或空指针解引用。之后，我们对Crash进行了手动分类，以确定它们是否对安全是至关重要且可利用。虽然鉴于失败的断言或崩溃情况，一些观察到的崩溃显然是可利用的，但其他崩溃首先需要进行大量分析才能确定可利用性。所有已识别的错误均以协调方式报告给开发人员。我们认为列出的所有缺陷都是可利用的，并且要么收到了CVE要么收到了Chrome内部问题编号。因此，这些问题随后由开发人员修复。</p>
 <p>1）<strong>类型分类：</strong> Table 1显示了所有17个发现的漏洞的全面摘要，这些漏洞提交后分配给我们一个CVE或内部问题编号。所有已识别的漏洞都与JIT编译相关，并且跨越了诸如无效的边界检查删除、不正确的类型推断和寄存器错误分配问题等问题。</p>
 <p>2）<strong>存在时长确定：</strong> 我们还通过编译旧版本的软件并验证找到测试用例是否触发崩溃来确定漏洞的存在时长。对于JavaScriptCore和V8，我们使用git的bisecting功能来查找最旧的版本。对于Firefox，我们使用旧的官方版本并在这些版本上进行了测试。由于测试用例可能由于无关原因而未在其他版本上触发，甚至可能触发另一个错误，因此Age确定的结果可能包含不准确之处，但通常是保守的。在我们无法如上所述动态确定问题版本的情况下，我们求助于手动源代码分析，以尝试确定何时引入了易受攻击的代码。由于这比编译和测试代码更容易出错，因此此处的结果不太确定。</p>
-<img src="/2025/03/05/Fuzzilli%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20250307152941454.png" class="" title="image-20250307152941454">
+<img src="/2025/03/05/Fuzzilli%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20250307152941454.png" srcset="/img/loading.gif" lazyload class="" title="image-20250307152941454">
 
 <h3 id="6-发现漏洞的分类"><a href="#6-发现漏洞的分类" class="headerlink" title="6. 发现漏洞的分类"></a>6. 发现漏洞的分类</h3><p>为了系统化发现的漏洞，我们首先描述导致每个漏洞的根本原因，然后介绍两个分类法。第一个根据影响对漏洞进行分类，第二个根据漏洞发生的时间对漏洞进行分类。Table 1中显示了已分类漏洞的表格概述。</p>
 <h4 id="A-根本原因"><a href="#A-根本原因" class="headerlink" title="A. 根本原因"></a>A. 根本原因</h4><p>我们确定了三个常见的根本原因：移动代码时的优化、运行时执行语义的错误建模和类型检查的错误删除。不符合此分类的根本原因被归类为杂项。</p>
@@ -379,7 +440,7 @@
 <p>不同的引擎之间也没有明显的差异。 成功的突变器的分布保持在相同的比例内。 对于每分钟产生新样本的突变数量，JSC 和 SpiderMonkey 都趋于零，这一观察结果也成立。 但是，我们发现 JSC 的初始下降速度比 SpiderMonkey 慢。</p>
 </li>
 </ol>
-<img src="/2025/03/05/Fuzzilli：论文阅读/image-20250308152959894.png"  alt="image-20250308152959894" style="zoom:67%;" />
+<img src="/2025/03/05/Fuzzilli：论文阅读/image-20250308152959894.png" srcset="/img/loading.gif" lazyload  alt="image-20250308152959894" style="zoom:67%;" />
 
 <ol start="2">
 <li><strong>与SoFi的比较：</strong> 我们本希望包含与最近发布的 SoFi 方法的直接比较。 遗憾的是，作者既没有发布完整的源代码，也没有在联系时提供代码。 我们分析了论文表 2 中报告的结果，发现三个相关的 JavaScript 引擎 SpiderMonkey、JavaScriptCore 和 V8 中发现的“错误”似乎并不代表实际的安全关键漏洞。 例如，为 SpiderMonkey 报告的前四个错误被开发人员标记为无效，根本不代表漏洞。 第五个报告是重复的。 同样，为 JavaScriptCore 报告的“错误”也被开发人员标记为无效。 我们对已报告结果的分析以及源代码的不可用性感到困惑。 遗憾的是，无法通过与作者的直接交流来解决这些问题，因此无法进行直接比较。</li>
@@ -405,72 +466,380 @@
 <p>我们还对我们的模糊器进行了描述性和经验性分析。 在我们的描述性分析中，我们展示了我们的模糊器如何在不同的引擎中很好地泛化，并且能够找到先前未知的漏洞，从而展示了其对最新技术的定性改进。 我们的经验分析表明，我们的模糊器部署了恒定但有限的突变焦点来关注 JIT。 此外，经验分析表明，即使向 Superion 提供全面的启动语料库，我们也能在 JIT 聚焦模糊测试方面优于或与最新的模糊器 Superion 竞争。 当减少启动语料库时，Superion 无法在三个引擎的通用覆盖率或 JIT 聚焦覆盖率方面超越我们。 这些结果强调了跨多个不同语料库测试利用输入语料库的模糊器的重要性，以判断其通用性。 我们还呼吁所有未来的模糊测试研究不仅需要发布源代码，还需要发布使用的评估语料库。</p>
 <p>然而，我们的模糊测试方法并不完整，因为仍然有改进类型信息的空间，<strong>例如通过检测发出的代码使其更加精确</strong>，这将允许更具针对性的代码生成。 此外，我们的突变集是有限的。 增加突变集以包含对控制流的聚焦突变可能会产生更深层隐藏的漏洞。 此外，还可以增加特殊功能的集合，因为 JavaScript 是一种复杂且功能丰富的语言，不太受欢迎的功能可能包含尚未发现的问题。</p>
 
-        </div>
-
-        
-            <section class="post-copyright">
                 
-                    <p class="copyright-item">
-                        <span>Author:</span>
-                        <span>Lobo Q1ng</span>
-                    </p>
-                
-                
-                
-                    <p class="copyright-item">
-                        <span>License:</span>
-                        <span>Copyright (c) 2025 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
-                    </p>
-                
-                
-                     <p class="copyright-item">
-                         <span>Slogan:</span>
-                         <span>Hello~,<strong>DESTINY</strong></span>
-                     </p>
-                
-
-            </section>
-        
-        <section class="post-tags">
+              </div>
+            
+            <hr/>
             <div>
-                <span>Tag(s):</span>
-                <span class="tag">
-                    
-                    
-                        <a href="/tags/Fuzz/"># Fuzz</a>
-                    
-                        <a href="/tags/Paper-Reading/"># Paper Reading</a>
-                    
-                        
-                </span>
-            </div>
-            <div>
-                <a href="javascript:window.history.back();">back</a>
-                <span>· </span>
-                <a href="/">home</a>
-            </div>
-        </section>
-        <section class="post-nav">
-            
-                <a class="prev" rel="prev" href="/2025/03/12/CVE-2020-9802-JSC%E7%BC%96%E8%AF%91%E4%BC%98%E5%8C%96%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/">CVE-2020-9802 JSC编译优化漏洞复现</a>
-            
-            
-            <a class="next" rel="next" href="/2025/03/01/pwn-college-%E9%A2%98%E8%A7%A3/">pwn.college 题解</a>
-            
-        </section>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
 
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Fuzz/" class="category-chain-item">Fuzz</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Fuzz/Paper-Reading/" class="category-chain-item">Paper Reading</a>
+  
+  
 
-    </article>
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Fuzz/" class="print-no-link">#Fuzz</a>
+      
+        <a href="/tags/Paper-Reading/" class="print-no-link">#Paper Reading</a>
+      
+    </div>
+  
 </div>
 
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Fuzzilli：论文阅读</div>
+      <div>https://loboq1ng.github.io/2025/03/05/Fuzzilli：论文阅读/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Lobo Q1ng</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2025年3月5日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2025/03/12/CVE-2020-9802-JSC%E7%BC%96%E8%AF%91%E4%BC%98%E5%8C%96%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/" title="CVE-2020-9802 JSC编译优化漏洞复现">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">CVE-2020-9802 JSC编译优化漏洞复现</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2025/03/01/pwn-college-%E9%A2%98%E8%A7%A3/" title="pwn.college 题解">
+                        <span class="hidden-mobile">pwn.college 题解</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
             </div>
-            <footer id="footer" class="footer">
-    <div class="copyright">
-        <span>© Lobo Q1ng | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+
+            
+          </article>
+        </div>
+      </div>
     </div>
-</footer>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
 
     </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
 </body>
-
 </html>
