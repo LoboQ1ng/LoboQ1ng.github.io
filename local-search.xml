@@ -88,14 +88,14 @@
     
     <categories>
       
-      <category>漏洞复现</category>
+      <category>CVE</category>
       
     </categories>
     
     
     <tags>
       
-      <tag>漏洞复现</tag>
+      <tag>CVE</tag>
       
     </tags>
     
@@ -113,18 +113,14 @@
     
     <categories>
       
-      <category>Fuzz</category>
-      
-      <category>Paper Reading</category>
+      <category>Paper</category>
       
     </categories>
     
     
     <tags>
       
-      <tag>Fuzz</tag>
-      
-      <tag>Paper Reading</tag>
+      <tag>Paper</tag>
       
     </tags>
     
@@ -217,18 +213,14 @@
     
     <categories>
       
-      <category>Fuzz</category>
-      
-      <category>Paper Reading</category>
+      <category>Paper</category>
       
     </categories>
     
     
     <tags>
       
-      <tag>Fuzz</tag>
-      
-      <tag>Paper Reading</tag>
+      <tag>Paper</tag>
       
     </tags>
     
@@ -246,18 +238,14 @@
     
     <categories>
       
-      <category>Fuzz</category>
-      
-      <category>Paper Reading</category>
+      <category>Paper</category>
       
     </categories>
     
     
     <tags>
       
-      <tag>Fuzz</tag>
-      
-      <tag>Paper Reading</tag>
+      <tag>Paper</tag>
       
     </tags>
     
