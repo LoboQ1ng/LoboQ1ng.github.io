@@ -1,0 +1,749 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/Pi.png">
+  <link rel="icon" href="/img/Pi.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Lobo Q1ng">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="Building a Web Serverlevel1正常的exit汇编 123456789.intel_syntax noprefix.global _start.section .text_start:    mov rdi,0    mov rax,60    syscall.section .data    level2要实现socket，其系统调用为41。原型int socket(int">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pwn.college: Dealing with Data">
+<meta property="og:url" content="https://loboq1ng.github.io/2024/11/10/pwn-college-Building-a-Web-Server/index.html">
+<meta property="og:site_name" content="Q1ng&#39;s blog">
+<meta property="og:description" content="Building a Web Serverlevel1正常的exit汇编 123456789.intel_syntax noprefix.global _start.section .text_start:    mov rdi,0    mov rax,60    syscall.section .data    level2要实现socket，其系统调用为41。原型int socket(int">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://loboq1ng.github.io/2024/11/10/pwn-college-Building-a-Web-Server/image-20241031112813128.png">
+<meta property="article:published_time" content="2024-11-10T10:29:34.000Z">
+<meta property="article:modified_time" content="2025-05-11T08:55:58.038Z">
+<meta property="article:author" content="Lobo Q1ng">
+<meta property="article:tag" content="Pwn">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://loboq1ng.github.io/2024/11/10/pwn-college-Building-a-Web-Server/image-20241031112813128.png">
+  
+  
+  
+  <title>pwn.college: Dealing with Data - Q1ng&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"loboq1ng.github.io","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Q1ng&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/Townscaper.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="pwn.college: Dealing with Data"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-11-10 18:29" pubdate>
+          2024年11月10日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          35 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">pwn.college: Dealing with Data</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h3 id="Building-a-Web-Server"><a href="#Building-a-Web-Server" class="headerlink" title="Building a Web Server"></a>Building a Web Server</h3><h4 id="level1"><a href="#level1" class="headerlink" title="level1"></a>level1</h4><p>正常的exit汇编</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-meta">.section</span> .text<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>,<span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>,<span class="hljs-number">60</span><br>    <span class="hljs-keyword">syscall</span><br><span class="hljs-meta"></span><br><span class="hljs-meta">.section</span> .data<br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level2"><a href="#level2" class="headerlink" title="level2"></a>level2</h4><p>要实现socket，其系统调用为41。原型<code>int socket(int domain, int type, int protocol);</code></p>
+<p><code>socket(AF_INET, SOCK_STREAM,IPPROTO_IP)=3</code></p>
+<p>也就是说，domain为<code>AF_INET</code>，type为<code>SOCK_STREAM</code>，protocol为<code>IPPROTO_IP</code></p>
+<p>其中，关于第一个参数说明如下：</p>
+<ul>
+<li><strong><code>AF_INET</code> (2):</strong> IPv4 地址族。</li>
+<li><strong><code>AF_INET6</code> (10):</strong> IPv6 地址族。</li>
+<li><strong><code>AF_UNIX</code> (1):</strong> Unix 套接字。 这些套接字用于进程间通信，通常在本地主机上使用。 它们不是基于网络的。</li>
+<li><strong><code>AF_BLUETOOTH</code> (12):</strong> 用于蓝牙通信的套接字类型。</li>
+<li><strong><code>AF_PACKET</code> (17):</strong> 允许应用程序访问底层网络帧。</li>
+<li><strong><code>AF_NETLINK</code> (16):</strong> 用于内核模块和用户空间进程之间的消息传递。</li>
+<li><strong><code>AF_AX25</code> (11):</strong> 用于 AX.25 协议的套接字类型。</li>
+<li><strong><code>AF_X25</code> (15):</strong> 用于 X.25 协议的套接字类型。</li>
+<li><strong><code>AF_ATMPVC</code> (21):</strong> 用于 ATM (Asynchronous Transfer Mode) 协议的虚拟通道 (PVC)。</li>
+<li><strong><code>AF_APPLETALK</code> (23):</strong> 用于 AppleTalk 协议的套接字类型。</li>
+<li><strong><code>AF_NETBIOS</code> (24):</strong> 用于 NetBIOS 协议的套接字类型。</li>
+</ul>
+<p>关于第二个参数说明如下：</p>
+<ul>
+<li><strong><code>SOCK_STREAM</code> (1):</strong> 面向连接的流式套接字。数据被可靠地传输，以字节流的形式发送，顺序保证。 这类似于 TCP。</li>
+<li><strong><code>SOCK_DGRAM</code> (2):</strong> 无连接的数据报套接字。数据包可能会丢失或顺序颠倒。 这类似于 UDP。 数据被发送成独立的数据报，没有可靠性保证。</li>
+<li><strong><code>SOCK_SEQPACKET</code> (3):</strong> 面向连接的序列包套接字。它试图提供 TCP 的可靠性但不需要三次握手，在某些情况下性能更好。 这种类型比较少见。</li>
+<li><strong><code>SOCK_RAW</code> (3):</strong> 原始套接字。允许应用程序访问底层网络协议。程序员可以访问网络协议的详细信息，控制传输的整个过程。这需要对网络协议有深入的了解，使用风险比较高。</li>
+</ul>
+<p>关于第三个参数说明如下：</p>
+<ul>
+<li><strong><code>IPPROTO_IP</code> (0):</strong> IP 协议。 这个值通常在使用 TCP 或 UDP 时使用，因为它在底层协议栈中就已经存在了。 它不是一个独立的协议，而是 IP 协议栈的一部分。</li>
+<li><strong><code>IPPROTO_TCP</code> (6):</strong> 传输控制协议 (TCP)。 这指定了使用 TCP 协议。</li>
+<li><strong><code>IPPROTO_UDP</code> (17):</strong> 用户数据报协议 (UDP)。 这指定了使用 UDP 协议。</li>
+<li><strong><code>IPPROTO_ICMP</code> (1):</strong> 因特网控制消息协议 (ICMP)。 ICMP 用于错误报告和查询。</li>
+<li><strong><code>IPPROTO_IGMP</code> (2):</strong> 因特网组管理协议 (IGMP)。 IGMP 用于多播。</li>
+<li><strong><code>IPPROTO_IPIP</code> (4):</strong> IP over IP。 这允许一个 IP 数据报封装在另一个 IP 数据报中。</li>
+<li><strong><code>IPPROTO_RSVP</code> (46):</strong> 资源预留协议 (RSVP)。 用于保证多媒体应用程序的带宽。</li>
+<li><strong><code>IPPROTO_GRE</code> (47):</strong> 通用路由封装 (GRE)。 允许将不同协议的数据包封装在 IP 数据报中。</li>
+<li><strong><code>IPPROTO_AH</code> (51):</strong> 认证头 (AH)。 用于安全通信。</li>
+</ul>
+<p>那么最终的exp为：</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-meta">.section</span> .text<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">41</span>      # socket(AF_INET, SOCK_STREAM,IPPROTO_IP)=<span class="hljs-number">3</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">2</span>		# AF_INET(<span class="hljs-number">2</span>)<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">1</span>		# SOCK_STREAM(<span class="hljs-number">1</span>)<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span>		# IPPROTO_IP(<span class="hljs-number">0</span>)<br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>,<span class="hljs-number">0</span>       # SYS_exit<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>,<span class="hljs-number">60</span><br>    <span class="hljs-keyword">syscall</span><br><span class="hljs-meta"></span><br><span class="hljs-meta">.section</span> .data<br><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level3"><a href="#level3" class="headerlink" title="level3"></a>level3</h4><p>实现bind，<code>bind(3, &#123;sa_family=AF_INET, sin_port=htons(&lt;bind_port&gt;), sin_addr=inet_addr(&quot;&lt;bind_address&gt;&quot;)&#125;, 16) = 0</code></p>
+<p>bind原型：<code>int bind(int sockfd, const struct sockaddr addr, socklen_t addrlen)</code></p>
+<p>好吧，我想不出来。看别人的wp，很好，用到了.data段定义这个结构体。然后端口是0x5000，是80的小端序</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-meta">.section</span> .text<br><span class="hljs-symbol">_start:</span>     <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">2</span>      # socket(AF_INET, SOCK_STREAM,IPPROTO_IP)=<span class="hljs-number">3</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">41</span> <br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, [<span class="hljs-built_in">rip</span>+socket_addr]<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">16</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">49</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>,<span class="hljs-number">0</span>       # SYS_exit<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>,<span class="hljs-number">60</span><br>    <span class="hljs-keyword">syscall</span><br><span class="hljs-meta"></span><br><span class="hljs-meta">.section</span> .data<br><span class="hljs-symbol">socket_addr:</span><br><span class="hljs-meta">    .2byte</span> <span class="hljs-number">2</span><br><span class="hljs-meta">    .2byte</span> <span class="hljs-number">0x5000</span><br><span class="hljs-meta">    .4byte</span> <span class="hljs-number">0</span><br><span class="hljs-meta">    .8byte</span> <span class="hljs-number">0</span><br></code></pre></td></tr></table></figure>
+
+<p>绑定的地址为0.0.0.0即<code>bind(3, &#123;sa_family=AF_INET, sin_port=htons(80), sin_addr=inet_addr(&quot;0.0.0.0&quot;)&#125;, 16) = 0</code></p>
+<h4 id="level4"><a href="#level4" class="headerlink" title="level4"></a>level4</h4><p>要完成<code>listen(3, 0) = 0</code>，这个简单啊，listen系统调用号为50</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-meta">.section</span> .text<br><span class="hljs-symbol">_start:</span>     <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">2</span>      # socket(AF_INET, SOCK_STREAM,IPPROTO_IP)=<span class="hljs-number">3</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">41</span> <br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # bind(<span class="hljs-number">3</span>, &#123;sa_family=AF_INET, sin_port=htons(<span class="hljs-number">80</span>), sin_addr=inet_addr(<span class="hljs-string">&quot;0.0.0.0&quot;</span>)&#125;, <span class="hljs-number">16</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, [<span class="hljs-built_in">rip</span>+socket_addr]<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">16</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">49</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # listen(<span class="hljs-number">3</span>, <span class="hljs-number">0</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">50</span><br>    <span class="hljs-keyword">syscall</span> <br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>,<span class="hljs-number">0</span>       # SYS_exit<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>,<span class="hljs-number">60</span><br>    <span class="hljs-keyword">syscall</span><br><span class="hljs-meta"></span><br><span class="hljs-meta">.section</span> .data<br><span class="hljs-symbol">socket_addr:</span><br><span class="hljs-meta">    .2byte</span> <span class="hljs-number">2</span><br><span class="hljs-meta">    .2byte</span> <span class="hljs-number">0x5000</span><br><span class="hljs-meta">    .4byte</span> <span class="hljs-number">0</span><br><span class="hljs-meta">    .8byte</span> <span class="hljs-number">0</span><br><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level5"><a href="#level5" class="headerlink" title="level5"></a>level5</h4><p>要完成<code>accept(3, NULL, NULL) = 4</code> accept的系统调用号为43</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-meta">.section</span> .text<br><span class="hljs-symbol">_start:</span>     <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">2</span>      # socket(AF_INET, SOCK_STREAM,IPPROTO_IP)=<span class="hljs-number">3</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">41</span> <br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # bind(<span class="hljs-number">3</span>, &#123;sa_family=AF_INET, sin_port=htons(<span class="hljs-number">80</span>), sin_addr=inet_addr(<span class="hljs-string">&quot;0.0.0.0&quot;</span>)&#125;, <span class="hljs-number">16</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, [<span class="hljs-built_in">rip</span>+socket_addr]<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">16</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">49</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # listen(<span class="hljs-number">3</span>, <span class="hljs-number">0</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">50</span><br>    <span class="hljs-keyword">syscall</span> <br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # accept(<span class="hljs-number">3</span>, NULL, NULL) = <span class="hljs-number">4</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">43</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>,<span class="hljs-number">0</span>       # SYS_exit<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>,<span class="hljs-number">60</span><br>    <span class="hljs-keyword">syscall</span><br><span class="hljs-meta"></span><br><span class="hljs-meta">.section</span> .data<br><span class="hljs-symbol">socket_addr:</span><br><span class="hljs-meta">    .2byte</span> <span class="hljs-number">2</span><br><span class="hljs-meta">    .2byte</span> <span class="hljs-number">0x5000</span><br><span class="hljs-meta">    .4byte</span> <span class="hljs-number">0</span><br><span class="hljs-meta">    .8byte</span> <span class="hljs-number">0</span><br><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level6"><a href="#level6" class="headerlink" title="level6"></a>level6</h4><p>这一关有点东西，要完成三个东西：<code>read(4, &lt;read_request&gt;, &lt;read_request_count&gt;) = &lt;read_request_result&gt;</code>，<code>write(4, &quot;HTTP/1.0 200 OK\r\n\r\n&quot;, 19) = 19</code>和<code>close(4) = 0</code></p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-meta">.section</span> .text<br><span class="hljs-symbol">_start:</span>     <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">2</span>      # socket(AF_INET, SOCK_STREAM,IPPROTO_IP)=<span class="hljs-number">3</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">41</span> <br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # bind(<span class="hljs-number">3</span>, &#123;sa_family=AF_INET, sin_port=htons(<span class="hljs-number">80</span>), sin_addr=inet_addr(<span class="hljs-string">&quot;0.0.0.0&quot;</span>)&#125;, <span class="hljs-number">16</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, [<span class="hljs-built_in">rip</span>+socket_addr]<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">16</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">49</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # listen(<span class="hljs-number">3</span>, <span class="hljs-number">0</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">50</span><br>    <span class="hljs-keyword">syscall</span> <br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # accept(<span class="hljs-number">3</span>, NULL, NULL) = <span class="hljs-number">4</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">43</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-built_in">rsp</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">256</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # write(<span class="hljs-number">4</span>, <span class="hljs-string">&quot;HTTP/1.0 200 OK\r\n\r\n&quot;</span>, <span class="hljs-number">19</span>) = <span class="hljs-number">19</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>,[<span class="hljs-built_in">rip</span> + ret_normal_msg] <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">19</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # close(<span class="hljs-number">4</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>,<span class="hljs-number">0</span>       # SYS_exit<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>,<span class="hljs-number">60</span><br>    <span class="hljs-keyword">syscall</span><br><span class="hljs-meta"></span><br><span class="hljs-meta">.section</span> .data<br><span class="hljs-symbol">socket_addr:</span><br><span class="hljs-meta">    .2byte</span> <span class="hljs-number">2</span><br><span class="hljs-meta">    .2byte</span> <span class="hljs-number">0x5000</span><br><span class="hljs-meta">    .4byte</span> <span class="hljs-number">0</span><br><span class="hljs-meta">    .8byte</span> <span class="hljs-number">0</span><br><span class="hljs-symbol">ret_normal_msg:</span><br><span class="hljs-meta">    .ascii</span> <span class="hljs-string">&quot;HTTP/1.0 200 OK\r\n\r\n&quot;</span><br><br></code></pre></td></tr></table></figure>
+
+<p>这一关的目的是，能够接收客户端发送来的消息，并反馈200状态码。</p>
+<h4 id="level7"><a href="#level7" class="headerlink" title="level7"></a>level7</h4><p>那么这一关，就响应客户端的请求，将它要的文件，发送给它。那么就有个问题了，第一个read会读取客户端发来的请求，然后这个请求很长，该怎么精准拿到这个文件呢？</p>
+<figure class="highlight nix"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs nix">read(<span class="hljs-number">4</span>, <span class="hljs-string">&quot;GET /tmp/tmpper_iarh HTTP/1.1<span class="hljs-char escape_">\r</span><span class="hljs-char escape_">\n</span>Host: localhost<span class="hljs-char escape_">\r</span><span class="hljs-char escape_">\n</span>User-Agent: python-requests/2.32.3<span class="hljs-char escape_">\r</span><span class="hljs-char escape_">\n</span>Accept-Encoding: gzip, deflate, zstd<span class="hljs-char escape_">\r</span><span class="hljs-char escape_">\n</span>Accept: */*<span class="hljs-char escape_">\r</span><span class="hljs-char escape_">\n</span>Connection: keep-alive<span class="hljs-char escape_">\r</span><span class="hljs-char escape_">\n</span><span class="hljs-char escape_">\r</span><span class="hljs-char escape_">\n</span>&quot;</span>, <span class="hljs-number">256</span>) <span class="hljs-operator">=</span> <span class="hljs-number">161</span><br></code></pre></td></tr></table></figure>
+
+<img src="/2024/11/10/pwn-college-Building-a-Web-Server/image-20241031112813128.png" srcset="/img/loading.gif" lazyload class="" title="image-20241031112813128">
+
+<p>我发现了一个简单的方法用变量存起来就好了，然后截断第一个空格。</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-meta"></span><br><span class="hljs-meta"></span><br><span class="hljs-meta">.section</span> .text<br><span class="hljs-symbol">_start:</span>     <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">2</span>      # socket(AF_INET, SOCK_STREAM,IPPROTO_IP)=<span class="hljs-number">3</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">41</span> <br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # bind(<span class="hljs-number">3</span>, &#123;sa_family=AF_INET, sin_port=htons(<span class="hljs-number">80</span>), sin_addr=inet_addr(<span class="hljs-string">&quot;0.0.0.0&quot;</span>)&#125;, <span class="hljs-number">16</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, [<span class="hljs-built_in">rip</span>+socket_addr]<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">16</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">49</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # listen(<span class="hljs-number">3</span>, <span class="hljs-number">0</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">50</span><br>    <span class="hljs-keyword">syscall</span> <br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # accept(<span class="hljs-number">3</span>, NULL, NULL) = <span class="hljs-number">4</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">43</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # read(<span class="hljs-number">4</span>,buf,count_bytes)<br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, buffer<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">256</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, buffer+<span class="hljs-number">4</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rdi</span>, file_path<br><span class="hljs-symbol">loop_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [<span class="hljs-built_in">rsi</span>]<br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">al</span>, <span class="hljs-string">&#x27; &#x27;</span><br>    <span class="hljs-keyword">je</span> get_file_path<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [<span class="hljs-built_in">rdi</span>], <span class="hljs-built_in">al</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rdi</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">jmp</span> loop_start<br><span class="hljs-symbol"></span><br><span class="hljs-symbol">get_file_path:</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rdi</span>, file_path # open<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">2</span><br>    <span class="hljs-keyword">syscall</span><br>    <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">5</span>              # read<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-built_in">rsp</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">256</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">syscall</span> <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r8</span>, <span class="hljs-built_in">rax</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-number">0</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">5</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # write(<span class="hljs-number">4</span>, <span class="hljs-string">&quot;HTTP/1.0 200 OK\r\n\r\n&quot;</span>, <span class="hljs-number">19</span>) = <span class="hljs-number">19</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>,[<span class="hljs-built_in">rip</span> + ret_normal_msg] <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">19</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-built_in">rsp</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-built_in">r8</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # close(<span class="hljs-number">4</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>,<span class="hljs-number">0</span>       # SYS_exit<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>,<span class="hljs-number">60</span><br>    <span class="hljs-keyword">syscall</span><br><span class="hljs-meta"></span><br><span class="hljs-meta">.section</span> .data<br><span class="hljs-symbol">socket_addr:</span><br><span class="hljs-meta">    .2byte</span> <span class="hljs-number">2</span><br><span class="hljs-meta">    .2byte</span> <span class="hljs-number">0x5000</span><br><span class="hljs-meta">    .4byte</span> <span class="hljs-number">0</span><br><span class="hljs-meta">    .8byte</span> <span class="hljs-number">0</span><br><span class="hljs-symbol">ret_normal_msg:</span><br><span class="hljs-meta">    .ascii</span> <span class="hljs-string">&quot;HTTP/1.0 200 OK\r\n\r\n&quot;</span><br><span class="hljs-symbol">buffer:</span><br><span class="hljs-meta">    .space</span> <span class="hljs-number">256</span><br><span class="hljs-symbol">file_path:</span><br><span class="hljs-meta">    .space</span> <span class="hljs-number">64</span> <br><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level8"><a href="#level8" class="headerlink" title="level8"></a>level8</h4><p>这一关就是加一个accept调用即可。</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-meta"></span><br><span class="hljs-meta"></span><br><span class="hljs-meta">.section</span> .text<br><span class="hljs-symbol">_start:</span>     <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">2</span>      # socket(AF_INET, SOCK_STREAM,IPPROTO_IP)=<span class="hljs-number">3</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">41</span> <br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # bind(<span class="hljs-number">3</span>, &#123;sa_family=AF_INET, sin_port=htons(<span class="hljs-number">80</span>), sin_addr=inet_addr(<span class="hljs-string">&quot;0.0.0.0&quot;</span>)&#125;, <span class="hljs-number">16</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, [<span class="hljs-built_in">rip</span>+socket_addr]<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">16</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">49</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # listen(<span class="hljs-number">3</span>, <span class="hljs-number">0</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">50</span><br>    <span class="hljs-keyword">syscall</span> <br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # accept(<span class="hljs-number">3</span>, NULL, NULL) = <span class="hljs-number">4</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">43</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # read(<span class="hljs-number">4</span>,buf,count_bytes)<br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, buffer<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">256</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, buffer+<span class="hljs-number">4</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rdi</span>, file_path<br><span class="hljs-symbol">loop_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [<span class="hljs-built_in">rsi</span>]<br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">al</span>, <span class="hljs-string">&#x27; &#x27;</span><br>    <span class="hljs-keyword">je</span> get_file_path<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [<span class="hljs-built_in">rdi</span>], <span class="hljs-built_in">al</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rdi</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">jmp</span> loop_start<br><span class="hljs-symbol"></span><br><span class="hljs-symbol">get_file_path:</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rdi</span>, file_path # open(<span class="hljs-string">&quot;file_path&quot;</span>, O_RDONLY)<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">2</span><br>    <span class="hljs-keyword">syscall</span><br>    <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">5</span>              # read(the_file,buf,<span class="hljs-number">256</span>)<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-built_in">rsp</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">256</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">syscall</span> <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r8</span>, <span class="hljs-built_in">rax</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">5</span>      # close(<span class="hljs-number">5</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # write(<span class="hljs-number">4</span>, <span class="hljs-string">&quot;HTTP/1.0 200 OK\r\n\r\n&quot;</span>, <span class="hljs-number">19</span>) = <span class="hljs-number">19</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>,[<span class="hljs-built_in">rip</span> + ret_normal_msg] <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">19</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # write(<span class="hljs-number">4</span>, <span class="hljs-string">&quot;file_buf&quot;</span>, <span class="hljs-built_in">r8</span>)<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-built_in">rsp</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-built_in">r8</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # close(<span class="hljs-number">4</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # accept(<span class="hljs-number">3</span>, NULL, NULL) = <span class="hljs-number">4</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">43</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>,<span class="hljs-number">0</span>       # SYS_exit<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>,<span class="hljs-number">60</span><br>    <span class="hljs-keyword">syscall</span><br><span class="hljs-meta"></span><br><span class="hljs-meta">.section</span> .data<br><span class="hljs-symbol">socket_addr:</span><br><span class="hljs-meta">    .2byte</span> <span class="hljs-number">2</span><br><span class="hljs-meta">    .2byte</span> <span class="hljs-number">0x5000</span><br><span class="hljs-meta">    .4byte</span> <span class="hljs-number">0</span><br><span class="hljs-meta">    .8byte</span> <span class="hljs-number">0</span><br><span class="hljs-symbol">ret_normal_msg:</span><br><span class="hljs-meta">    .ascii</span> <span class="hljs-string">&quot;HTTP/1.0 200 OK\r\n\r\n&quot;</span><br><span class="hljs-symbol">buffer:</span><br><span class="hljs-meta">    .space</span> <span class="hljs-number">256</span><br><span class="hljs-symbol">file_path:</span><br><span class="hljs-meta">    .space</span> <span class="hljs-number">64</span> <br><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level9"><a href="#level9" class="headerlink" title="level9"></a>level9</h4><p>这道题要用fork，经过第七题的拷打之后，简单一些了。</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-meta"></span><br><span class="hljs-meta"></span><br><span class="hljs-meta">.section</span> .text<br><span class="hljs-symbol">_start:</span>     <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">2</span>      # socket(AF_INET, SOCK_STREAM,IPPROTO_IP)=<span class="hljs-number">3</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">41</span> <br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # bind(<span class="hljs-number">3</span>, &#123;sa_family=AF_INET, sin_port=htons(<span class="hljs-number">80</span>), sin_addr=inet_addr(<span class="hljs-string">&quot;0.0.0.0&quot;</span>)&#125;, <span class="hljs-number">16</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, [<span class="hljs-built_in">rip</span>+socket_addr]<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">16</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">49</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # listen(<span class="hljs-number">3</span>, <span class="hljs-number">0</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">50</span><br>    <span class="hljs-keyword">syscall</span> <br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # accept(<span class="hljs-number">3</span>, NULL, NULL) = <span class="hljs-number">4</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">43</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">57</span>     # fork()<br>    <span class="hljs-keyword">syscall</span><br>    <br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">je</span> child_process<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # close(<span class="hljs-number">4</span>)<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # accept(<span class="hljs-number">3</span>, NULL, NULL) = <span class="hljs-number">4</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">43</span><br>    <span class="hljs-keyword">syscall</span><br>    <span class="hljs-keyword">jmp</span> done<br><span class="hljs-symbol"></span><br><span class="hljs-symbol">child_process:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # close(<span class="hljs-number">3</span>)<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">syscall</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # read(<span class="hljs-number">4</span>,buf,count_bytes)<br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, buffer<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">256</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, buffer+<span class="hljs-number">4</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rdi</span>, file_path<br><span class="hljs-symbol">loop_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [<span class="hljs-built_in">rsi</span>]<br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">al</span>, <span class="hljs-string">&#x27; &#x27;</span><br>    <span class="hljs-keyword">je</span> get_file_path<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [<span class="hljs-built_in">rdi</span>], <span class="hljs-built_in">al</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rdi</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">jmp</span> loop_start<br><span class="hljs-symbol"></span><br><span class="hljs-symbol">get_file_path:</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rdi</span>, file_path # open(<span class="hljs-string">&quot;file_path&quot;</span>, O_RDONLY)<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">2</span><br>    <span class="hljs-keyword">syscall</span><br>    <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>              # read(the_file,buf,<span class="hljs-number">256</span>)<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-built_in">rsp</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">256</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">syscall</span> <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r8</span>, <span class="hljs-built_in">rax</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # close(<span class="hljs-number">5</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # write(<span class="hljs-number">4</span>, <span class="hljs-string">&quot;HTTP/1.0 200 OK\r\n\r\n&quot;</span>, <span class="hljs-number">19</span>) = <span class="hljs-number">19</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>,[<span class="hljs-built_in">rip</span> + ret_normal_msg] <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">19</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # write(<span class="hljs-number">4</span>, <span class="hljs-string">&quot;file_buf&quot;</span>, <span class="hljs-built_in">r8</span>)<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-built_in">rsp</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-built_in">r8</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # close(<span class="hljs-number">4</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # accept(<span class="hljs-number">3</span>, NULL, NULL) = <span class="hljs-number">4</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">43</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>,<span class="hljs-number">0</span>       # SYS_exit<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>,<span class="hljs-number">60</span><br>    <span class="hljs-keyword">syscall</span><br><span class="hljs-symbol"></span><br><span class="hljs-symbol">done:</span><br><span class="hljs-meta">    </span><br><span class="hljs-meta">.section</span> .data<br><span class="hljs-symbol">socket_addr:</span><br><span class="hljs-meta">    .2byte</span> <span class="hljs-number">2</span><br><span class="hljs-meta">    .2byte</span> <span class="hljs-number">0x5000</span><br><span class="hljs-meta">    .4byte</span> <span class="hljs-number">0</span><br><span class="hljs-meta">    .8byte</span> <span class="hljs-number">0</span><br><span class="hljs-symbol">ret_normal_msg:</span><br><span class="hljs-meta">    .ascii</span> <span class="hljs-string">&quot;HTTP/1.0 200 OK\r\n\r\n&quot;</span><br><span class="hljs-symbol">buffer:</span><br><span class="hljs-meta">    .space</span> <span class="hljs-number">256</span><br><span class="hljs-symbol">file_path:</span><br><span class="hljs-meta">    .space</span> <span class="hljs-number">64</span> <br><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level10"><a href="#level10" class="headerlink" title="level10"></a>level10</h4><p>这一关，还挺折磨的。对于客户端发来的信息：</p>
+<figure class="highlight nix"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs nix"><span class="hljs-string">&quot;POST /tmp/tmpgjb407yq HTTP/1.1<span class="hljs-char escape_">\r</span><span class="hljs-char escape_">\n</span>Host: localhost<span class="hljs-char escape_">\r</span><span class="hljs-char escape_">\n</span>User-Agent: python-requests/2.32.3<span class="hljs-char escape_">\r</span><span class="hljs-char escape_">\n</span>Accept-Encoding: gzip, deflate, zstd<span class="hljs-char escape_">\r</span><span class="hljs-char escape_">\n</span>Accept: */*<span class="hljs-char escape_">\r</span><span class="hljs-char escape_">\n</span>Connection: keep-alive<span class="hljs-char escape_">\r</span><span class="hljs-char escape_">\n</span>Content-Length: 65<span class="hljs-char escape_">\r</span><span class="hljs-char escape_">\n</span><span class="hljs-char escape_">\r</span><span class="hljs-char escape_">\n</span>K8rWGbWjWUycQmhKDinJRKVnmTd1ssEfnNbxuzygIK4l1pIVgCGgSx0Kdr3xqIFWK&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p>需要解析出length和这个随机字符串。因为后续需要通过write写入文件<code>/tmp/xxx</code>。所以，我想到的方法是将这个字符串存入buffer，然后从buffer的最后一个字节开始逆序遍历，到第一个<code>\n</code>停止。这样可以拿到这个随机字符串的逆序，以及用一个寄存器记录一下长度。后续再通过这个长度来再一次逆序这个随机字符串，从而写入<code>/tmp/xxx</code>。最终代码如下：</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-meta"></span><br><span class="hljs-meta"></span><br><span class="hljs-meta">.section</span> .text<br><span class="hljs-symbol">_start:</span>     <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">2</span>      # socket(AF_INET, SOCK_STREAM,IPPROTO_IP)=<span class="hljs-number">3</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">41</span> <br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # bind(<span class="hljs-number">3</span>, &#123;sa_family=AF_INET, sin_port=htons(<span class="hljs-number">80</span>), sin_addr=inet_addr(<span class="hljs-string">&quot;0.0.0.0&quot;</span>)&#125;, <span class="hljs-number">16</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, [<span class="hljs-built_in">rip</span>+socket_addr]<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">16</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">49</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # listen(<span class="hljs-number">3</span>, <span class="hljs-number">0</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">50</span><br>    <span class="hljs-keyword">syscall</span> <br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # accept(<span class="hljs-number">3</span>, NULL, NULL) = <span class="hljs-number">4</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">43</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">57</span>     # fork()<br>    <span class="hljs-keyword">syscall</span><br>    <br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">je</span> child_process<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # close(<span class="hljs-number">4</span>)<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # accept(<span class="hljs-number">3</span>, NULL, NULL) = <span class="hljs-number">4</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">43</span><br>    <span class="hljs-keyword">syscall</span><br>    <span class="hljs-keyword">jmp</span> done<br><span class="hljs-symbol"></span><br><span class="hljs-symbol">child_process:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # close(<span class="hljs-number">3</span>)<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">syscall</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # read(<span class="hljs-number">4</span>,buf,count_bytes)<br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, buffer<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">512</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">syscall</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r8</span>, <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, buffer+<span class="hljs-number">5</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rdi</span>, file_path<br><span class="hljs-symbol">loop_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [<span class="hljs-built_in">rsi</span>]<br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">al</span>, <span class="hljs-number">0x20</span><br>    <span class="hljs-keyword">je</span> get_file_path<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [<span class="hljs-built_in">rdi</span>], <span class="hljs-built_in">al</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rdi</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">jmp</span> loop_start<br><span class="hljs-symbol"></span><br><span class="hljs-symbol">get_file_path:</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rdi</span>, file_path  # open(<span class="hljs-string">&quot;file_path&quot;</span>, O_WRONLY|O_CREAT, <span class="hljs-number">0777</span>)<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">01</span>|<span class="hljs-number">0100</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0x1FF</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">2</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rdi</span>, content<br>    <span class="hljs-keyword">dec</span> <span class="hljs-built_in">r8</span><br><span class="hljs-symbol"></span><br><span class="hljs-symbol">loop2_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [buffer + <span class="hljs-built_in">r8</span>]<br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">al</span>, <span class="hljs-number">0xa</span><br>    <span class="hljs-keyword">je</span> get_content_str<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [<span class="hljs-built_in">rdi</span>], <span class="hljs-built_in">al</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rdi</span><br>    <span class="hljs-keyword">dec</span> <span class="hljs-built_in">r8</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rbx</span><br>    <span class="hljs-keyword">jmp</span> loop2_start<br><span class="hljs-symbol"></span><br><span class="hljs-symbol">get_content_str:</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rdi</span>, reverse_content<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r9</span>, <span class="hljs-built_in">rbx</span><br>    <span class="hljs-keyword">dec</span> <span class="hljs-built_in">r9</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rcx</span>, <span class="hljs-number">0</span><br><span class="hljs-symbol">loop3_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [content + <span class="hljs-built_in">r9</span>]<br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">rcx</span>, <span class="hljs-built_in">rbx</span><br>    <span class="hljs-keyword">je</span> get_reverse_str<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [<span class="hljs-built_in">rdi</span>], <span class="hljs-built_in">al</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rdi</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rcx</span><br>    <span class="hljs-keyword">dec</span> <span class="hljs-built_in">r9</span><br>    <span class="hljs-keyword">jmp</span> loop3_start<br><span class="hljs-symbol">get_reverse_str:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # write(<span class="hljs-number">3</span>, content, content_length)<br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, reverse_content<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-built_in">rbx</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">syscall</span><br>    <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # close(<span class="hljs-number">3</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # write(<span class="hljs-number">4</span>, <span class="hljs-string">&quot;HTTP/1.0 200 OK\r\n\r\n&quot;</span>, <span class="hljs-number">19</span>) = <span class="hljs-number">19</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>,[<span class="hljs-built_in">rip</span> + ret_normal_msg] <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">19</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>,<span class="hljs-number">0</span>       # SYS_exit<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>,<span class="hljs-number">60</span><br>    <span class="hljs-keyword">syscall</span><br><span class="hljs-symbol"></span><br><span class="hljs-symbol">done:</span><br><span class="hljs-meta"></span><br><span class="hljs-meta">.section</span> .data<br><span class="hljs-symbol">socket_addr:</span><br><span class="hljs-meta">    .2byte</span> <span class="hljs-number">2</span><br><span class="hljs-meta">    .2byte</span> <span class="hljs-number">0x5000</span><br><span class="hljs-meta">    .4byte</span> <span class="hljs-number">0</span><br><span class="hljs-meta">    .8byte</span> <span class="hljs-number">0</span><br><span class="hljs-symbol">ret_normal_msg:</span><br><span class="hljs-meta">    .ascii</span> <span class="hljs-string">&quot;HTTP/1.0 200 OK\r\n\r\n&quot;</span><br><span class="hljs-symbol">buffer:</span><br><span class="hljs-meta">    .space</span> <span class="hljs-number">512</span><br><span class="hljs-symbol">file_path:</span><br><span class="hljs-meta">    .space</span> <span class="hljs-number">64</span> <br><span class="hljs-symbol">content:</span><br><span class="hljs-meta">    .space</span> <span class="hljs-number">256</span><br><span class="hljs-symbol">reverse_content:</span><br><span class="hljs-meta">    .space</span> <span class="hljs-number">256</span><br><br></code></pre></td></tr></table></figure>
+
+<p>总共三个循环，还是挺复杂的。主要是有更简单的方法。<code>!</code>使用<code>\n</code>的索引即可。如下：</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-meta"></span><br><span class="hljs-meta"></span><br><span class="hljs-meta">.section</span> .text<br><span class="hljs-symbol">_start:</span>     <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">2</span>      # socket(AF_INET, SOCK_STREAM,IPPROTO_IP)=<span class="hljs-number">3</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">41</span> <br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # bind(<span class="hljs-number">3</span>, &#123;sa_family=AF_INET, sin_port=htons(<span class="hljs-number">80</span>), sin_addr=inet_addr(<span class="hljs-string">&quot;0.0.0.0&quot;</span>)&#125;, <span class="hljs-number">16</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, [<span class="hljs-built_in">rip</span>+socket_addr]<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">16</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">49</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # listen(<span class="hljs-number">3</span>, <span class="hljs-number">0</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">50</span><br>    <span class="hljs-keyword">syscall</span> <br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # accept(<span class="hljs-number">3</span>, NULL, NULL) = <span class="hljs-number">4</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">43</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">57</span>     # fork()<br>    <span class="hljs-keyword">syscall</span><br>    <br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">je</span> child_process<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # close(<span class="hljs-number">4</span>)<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # accept(<span class="hljs-number">3</span>, NULL, NULL) = <span class="hljs-number">4</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">43</span><br>    <span class="hljs-keyword">syscall</span><br>    <span class="hljs-keyword">jmp</span> done<br><span class="hljs-symbol"></span><br><span class="hljs-symbol">child_process:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # close(<span class="hljs-number">3</span>)<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">syscall</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # read(<span class="hljs-number">4</span>,buf,count_bytes)<br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, buffer<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">512</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">syscall</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r10</span>, <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, buffer+<span class="hljs-number">5</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rdi</span>, file_path<br><span class="hljs-symbol">loop_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [<span class="hljs-built_in">rsi</span>]<br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">al</span>, <span class="hljs-number">0x20</span><br>    <span class="hljs-keyword">je</span> get_file_path<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [<span class="hljs-built_in">rdi</span>], <span class="hljs-built_in">al</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rdi</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">jmp</span> loop_start<br><span class="hljs-symbol"></span><br><span class="hljs-symbol">get_file_path:</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rdi</span>, file_path  # open(<span class="hljs-string">&quot;file_path&quot;</span>, O_WRONLY|O_CREAT, <span class="hljs-number">0777</span>)<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">01</span>|<span class="hljs-number">0100</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0x1FF</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">2</span><br>    <span class="hljs-keyword">syscall</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r12</span>, <span class="hljs-number">8</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r8</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r9</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, buffer<br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rdi</span>, content<br><span class="hljs-symbol">loop2_start:</span><br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">r8</span>, <span class="hljs-built_in">r12</span><br>    <span class="hljs-keyword">jge</span> get_content<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [<span class="hljs-built_in">rsi</span>]<br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">r9</span><br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">al</span>, <span class="hljs-string">&#x27;\n&#x27;</span><br>    <span class="hljs-keyword">je</span> get_index <br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">jmp</span> loop2_start<br><span class="hljs-symbol">get_index:</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">r8</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">jmp</span> loop2_start<br><span class="hljs-symbol">get_content:</span><br>    <span class="hljs-keyword">sub</span> <span class="hljs-built_in">r10</span>, <span class="hljs-built_in">r9</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # write(<span class="hljs-number">3</span>, content, content_length)<br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, buffer<br>    <span class="hljs-keyword">add</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-built_in">r9</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-built_in">r10</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">syscall</span><br>    <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # close(<span class="hljs-number">3</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # write(<span class="hljs-number">4</span>, <span class="hljs-string">&quot;HTTP/1.0 200 OK\r\n\r\n&quot;</span>, <span class="hljs-number">19</span>) = <span class="hljs-number">19</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>,[<span class="hljs-built_in">rip</span> + ret_normal_msg] <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">19</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>,<span class="hljs-number">0</span>       # SYS_exit<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>,<span class="hljs-number">60</span><br>    <span class="hljs-keyword">syscall</span><br><span class="hljs-symbol"></span><br><span class="hljs-symbol">done:</span><br><span class="hljs-meta"></span><br><span class="hljs-meta">.section</span> .data<br><span class="hljs-symbol">socket_addr:</span><br><span class="hljs-meta">    .2byte</span> <span class="hljs-number">2</span><br><span class="hljs-meta">    .2byte</span> <span class="hljs-number">0x5000</span><br><span class="hljs-meta">    .4byte</span> <span class="hljs-number">0</span><br><span class="hljs-meta">    .8byte</span> <span class="hljs-number">0</span><br><span class="hljs-symbol">ret_normal_msg:</span><br><span class="hljs-meta">    .ascii</span> <span class="hljs-string">&quot;HTTP/1.0 200 OK\r\n\r\n&quot;</span><br><span class="hljs-symbol">buffer:</span><br><span class="hljs-meta">    .space</span> <span class="hljs-number">512</span><br><span class="hljs-symbol">file_path:</span><br><span class="hljs-meta">    .space</span> <span class="hljs-number">64</span> <br><span class="hljs-symbol">content:</span><br><span class="hljs-meta">    .space</span> <span class="hljs-number">256</span><br><span class="hljs-symbol">reverse_content:</span><br><span class="hljs-meta">    .space</span> <span class="hljs-number">256</span><br></code></pre></td></tr></table></figure>
+
+<h4 id="level11"><a href="#level11" class="headerlink" title="level11"></a>level11</h4><p>这道题的关键就是多线程，也就是父进程需要不断地接收新的连接，并fork出子进程来处理这个连接，然后再接收新的连接，再fork出子进程来处理。因此，子进程部分就是level9和level10的结合。额外加一个循环，让父进程不断地accept和fork就好了。</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-meta"></span><br><span class="hljs-meta"></span><br><span class="hljs-meta">.section</span> .text<br><span class="hljs-symbol">_start:</span>     <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">2</span>      # socket(AF_INET, SOCK_STREAM,IPPROTO_IP)=<span class="hljs-number">3</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">41</span> <br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # bind(<span class="hljs-number">3</span>, &#123;sa_family=AF_INET, sin_port=htons(<span class="hljs-number">80</span>), sin_addr=inet_addr(<span class="hljs-string">&quot;0.0.0.0&quot;</span>)&#125;, <span class="hljs-number">16</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, [<span class="hljs-built_in">rip</span>+socket_addr]<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">16</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">49</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # listen(<span class="hljs-number">3</span>, <span class="hljs-number">0</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">50</span><br>    <span class="hljs-keyword">syscall</span> <br><span class="hljs-symbol">loop_accept:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # accept(<span class="hljs-number">3</span>, NULL, NULL) = <span class="hljs-number">4</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">43</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">57</span>     # fork()<br>    <span class="hljs-keyword">syscall</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r8</span>, <span class="hljs-built_in">rax</span><br>	<span class="hljs-keyword">cmp</span> <span class="hljs-built_in">r8</span>, <span class="hljs-number">0</span><br>	<span class="hljs-keyword">jne</span> parent_process<br>	<span class="hljs-keyword">cmp</span> <span class="hljs-built_in">r8</span>, <span class="hljs-number">0</span><br>	<span class="hljs-keyword">je</span> child_process<br><span class="hljs-symbol"></span><br><span class="hljs-symbol">child_process:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # close(<span class="hljs-number">3</span>)<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">syscall</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # read(<span class="hljs-number">4</span>,buf,count_bytes)<br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, buffer<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">512</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">syscall</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r15</span>, <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [buffer]<br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">al</span>, <span class="hljs-string">&#x27;P&#x27;</span><br>    <span class="hljs-keyword">je</span> post_request<br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">al</span>, <span class="hljs-string">&#x27;G&#x27;</span><br>    <span class="hljs-keyword">je</span> get_request<br><span class="hljs-symbol"></span><br><span class="hljs-symbol">get_request:</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, buffer+<span class="hljs-number">4</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rdi</span>, file_path_get<br><span class="hljs-symbol">loop_start_get:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [<span class="hljs-built_in">rsi</span>]<br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">al</span>, <span class="hljs-string">&#x27; &#x27;</span><br>    <span class="hljs-keyword">je</span> get_file_path_get<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [<span class="hljs-built_in">rdi</span>], <span class="hljs-built_in">al</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rdi</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">jmp</span> loop_start_get<br><span class="hljs-symbol"></span><br><span class="hljs-symbol">get_file_path_get:</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rdi</span>, file_path_get # open<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">2</span><br>    <span class="hljs-keyword">syscall</span><br>    <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>              # read<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-built_in">rsp</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">256</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">syscall</span> <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r8</span>, <span class="hljs-built_in">rax</span><br><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # write(<span class="hljs-number">4</span>, <span class="hljs-string">&quot;HTTP/1.0 200 OK\r\n\r\n&quot;</span>, <span class="hljs-number">19</span>) = <span class="hljs-number">19</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>,[<span class="hljs-built_in">rip</span> + ret_normal_msg] <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">19</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-built_in">rsp</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-built_in">r8</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">syscall</span><br><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>,<span class="hljs-number">0</span>       # SYS_exit<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>,<span class="hljs-number">60</span><br>    <span class="hljs-keyword">syscall</span>    <br><span class="hljs-symbol"></span><br><span class="hljs-symbol"></span><br><span class="hljs-symbol"></span><br><span class="hljs-symbol">post_request:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r10</span>, <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, buffer+<span class="hljs-number">5</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rdi</span>, file_path<br><span class="hljs-symbol">loop_start_post:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [<span class="hljs-built_in">rsi</span>]<br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">al</span>, <span class="hljs-number">0x20</span><br>    <span class="hljs-keyword">je</span> get_file_path_post<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [<span class="hljs-built_in">rdi</span>], <span class="hljs-built_in">al</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rdi</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">jmp</span> loop_start_post<br><span class="hljs-symbol"></span><br><span class="hljs-symbol">get_file_path_post:</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rdi</span>, file_path  # open(<span class="hljs-string">&quot;file_path&quot;</span>, O_WRONLY|O_CREAT, <span class="hljs-number">0777</span>)<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">01</span>|<span class="hljs-number">0100</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0x1FF</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">2</span><br>    <span class="hljs-keyword">syscall</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r12</span>, <span class="hljs-number">8</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r8</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r9</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, buffer<br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rdi</span>, content<br><span class="hljs-symbol">loop2_start_post:</span><br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">r8</span>, <span class="hljs-built_in">r12</span><br>    <span class="hljs-keyword">jge</span> get_content<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [<span class="hljs-built_in">rsi</span>]<br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">r9</span><br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">al</span>, <span class="hljs-string">&#x27;\n&#x27;</span><br>    <span class="hljs-keyword">je</span> get_index <br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">jmp</span> loop2_start_post<br><span class="hljs-symbol">get_index:</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">r8</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">jmp</span> loop2_start_post<br><span class="hljs-symbol">get_content:</span><br>    <span class="hljs-keyword">sub</span> <span class="hljs-built_in">r15</span>, <span class="hljs-built_in">r9</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # write(<span class="hljs-number">3</span>, content, content_length)<br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>, buffer<br>    <span class="hljs-keyword">add</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-built_in">r9</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-built_in">r15</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">syscall</span><br>    <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">3</span>      # close(<span class="hljs-number">3</span>) = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span>      # write(<span class="hljs-number">4</span>, <span class="hljs-string">&quot;HTTP/1.0 200 OK\r\n\r\n&quot;</span>, <span class="hljs-number">19</span>) = <span class="hljs-number">19</span><br>    <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rsi</span>,[<span class="hljs-built_in">rip</span> + ret_normal_msg] <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">19</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>,<span class="hljs-number">0</span>       # SYS_exit<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>,<span class="hljs-number">60</span><br>    <span class="hljs-keyword">syscall</span><br><span class="hljs-symbol"></span><br><span class="hljs-symbol">parent_process:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">4</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">syscall</span><br>    <span class="hljs-keyword">jmp</span> loop_accept<br><span class="hljs-meta"></span><br><span class="hljs-meta"></span><br><span class="hljs-meta">.section</span> .data<br><span class="hljs-symbol">socket_addr:</span><br><span class="hljs-meta">    .2byte</span> <span class="hljs-number">2</span><br><span class="hljs-meta">    .2byte</span> <span class="hljs-number">0x5000</span><br><span class="hljs-meta">    .4byte</span> <span class="hljs-number">0</span><br><span class="hljs-meta">    .8byte</span> <span class="hljs-number">0</span><br><span class="hljs-symbol">ret_normal_msg:</span><br><span class="hljs-meta">    .ascii</span> <span class="hljs-string">&quot;HTTP/1.0 200 OK\r\n\r\n&quot;</span><br><span class="hljs-symbol">buffer:</span><br><span class="hljs-meta">    .space</span> <span class="hljs-number">512</span><br><span class="hljs-symbol">file_path:</span><br><span class="hljs-meta">    .space</span> <span class="hljs-number">64</span> <br><span class="hljs-symbol">file_path_get:</span><br><span class="hljs-meta">    .space</span> <span class="hljs-number">64</span><br><span class="hljs-symbol">content:</span><br><span class="hljs-meta">    .space</span> <span class="hljs-number">256</span><br><span class="hljs-symbol">reverse_content:</span><br><span class="hljs-meta">    .space</span> <span class="hljs-number">256</span><br><br></code></pre></td></tr></table></figure>
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Pwn/" class="category-chain-item">Pwn</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Pwn/" class="print-no-link">#Pwn</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>pwn.college: Dealing with Data</div>
+      <div>https://loboq1ng.github.io/2024/11/10/pwn-college-Building-a-Web-Server/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Lobo Q1ng</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年11月10日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2025/02/24/pwn-college-Talking-Web/" title="pwn.college: Talking Web">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">pwn.college: Talking Web</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/09/12/pwn-college-Dealing-with-Data/" title="pwn.college: Dealing with Data">
+                        <span class="hidden-mobile">pwn.college: Dealing with Data</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

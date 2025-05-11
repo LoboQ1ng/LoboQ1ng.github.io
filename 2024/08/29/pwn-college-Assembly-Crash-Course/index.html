@@ -1,0 +1,849 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/Pi.png">
+  <link rel="icon" href="/img/Pi.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Lobo Q1ng">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="Assembly Crash Course1. set-register要求：rdi &#x3D; 0x1337 1234.intel_syntax noprefix.global _start_start:mov rdi, 0x1337    2. set-multiple-registersIn this level, you will work with multiple registers. Ple">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pwn.college: Assembly Crash Course">
+<meta property="og:url" content="https://loboq1ng.github.io/2024/08/29/pwn-college-Assembly-Crash-Course/index.html">
+<meta property="og:site_name" content="Q1ng&#39;s blog">
+<meta property="og:description" content="Assembly Crash Course1. set-register要求：rdi &#x3D; 0x1337 1234.intel_syntax noprefix.global _start_start:mov rdi, 0x1337    2. set-multiple-registersIn this level, you will work with multiple registers. Ple">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-08-29T12:35:55.000Z">
+<meta property="article:modified_time" content="2025-05-11T08:55:29.431Z">
+<meta property="article:author" content="Lobo Q1ng">
+<meta property="article:tag" content="Pwn">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>pwn.college: Assembly Crash Course - Q1ng&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"loboq1ng.github.io","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Q1ng&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/Townscaper.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="pwn.college: Assembly Crash Course"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-08-29 20:35" pubdate>
+          2024年8月29日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          16 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">pwn.college: Assembly Crash Course</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h3 id="Assembly-Crash-Course"><a href="#Assembly-Crash-Course" class="headerlink" title="Assembly Crash Course"></a>Assembly Crash Course</h3><h4 id="1-set-register"><a href="#1-set-register" class="headerlink" title="1. set-register"></a>1. set-register</h4><p>要求：<code>rdi = 0x1337</code></p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br><span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">0x1337</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="2-set-multiple-registers"><a href="#2-set-multiple-registers" class="headerlink" title="2. set-multiple-registers"></a>2. set-multiple-registers</h4><p>In this level, you will work with multiple registers. Please set the following:</p>
+<ul>
+<li><code>rax = 0x1337</code></li>
+<li><code>r12 = 0xCAFED00D1337BEEF</code></li>
+<li><code>rsp = 0x31337</code></li>
+</ul>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br><span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0x1337</span><br><span class="hljs-keyword">mov</span> <span class="hljs-built_in">r12</span>, <span class="hljs-number">0xCAFED00D1337BEEF</span><br><span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsp</span>, <span class="hljs-number">0x31337</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="3-add-to-register"><a href="#3-add-to-register" class="headerlink" title="3. add-to-register"></a>3. add-to-register</h4><p>Do the following:</p>
+<ul>
+<li>Add <code>0x331337</code> to <code>rdi</code></li>
+</ul>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br><span class="hljs-keyword">add</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">0x331337</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="4-linear-equation-registers"><a href="#4-linear-equation-registers" class="headerlink" title="4. linear-equation-registers"></a>4. linear-equation-registers</h4><figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br><span class="hljs-keyword">imul</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-built_in">rsi</span><br><span class="hljs-keyword">add</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-built_in">rdi</span><br><span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rdx</span><br><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="5-integer-division"><a href="#5-integer-division" class="headerlink" title="5. integer-division"></a>5. integer-division</h4><figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br><span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rdi</span><br><span class="hljs-keyword">div</span> <span class="hljs-built_in">rsi</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="6-modulo-operation"><a href="#6-modulo-operation" class="headerlink" title="6. modulo-operation"></a>6. modulo-operation</h4><p>div操作之后，余数会被存于rdx(dx)中。</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br><span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rdi</span><br><span class="hljs-keyword">div</span> <span class="hljs-built_in">rsi</span><br><span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rdx</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="7-set-upper-byte"><a href="#7-set-upper-byte" class="headerlink" title="7. set-upper-byte"></a>7. set-upper-byte</h4><figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-section">MSB                                    LSB</span><br><span class="hljs-section">+----------------------------------------+</span><br><span class="hljs-section">|                   rax                  |</span><br><span class="hljs-section">+--------------------+-------------------+</span><br><span class="hljs-code">                     |        eax        |</span><br><span class="hljs-code">                     +---------+---------+</span><br><span class="hljs-code">                               |   ax    |</span><br><span class="hljs-code">                               +----+----+</span><br><span class="hljs-code">                               | ah | al |</span><br><span class="hljs-code">                               +----+----+</span><br></code></pre></td></tr></table></figure>
+
+<p>Using only one move instruction, please set the upper 8 bits of the <code>ax</code> register to <code>0x42</code>.</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br><span class="hljs-keyword">mov</span> <span class="hljs-number">ah</span>, <span class="hljs-number">0x42</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="8-efficient-modulo"><a href="#8-efficient-modulo" class="headerlink" title="8. efficient-modulo"></a>8. efficient-modulo</h4><p>Using only the following instruction(s):</p>
+<ul>
+<li><code>mov</code></li>
+</ul>
+<p>Please compute the following:</p>
+<ul>
+<li><code>rax = rdi % 256</code></li>
+<li><code>rbx = rsi % 65536</code></li>
+</ul>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br><span class="hljs-keyword">mov</span> <span class="hljs-built_in">rcx</span>, <span class="hljs-built_in">rdi</span><br><span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-built_in">cl</span><br><span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-built_in">rsi</span><br><span class="hljs-keyword">mov</span> <span class="hljs-built_in">bx</span>, <span class="hljs-built_in">dx</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="9-byte-extraction"><a href="#9-byte-extraction" class="headerlink" title="9. byte-extraction"></a>9. byte-extraction</h4><p><code>shl</code>指令：</p>
+<figure class="highlight llvm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs llvm"><span class="hljs-comment">;rax = 10001010</span><br><span class="hljs-keyword">shl</span> al<span class="hljs-punctuation">,</span> <span class="hljs-number">1</span><br><span class="hljs-comment">;al = 00010100</span><br></code></pre></td></tr></table></figure>
+
+<p>exp:</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br><span class="hljs-keyword">shr</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">32</span><br><span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-built_in">rdi</span><br><span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, <span class="hljs-built_in">bl</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="10-bitwise-and"><a href="#10-bitwise-and" class="headerlink" title="10. bitwise-and"></a>10. bitwise-and</h4><p>如果不使用以下说明：<code>mov</code>、<code>xchg</code>，请执行以下操作：<br>将 <code>rax</code> 设置为 <code>（rdi AND rsi）</code> 的值</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br><span class="hljs-keyword">and</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-built_in">rsi</span><br><span class="hljs-keyword">and</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0</span><br><span class="hljs-keyword">xor</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rdi</span><br></code></pre></td></tr></table></figure>
+
+
+
+
+
+<h4 id="11-check-even"><a href="#11-check-even" class="headerlink" title="11. check-even"></a>11. check-even</h4><figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">and</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">and</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">1</span><br>    <span class="hljs-keyword">xor</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rdi</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="12-memory-read"><a href="#12-memory-read" class="headerlink" title="12. memory-read"></a>12. memory-read</h4><p>请执行以下操作：将存储在 <code>0x404000</code> 的值放入 <code>rax</code> 中。确保 <code>rax</code> 中的值是存储在 <code>0x404000</code> 的原始值。</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, [<span class="hljs-number">0x404000</span>]<br><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="13-memory-write"><a href="#13-memory-write" class="headerlink" title="13. memory-write"></a>13. memory-write</h4><figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">mov</span> [<span class="hljs-number">0x404000</span>], <span class="hljs-built_in">rax</span><br><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="14-memory-increment"><a href="#14-memory-increment" class="headerlink" title="14. memory-increment"></a>14. memory-increment</h4><figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, [<span class="hljs-number">0x404000</span>]<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span> , <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">add</span> <span class="hljs-built_in">rbx</span> , <span class="hljs-number">0x1337</span><br>    <span class="hljs-keyword">mov</span> [<span class="hljs-number">0x404000</span>], <span class="hljs-built_in">rbx</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="15-byte-access"><a href="#15-byte-access" class="headerlink" title="15. byte-access"></a>15. byte-access</h4><p>Here is the breakdown of the names of memory sizes:<br>以下是内存大小名称的细分：</p>
+<ul>
+<li>Quad Word &#x3D; 8 Bytes &#x3D; 64 bits<br>四字 &#x3D; 8 字节 &#x3D; 64 位</li>
+<li>Double Word &#x3D; 4 bytes &#x3D; 32 bits<br>双字 &#x3D; 4 字节 &#x3D; 32 位</li>
+<li>Word &#x3D; 2 bytes &#x3D; 16 bits<br>字 &#x3D; 2 字节 &#x3D; 16 位</li>
+<li>Byte &#x3D; 1 byte &#x3D; 8 bits<br>字节 &#x3D; 1 字节 &#x3D; 8 位</li>
+</ul>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, [<span class="hljs-number">0x404000</span>]<br></code></pre></td></tr></table></figure>
+
+<p>在 x86_64 中，您可以在取消引用地址时访问这些大小，就像使用更大或更小的 register 访问一样：</p>
+<ul>
+<li><code>mov al, [address]</code> &lt;&#x3D;&gt; moves the least significant byte from address to <code>rax</code><br><code>mov al， [address]</code> &lt;&#x3D;&gt; 将最低有效字节从 address 移动到 <code>rax</code></li>
+<li><code>mov ax, [address]</code> &lt;&#x3D;&gt; moves the least significant word from address to <code>rax</code><br><code>mov ax， [address]</code> &lt;&#x3D;&gt; 将最低有效字从 address 移动到 <code>rax</code></li>
+<li><code>mov eax, [address]</code> &lt;&#x3D;&gt; moves the least significant double word from address to <code>rax</code><br><code>mov eax， [address]</code> &lt;&#x3D;&gt; 将最低有效双字从 address 移动到 <code>rax</code></li>
+<li><code>mov rax, [address]</code> &lt;&#x3D;&gt; moves the full quad word from address to <code>rax</code><br><code>mov rax， [address]</code> &lt;&#x3D;&gt; 将完整的四元字从 address 移动到 <code>rax</code></li>
+</ul>
+<h4 id="16-memory-size-access"><a href="#16-memory-size-access" class="headerlink" title="16. memory-size-access"></a>16. memory-size-access</h4><figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">al</span>, [<span class="hljs-number">0x404000</span>]<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">bx</span>, [<span class="hljs-number">0x404000</span>]<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">ecx</span>, [<span class="hljs-number">0x404000</span>]<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, [<span class="hljs-number">0x404000</span>]<br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="17-little-endian-write"><a href="#17-little-endian-write" class="headerlink" title="17. little-endian-write"></a>17. little-endian-write</h4><p>值得注意的是，值的存储顺序与我们表示它们的顺序相反。example:</p>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs abnf"><span class="hljs-comment">;[0x1330] = 0x00000000deadc0de</span><br><span class="hljs-comment">; 检查它在内存中的实际存储情况：</span><br><span class="hljs-comment">;[0x1330] = 0xde</span><br><span class="hljs-comment">;[0x1331] = 0xc0</span><br><span class="hljs-comment">;[0x1332] = 0xad</span><br><span class="hljs-comment">;[0x1333] = 0xde</span><br><span class="hljs-comment">;[0x1334] = 0x00</span><br><span class="hljs-comment">;[0x1335] = 0x00</span><br><span class="hljs-comment">;[0x1336] = 0x00</span><br><span class="hljs-comment">;[0x1337] = 0x00</span><br></code></pre></td></tr></table></figure>
+
+<p>这就是小端存储（Little Endian）。</p>
+<p>exp</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0xdeadbeef00001337</span><br>    <span class="hljs-keyword">mov</span> [<span class="hljs-built_in">rdi</span>], <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0xc0ffee0000</span><br>    <span class="hljs-keyword">mov</span> [<span class="hljs-built_in">rsi</span>], <span class="hljs-built_in">rax</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="18-memory-sum"><a href="#18-memory-sum" class="headerlink" title="18. memory-sum"></a>18. memory-sum</h4><p>内存是连续存储的，因此可以使用偏移量来获取指定字节。例如：</p>
+<figure class="highlight prolog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs prolog">;[<span class="hljs-number">0x1337</span>] = <span class="hljs-number">0x00000000deadbeef</span><br>;[<span class="hljs-number">0x1337</span>] = <span class="hljs-number">0xef</span><br>;[<span class="hljs-number">0x1337</span> + <span class="hljs-number">1</span>] = <span class="hljs-number">0xbe</span><br>;[<span class="hljs-number">0x1337</span> + <span class="hljs-number">2</span>] = <span class="hljs-number">0xad</span><br>...<br>;[<span class="hljs-number">0x1337</span> + <span class="hljs-number">7</span>] = <span class="hljs-number">0x00</span><br>; 假设我需要访问某个地址的第<span class="hljs-number">5</span>个字节。那么可以：<br>mov al, [address+<span class="hljs-number">4</span>]<br></code></pre></td></tr></table></figure>
+
+<p>题目要求：</p>
+<ul>
+<li>Load two consecutive quad words from the address stored in <code>rdi</code>.<br>从存储在 <code>rdi</code> 中的地址加载两个连续的四字。</li>
+<li>Calculate the sum of the previous steps’ quad words.<br>计算前面步骤的四边形词的总和。</li>
+<li>Store the sum at the address in <code>rsi</code>.<br>将总和存储在 <code>rsi</code> 中的地址。</li>
+</ul>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, [<span class="hljs-built_in">rdi</span>]<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span>, [<span class="hljs-built_in">rdi</span>+<span class="hljs-number">8</span>]<br>    <span class="hljs-keyword">add</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rbx</span><br>    <span class="hljs-keyword">mov</span> [<span class="hljs-built_in">rsi</span>], <span class="hljs-built_in">rax</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="19-stack-substraction"><a href="#19-stack-substraction" class="headerlink" title="19. stack-substraction"></a>19. stack-substraction</h4><figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">sub</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rdi</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-built_in">rax</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="20-swap-stack-values"><a href="#20-swap-stack-values" class="headerlink" title="20. swap-stack-values"></a>20. swap-stack-values</h4><figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-built_in">rdi</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rdi</span><br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rsi</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="21-average-stack-values"><a href="#21-average-stack-values" class="headerlink" title="21. average-stack-values"></a>21. average-stack-values</h4><p>除法还是很坑的，记得一定是<code>rdx:rax / reg</code>，商在rax中，余数在rdx中。因此，在调用div的时候一定要清空rdx寄存器（如果被除数没有占用到rdx的话）</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, [<span class="hljs-built_in">rsp</span>]<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rcx</span>, [<span class="hljs-built_in">rsp</span>+<span class="hljs-number">0x8</span>]<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span>, [<span class="hljs-built_in">rsp</span>+<span class="hljs-number">0x10</span>]<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, [<span class="hljs-built_in">rsp</span>+<span class="hljs-number">0x18</span>]<br>    <span class="hljs-keyword">add</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rbx</span><br>    <span class="hljs-keyword">add</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rcx</span><br>    <span class="hljs-keyword">add</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rdx</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-number">4</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">div</span> <span class="hljs-built_in">rbx</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-built_in">rax</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="22-absolute-jump"><a href="#22-absolute-jump" class="headerlink" title="22. absolute-jump"></a>22. absolute-jump</h4><p>绝对跳转，指的是跳转到指定地址</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>,<span class="hljs-number">0x403000</span><br>    <span class="hljs-keyword">jmp</span> <span class="hljs-built_in">rax</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="23-relative-jump"><a href="#23-relative-jump" class="headerlink" title="23. relative-jump"></a>23. relative-jump</h4><p>对于所有跳转，有三种类型：</p>
+<ul>
+<li>Relative jumps: jump + or - the next instruction.<br>相对跳转：jump + 或 - 下一条指令。</li>
+<li>Absolute jumps: jump to a specific address.<br>Absolute jumps：跳转到指定地址。</li>
+<li>Indirect jumps: jump to the memory address specified in a register.<br>Indirect jumps：跳转到 register 中指定的 memory 地址。</li>
+</ul>
+<p><code>jmp (reg1 | addr | +/-offset)</code></p>
+<p>要求：</p>
+<ul>
+<li>Make the first instruction in your code a <code>jmp</code>.<br>将代码中的第一条指令设为 <code>jmp</code>。</li>
+<li>Make that <code>jmp</code> a relative jump to 0x51 bytes from the current position.<br>使该 <code>jmp</code> 相对跳转到 0x51 字节的当前位置。</li>
+<li>At the code location where the relative jump will redirect control flow, set <code>rax</code> to 0x1.<br>在相对跳转将重定向控制流的代码位置，将 <code>rax</code> 设置为 0x1。</li>
+</ul>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">jmp</span> set_rax<br><span class="hljs-meta">    .rept</span> <span class="hljs-number">0x51</span><br>    <span class="hljs-keyword">nop</span><br><span class="hljs-meta">    .endr</span><br><span class="hljs-symbol">set_rax:</span>   <br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>,<span class="hljs-number">0x1</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="24-jump-trampoline"><a href="#24-jump-trampoline" class="headerlink" title="24. jump-trampoline"></a>24. jump-trampoline</h4><figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">jmp</span> set_rax<br><span class="hljs-meta">    .rept</span> <span class="hljs-number">0x51</span><br>    <span class="hljs-keyword">nop</span><br><span class="hljs-meta">    .endr</span><br><span class="hljs-symbol">set_rax:</span>  <br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rdi</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-number">0x403000</span><br>    <span class="hljs-keyword">jmp</span> <span class="hljs-built_in">rbx</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="25-conditional-jump"><a href="#25-conditional-jump" class="headerlink" title="25. conditional-jump"></a>25. conditional-jump</h4><p>挖草，巨坑的一点！</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">eax</span>, [<span class="hljs-built_in">rdi</span>]<br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">eax</span>, <span class="hljs-number">0x7f454c46</span><br>    <span class="hljs-keyword">je</span> flag_1<br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">eax</span>, <span class="hljs-number">0x00005A4D</span><br>    <span class="hljs-keyword">je</span> flag_2<br>    <span class="hljs-keyword">jmp</span> flag_3<br><span class="hljs-symbol"></span><br><span class="hljs-symbol">flag_1:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">eax</span>, [<span class="hljs-built_in">rdi</span>+<span class="hljs-number">4</span>]<br>    <span class="hljs-keyword">add</span> <span class="hljs-built_in">eax</span>, [<span class="hljs-built_in">rdi</span>+<span class="hljs-number">8</span>]<br>    <span class="hljs-keyword">add</span> <span class="hljs-built_in">eax</span>, [<span class="hljs-built_in">rdi</span>+<span class="hljs-number">12</span>]<br>    <span class="hljs-keyword">jmp</span> done<br><span class="hljs-symbol">flag_2:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">eax</span>, [<span class="hljs-built_in">rdi</span>+<span class="hljs-number">4</span>]<br>    <span class="hljs-keyword">sub</span> <span class="hljs-built_in">eax</span>, [<span class="hljs-built_in">rdi</span>+<span class="hljs-number">8</span>]<br>    <span class="hljs-keyword">sub</span> <span class="hljs-built_in">eax</span>, [<span class="hljs-built_in">rdi</span>+<span class="hljs-number">12</span>]<br>    <span class="hljs-keyword">jmp</span> done<br><span class="hljs-symbol">flag_3:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">eax</span>, [<span class="hljs-built_in">rdi</span>+<span class="hljs-number">4</span>]<br>    <span class="hljs-keyword">imul</span> <span class="hljs-built_in">eax</span>,[<span class="hljs-built_in">rdi</span>+<span class="hljs-number">8</span>]<br>    <span class="hljs-keyword">imul</span> <span class="hljs-built_in">eax</span>, [<span class="hljs-built_in">rdi</span>+<span class="hljs-number">12</span>]<br>    <span class="hljs-keyword">jmp</span> done<br><span class="hljs-symbol">done:</span><br></code></pre></td></tr></table></figure>
+
+<p>注意的是<code>mov eax, [rdi]</code>，如果用<code>mov rax, [rdi]</code>会出问题，因为会读取<code>rdi</code>地址上的pword，那么永远走的都是else下的语句。服了。</p>
+<h4 id="26-indirect-jump"><a href="#26-indirect-jump" class="headerlink" title="26. indirect-jump"></a>26. indirect-jump</h4><figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rdi</span><br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">jg</span> <span class="hljs-meta">default</span><br>    <span class="hljs-keyword">imul</span> <span class="hljs-built_in">rax</span>,<span class="hljs-number">8</span><br>    <span class="hljs-keyword">add</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">jmp</span> [<span class="hljs-built_in">rax</span>]<br><span class="hljs-symbol">default:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">add</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0x20</span><br>    <span class="hljs-keyword">jmp</span> [<span class="hljs-built_in">rax</span>]<br></code></pre></td></tr></table></figure>
+
+<p>这里其实也有坑，需要好好把控<code>[]</code>会解析地址。例如下面的exp：</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rdi</span><br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">3</span><br>    <span class="hljs-keyword">jg</span> <span class="hljs-meta">default</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, [<span class="hljs-built_in">rsi</span> + <span class="hljs-built_in">rdi</span> * <span class="hljs-number">8</span>]<br>    <span class="hljs-keyword">jmp</span> <span class="hljs-built_in">rax</span><br><span class="hljs-symbol">default:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, [<span class="hljs-built_in">rsi</span> + <span class="hljs-number">0x20</span>]<br>    <span class="hljs-keyword">jmp</span> <span class="hljs-built_in">rax</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="27-average-loop"><a href="#27-average-loop" class="headerlink" title="27. average-loop"></a>27. average-loop</h4><figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rcx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-built_in">rdi</span><br><span class="hljs-symbol">loop_start:</span><br>    <span class="hljs-keyword">add</span> <span class="hljs-built_in">rax</span>, [<span class="hljs-built_in">rbx</span>]<br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rcx</span><br>    <span class="hljs-keyword">add</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-number">0x8</span><br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">rcx</span>, <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">jg</span> loop_end<br>    <span class="hljs-keyword">jmp</span> loop_start<br><span class="hljs-symbol">loop_end:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">div</span> <span class="hljs-built_in">rbx</span><br>    <br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>依然是要注意<code>[]</code>的使用，要认知是取内存指向的值，还是取内存进行加减。</p>
+</blockquote>
+<h4 id="28-count-non-zero"><a href="#28-count-non-zero" class="headerlink" title="28. count-non-zero"></a>28. count-non-zero</h4><p>感觉主要问题是，我没理解题目的意思。理解后就很简单了。</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0</span><br><span class="hljs-symbol">loop_start:</span><br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">je</span> loop_end<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">bl</span>, [<span class="hljs-built_in">rdi</span>]<br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">bl</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">je</span> loop_end<br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rdi</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">jmp</span> loop_start<br><span class="hljs-symbol"></span><br><span class="hljs-symbol">loop_end:</span><br><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="29-string-lower"><a href="#29-string-lower" class="headerlink" title="29. string lower"></a>29. string lower</h4><p>这个还行，一遍过了。还记得系统调用的时候，第一个参数是用<code>rdi</code>存储，第二个参数是用<code>rsi</code>存储</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">jne</span> loop_start<br>    <span class="hljs-keyword">jmp</span> done<br><span class="hljs-symbol">loop_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">cl</span>, [<span class="hljs-built_in">rdi</span>]<br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">cl</span>, <span class="hljs-number">0x00</span><br>    <span class="hljs-keyword">je</span> done<br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">cl</span>, <span class="hljs-number">0x5a</span><br>    <span class="hljs-keyword">jle</span> exe_1<br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rdi</span><br>    <span class="hljs-keyword">jmp</span> loop_start<br><span class="hljs-symbol">exe_1:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rcx</span>, <span class="hljs-built_in">rdi</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0x403000</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, [<span class="hljs-built_in">rdi</span>]<br>    <span class="hljs-keyword">call</span> <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>, <span class="hljs-built_in">rcx</span><br>    <span class="hljs-keyword">mov</span> [<span class="hljs-built_in">rdi</span>], <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rbx</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rdi</span><br>    <span class="hljs-keyword">jmp</span> loop_start<br><span class="hljs-symbol">done:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rbx</span><br>    <span class="hljs-keyword">ret</span><br><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="30-most-common-byte"><a href="#30-most-common-byte" class="headerlink" title="30. most-common-byte"></a>30. most-common-byte</h4><p>这道题卡了半天吧得，主要是对寄存器不熟悉，重复用了一些寄存器，然后导致出现问题，后面用普通寄存器<code>r8~15</code>解决的，普通寄存器也得用，不然变量不够存的。</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">push</span> <span class="hljs-built_in">rbp</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbp</span>, <span class="hljs-built_in">rsp</span><br>    <span class="hljs-keyword">sub</span> <span class="hljs-built_in">rsp</span>, <span class="hljs-number">0x200</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rcx</span>, <span class="hljs-number">0</span><br><span class="hljs-symbol"></span><br><span class="hljs-symbol">loop_count_bytes:</span><br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">rcx</span>, <span class="hljs-built_in">rsi</span><br>    <span class="hljs-keyword">jge</span> loop_count_bytes_end<br><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">dl</span>, [<span class="hljs-built_in">rdi</span> + <span class="hljs-built_in">rcx</span>]<br>    <span class="hljs-keyword">movzx</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">dl</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-built_in">rbp</span><br>    <span class="hljs-keyword">sub</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-built_in">rax</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">byte</span> <span class="hljs-built_in">ptr</span> [<span class="hljs-built_in">rbx</span>]<br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rcx</span><br>    <span class="hljs-keyword">jmp</span> loop_count_bytes<br><span class="hljs-symbol"></span><br><span class="hljs-symbol">loop_count_bytes_end:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rcx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-number">0</span><br><span class="hljs-symbol"></span><br><span class="hljs-symbol">loop_find_max:</span><br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">rcx</span>, <span class="hljs-number">0xff</span><br>    <span class="hljs-keyword">jg</span> loop_find_max_end<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-built_in">rbp</span><br>    <span class="hljs-keyword">sub</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-built_in">rcx</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">r8b</span>, [<span class="hljs-built_in">rbx</span>]<br>    <span class="hljs-keyword">movzx</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-built_in">r8b</span><br>    <span class="hljs-keyword">cmp</span> <span class="hljs-built_in">rbx</span>, <span class="hljs-built_in">rdx</span><br>    <span class="hljs-keyword">jle</span> skip_update<br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdx</span>, <span class="hljs-built_in">rbx</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>, <span class="hljs-built_in">rcx</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rcx</span><br>    <span class="hljs-keyword">jmp</span> loop_find_max<br><span class="hljs-symbol"></span><br><span class="hljs-symbol">skip_update:</span><br>    <span class="hljs-keyword">inc</span> <span class="hljs-built_in">rcx</span><br>    <span class="hljs-keyword">jmp</span> loop_find_max<br><span class="hljs-symbol"></span><br><span class="hljs-symbol">loop_find_max_end:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rsp</span>, <span class="hljs-built_in">rbp</span><br>    <span class="hljs-keyword">pop</span> <span class="hljs-built_in">rbp</span><br>    <span class="hljs-keyword">ret</span><br><br></code></pre></td></tr></table></figure>
+
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Pwn/" class="category-chain-item">Pwn</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Pwn/" class="print-no-link">#Pwn</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>pwn.college: Assembly Crash Course</div>
+      <div>https://loboq1ng.github.io/2024/08/29/pwn-college-Assembly-Crash-Course/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Lobo Q1ng</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年8月29日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/09/12/pwn-college-Dealing-with-Data/" title="pwn.college: Dealing with Data">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">pwn.college: Dealing with Data</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/08/21/AFL%E4%BD%BF%E7%94%A8%E4%B8%8E%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" title="AFL使用与源码分析">
+                        <span class="hidden-mobile">AFL使用与源码分析</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
