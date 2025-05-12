@@ -19,12 +19,12 @@
   <meta name="author" content="Lobo Q1ng">
   <meta name="keywords" content="">
   
-    <meta name="description" content="AIFORE: Smart Fuzzing Based on Automatic Input Format Reverse EngineeringAIFORE的模糊测试过程： 首先使用污点分析来识别每个Basic Block处理的输入字节，然后使用最小聚类算法识别不可分割的输入字段，并使用表征BB行为的神经网络模型学习它们的类型。使用设计出的一种新的能量调度算法，该算法基于推断出的输入格式存储信息">
+    <meta name="description" content="可惜了，不开源。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="AIFORE:论文阅读">
 <meta property="og:url" content="https://loboq1ng.github.io/2024/08/02/AIFORE%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/index.html">
 <meta property="og:site_name" content="Q1ng&#39;s blog">
-<meta property="og:description" content="AIFORE: Smart Fuzzing Based on Automatic Input Format Reverse EngineeringAIFORE的模糊测试过程： 首先使用污点分析来识别每个Basic Block处理的输入字节，然后使用最小聚类算法识别不可分割的输入字段，并使用表征BB行为的神经网络模型学习它们的类型。使用设计出的一种新的能量调度算法，该算法基于推断出的输入格式存储信息">
+<meta property="og:description" content="可惜了，不开源。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://loboq1ng.github.io/2024/08/02/AIFORE%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20240724141934191.png">
 <meta property="og:image" content="https://loboq1ng.github.io/2024/08/02/AIFORE%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20240724143204076.png">
@@ -40,7 +40,7 @@
 <meta property="og:image" content="https://loboq1ng.github.io/2024/08/02/AIFORE%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20240728142518357.png">
 <meta property="og:image" content="https://loboq1ng.github.io/2024/08/02/AIFORE%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20240728144306607.png">
 <meta property="article:published_time" content="2024-08-02T05:52:27.000Z">
-<meta property="article:modified_time" content="2025-04-19T01:42:49.526Z">
+<meta property="article:modified_time" content="2025-05-12T03:52:49.591Z">
 <meta property="article:author" content="Lobo Q1ng">
 <meta property="article:tag" content="Paper">
 <meta name="twitter:card" content="summary_large_image">
@@ -305,7 +305,10 @@
             
               <div class="markdown-body">
                 
-                <h2 id="AIFORE-Smart-Fuzzing-Based-on-Automatic-Input-Format-Reverse-Engineering"><a href="#AIFORE-Smart-Fuzzing-Based-on-Automatic-Input-Format-Reverse-Engineering" class="headerlink" title="AIFORE: Smart Fuzzing Based on Automatic Input Format Reverse Engineering"></a>AIFORE: Smart Fuzzing Based on Automatic Input Format Reverse Engineering</h2><p>AIFORE的模糊测试过程：</p>
+                <p>可惜了，不开源。</p>
+<span id="more"></span>
+
+<h2 id="AIFORE-Smart-Fuzzing-Based-on-Automatic-Input-Format-Reverse-Engineering"><a href="#AIFORE-Smart-Fuzzing-Based-on-Automatic-Input-Format-Reverse-Engineering" class="headerlink" title="AIFORE: Smart Fuzzing Based on Automatic Input Format Reverse Engineering"></a>AIFORE: Smart Fuzzing Based on Automatic Input Format Reverse Engineering</h2><p>AIFORE的模糊测试过程：</p>
 <p>首先使用污点分析来识别每个Basic Block处理的输入字节，然后使用最小聚类算法识别不可分割的输入字段，并使用表征BB行为的神经网络模型学习它们的类型。使用设计出的一种新的能量调度算法，该算法基于推断出的输入格式存储信息（inferred format knowledge）。使用该算法来指导智能模糊测试。</p>
 <p><strong>摘要</strong></p>
 <p>了解程序的输入格式对于在模糊测试中有效生成输入至关重要。自动输入格式逆向工程代表了一种有吸引力但具有挑战性的学习格式的方法。在本文中，我们解决了自动输入格式逆向工程的几个挑战，并提出了一种只能模糊测试解决方案AIFORE，它充分利用了逆向格式并从中受益。</p>

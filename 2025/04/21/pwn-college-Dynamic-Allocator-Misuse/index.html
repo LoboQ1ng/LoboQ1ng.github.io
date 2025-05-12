@@ -19,15 +19,15 @@
   <meta name="author" content="Lobo Q1ng">
   <meta name="keywords" content="">
   
-    <meta name="description" content="Dynamic Allocator MisuseThe glibc heap consists of many components distinct parts that balance performance and security. In this introduction to the heap, the thread caching layer, tcache will be targ">
+    <meta name="description" content="不入堆，不算Pwn~ .O.o.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="pwn.college: Dynamic Allocator Misuse">
 <meta property="og:url" content="https://loboq1ng.github.io/2025/04/21/pwn-college-Dynamic-Allocator-Misuse/index.html">
 <meta property="og:site_name" content="Q1ng&#39;s blog">
-<meta property="og:description" content="Dynamic Allocator MisuseThe glibc heap consists of many components distinct parts that balance performance and security. In this introduction to the heap, the thread caching layer, tcache will be targ">
+<meta property="og:description" content="不入堆，不算Pwn~ .O.o.">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2025-04-21T08:48:57.000Z">
-<meta property="article:modified_time" content="2025-05-12T02:45:25.145Z">
+<meta property="article:modified_time" content="2025-05-12T03:29:10.932Z">
 <meta property="article:author" content="Lobo Q1ng">
 <meta property="article:tag" content="Pwn">
 <meta name="twitter:card" content="summary_large_image">
@@ -291,7 +291,10 @@
             
               <div class="markdown-body">
                 
-                <h3 id="Dynamic-Allocator-Misuse"><a href="#Dynamic-Allocator-Misuse" class="headerlink" title="Dynamic Allocator Misuse"></a>Dynamic Allocator Misuse</h3><p>The glibc heap consists of many components distinct parts that balance performance and security. In this introduction to the heap, the thread caching layer, <code>tcache</code> will be targeted for exploitation. <code>tcache</code> is a fast thread-specific caching layer that is often the first point of interaction for programs working with dynamic memory allocations.</p>
+                <p>不入堆，不算Pwn~ .O.o.</p>
+<span id="more"></span>
+
+<h3 id="Dynamic-Allocator-Misuse"><a href="#Dynamic-Allocator-Misuse" class="headerlink" title="Dynamic Allocator Misuse"></a>Dynamic Allocator Misuse</h3><p>The glibc heap consists of many components distinct parts that balance performance and security. In this introduction to the heap, the thread caching layer, <code>tcache</code> will be targeted for exploitation. <code>tcache</code> is a fast thread-specific caching layer that is often the first point of interaction for programs working with dynamic memory allocations.</p>
 <blockquote>
 <p>glibc堆由许多组件组成，这些组件是平衡性能和安全性的不同部分。在本文对堆（线程缓存层）的介绍中，缓存将成为开发的目标。Tcache是一种特定于线程的快速缓存层，它通常是处理动态内存分配的程序的第一个交互点。</p>
 </blockquote>

@@ -19,15 +19,15 @@
   <meta name="author" content="Lobo Q1ng">
   <meta name="keywords" content="">
   
-    <meta name="description" content="SQL Playground1. SQL Queries简单的SQL语法 12345678hacker@sql-playground~sql-queries:~&#x2F;Desktop$ &#x2F;challenge&#x2F;sql sql&gt; select name from sqlite_master where type &#x3D; &amp;#x27;table&amp;#x27;Got 1 rows.- &amp;#123;&amp;#x27;n">
+    <meta name="description" content="ahhhh，甚至一个简单的level都比学校数据库老师教的好。):">
 <meta property="og:type" content="article">
 <meta property="og:title" content="pwn.college: SQL Playground">
 <meta property="og:url" content="https://loboq1ng.github.io/2025/02/24/pwn-college-SQL-Playground/index.html">
 <meta property="og:site_name" content="Q1ng&#39;s blog">
-<meta property="og:description" content="SQL Playground1. SQL Queries简单的SQL语法 12345678hacker@sql-playground~sql-queries:~&#x2F;Desktop$ &#x2F;challenge&#x2F;sql sql&gt; select name from sqlite_master where type &#x3D; &amp;#x27;table&amp;#x27;Got 1 rows.- &amp;#123;&amp;#x27;n">
+<meta property="og:description" content="ahhhh，甚至一个简单的level都比学校数据库老师教的好。):">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2025-02-24T08:41:02.000Z">
-<meta property="article:modified_time" content="2025-05-12T02:45:49.447Z">
+<meta property="article:modified_time" content="2025-05-12T03:41:14.787Z">
 <meta property="article:author" content="Lobo Q1ng">
 <meta property="article:tag" content="Pwn">
 <meta name="twitter:card" content="summary_large_image">
@@ -225,7 +225,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          340 字
+          361 字
         
       </span>
     
@@ -291,7 +291,9 @@
             
               <div class="markdown-body">
                 
-                <h3 id="SQL-Playground"><a href="#SQL-Playground" class="headerlink" title="SQL Playground"></a>SQL Playground</h3><h4 id="1-SQL-Queries"><a href="#1-SQL-Queries" class="headerlink" title="1. SQL Queries"></a>1. SQL Queries</h4><p>简单的SQL语法</p>
+                <p>ahhhh，甚至一个简单的level都比学校数据库老师教的好。):</p>
+<span id="more"></span>
+<h3 id="SQL-Playground"><a href="#SQL-Playground" class="headerlink" title="SQL Playground"></a>SQL Playground</h3><h4 id="1-SQL-Queries"><a href="#1-SQL-Queries" class="headerlink" title="1. SQL Queries"></a>1. SQL Queries</h4><p>简单的SQL语法</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs bash">hacker@sql-playground~sql-queries:~/Desktop$ /challenge/sql <br>sql&gt; <span class="hljs-keyword">select</span> name from sqlite_master <span class="hljs-built_in">where</span> <span class="hljs-built_in">type</span> = <span class="hljs-string">&#x27;table&#x27;</span><br>Got 1 rows.<br>- &#123;<span class="hljs-string">&#x27;name&#x27;</span>: <span class="hljs-string">&#x27;information&#x27;</span>&#125;<br>hacker@sql-playground~sql-queries:~/Desktop$ /challenge/sql <br>sql&gt; <span class="hljs-keyword">select</span> * from information<br>Got 1 rows.<br>- &#123;<span class="hljs-string">&#x27;record&#x27;</span>: <span class="hljs-string">&#x27;pwn.college&#123;sL39JzNFAYS1b4urGcF1vDs5hcn.QX5kzN0EDLxYTN1YzW&#125;&#x27;</span>&#125;<br></code></pre></td></tr></table></figure>
 
 <h4 id="2-Filtering-SQL"><a href="#2-Filtering-SQL" class="headerlink" title="2. Filtering SQL"></a>2. Filtering SQL</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">hacker@sql-playground~filtering-sql:~/Desktop$ /challenge/sql <br>sql&gt; <span class="hljs-keyword">select</span> info from repository <span class="hljs-built_in">where</span> info like <span class="hljs-string">&#x27;%pwn%&#x27;</span><br>Got 1 rows.<br>- &#123;<span class="hljs-string">&#x27;info&#x27;</span>: <span class="hljs-string">&#x27;pwn.college&#123;UIysK2dWKY3qPB4nHgeDwWXQnHb.QXwADO0EDLxYTN1YzW&#125;&#x27;</span>&#125;<br></code></pre></td></tr></table></figure>

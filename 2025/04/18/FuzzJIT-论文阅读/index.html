@@ -19,12 +19,12 @@
   <meta name="author" content="Lobo Q1ng">
   <meta name="keywords" content="">
   
-    <meta name="description" content="FuzzJIT: Oracle-Enhanced Fuzzing for JavaScript Engine JIT Compiler摘要我们提出了一种新颖的模糊测试技术 FuzzJIT，用于揭示 JavaScript 引擎中的 JIT 编译器错误。该技术基于我们的洞察：JIT 编译器应仅加速执行，而绝不更改 JavaScript 代码的执行结果。 FuzzJIT 可以为每个测试用例激活 JIT">
+    <meta name="description" content="如果不是和Zhang交流了一下，我可能以为这篇文章有点…，Aha，作者只是给我们提供一个思路，所以请勿在意”Result”。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="FuzzJIT:论文阅读">
 <meta property="og:url" content="https://loboq1ng.github.io/2025/04/18/FuzzJIT-%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/index.html">
 <meta property="og:site_name" content="Q1ng&#39;s blog">
-<meta property="og:description" content="FuzzJIT: Oracle-Enhanced Fuzzing for JavaScript Engine JIT Compiler摘要我们提出了一种新颖的模糊测试技术 FuzzJIT，用于揭示 JavaScript 引擎中的 JIT 编译器错误。该技术基于我们的洞察：JIT 编译器应仅加速执行，而绝不更改 JavaScript 代码的执行结果。 FuzzJIT 可以为每个测试用例激活 JIT">
+<meta property="og:description" content="如果不是和Zhang交流了一下，我可能以为这篇文章有点…，Aha，作者只是给我们提供一个思路，所以请勿在意”Result”。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://loboq1ng.github.io/2025/04/18/FuzzJIT-%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20250404135413658.png">
 <meta property="og:image" content="https://loboq1ng.github.io/2025/04/18/FuzzJIT-%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20250404160310538.png">
@@ -35,7 +35,7 @@
 <meta property="og:image" content="https://loboq1ng.github.io/2025/04/18/FuzzJIT-%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20250405142527833.png">
 <meta property="og:image" content="https://loboq1ng.github.io/2025/04/18/FuzzJIT-%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20250405145804487.png">
 <meta property="article:published_time" content="2025-04-18T13:17:17.000Z">
-<meta property="article:modified_time" content="2025-04-18T15:19:17.891Z">
+<meta property="article:modified_time" content="2025-05-12T03:47:11.078Z">
 <meta property="article:author" content="Lobo Q1ng">
 <meta property="article:tag" content="Paper">
 <meta name="twitter:card" content="summary_large_image">
@@ -245,7 +245,7 @@
         
         
         
-          160 分钟
+          161 分钟
         
       </span>
     
@@ -300,7 +300,9 @@
             
               <div class="markdown-body">
                 
-                <h1 id="FuzzJIT-Oracle-Enhanced-Fuzzing-for-JavaScript-Engine-JIT-Compiler"><a href="#FuzzJIT-Oracle-Enhanced-Fuzzing-for-JavaScript-Engine-JIT-Compiler" class="headerlink" title="FuzzJIT: Oracle-Enhanced Fuzzing for JavaScript Engine JIT Compiler"></a>FuzzJIT: Oracle-Enhanced Fuzzing for JavaScript Engine JIT Compiler</h1><h2 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h2><p>我们提出了一种新颖的模糊测试技术 FuzzJIT，用于揭示 JavaScript 引擎中的 JIT 编译器错误。该技术基于我们的洞察：JIT 编译器应仅加速执行，而绝不更改 JavaScript 代码的执行结果。 FuzzJIT 可以为每个测试用例激活 JIT 编译器，并敏锐地捕获由 JIT 编译器引起的任何执行差异。成功的关键在于输入包装模板的设计，该模板主动激活 JIT 编译器，并使生成的样本自身具备 oracle 感知能力，并且在执行期间自发地测试该 oracle。我们还设计了一组变异策略，以强调在揭示 JIT 编译器错误方面有希望的程序元素。 FuzzJIT 精确探测 JIT 编译器，同时保持了模糊测试的高效率。我们已经实现了该设计，并应用该原型在四个主流 JavaScript 引擎中发现了新的 JIT 编译器错误。在一个月内，分别在 JavaScriptCore、V8、SpiderMonkey 和 ChakraCore 中发现了 10 个、5 个、2 个和 16 个新漏洞，其中 3 个被证明是可利用的。</p>
+                <p>如果不是和Zhang交流了一下，我可能以为这篇文章有点…，Aha，作者只是给我们提供一个思路，所以请勿在意”Result”。</p>
+<span id="more"></span>
+<h1 id="FuzzJIT-Oracle-Enhanced-Fuzzing-for-JavaScript-Engine-JIT-Compiler"><a href="#FuzzJIT-Oracle-Enhanced-Fuzzing-for-JavaScript-Engine-JIT-Compiler" class="headerlink" title="FuzzJIT: Oracle-Enhanced Fuzzing for JavaScript Engine JIT Compiler"></a>FuzzJIT: Oracle-Enhanced Fuzzing for JavaScript Engine JIT Compiler</h1><h2 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h2><p>我们提出了一种新颖的模糊测试技术 FuzzJIT，用于揭示 JavaScript 引擎中的 JIT 编译器错误。该技术基于我们的洞察：JIT 编译器应仅加速执行，而绝不更改 JavaScript 代码的执行结果。 FuzzJIT 可以为每个测试用例激活 JIT 编译器，并敏锐地捕获由 JIT 编译器引起的任何执行差异。成功的关键在于输入包装模板的设计，该模板主动激活 JIT 编译器，并使生成的样本自身具备 oracle 感知能力，并且在执行期间自发地测试该 oracle。我们还设计了一组变异策略，以强调在揭示 JIT 编译器错误方面有希望的程序元素。 FuzzJIT 精确探测 JIT 编译器，同时保持了模糊测试的高效率。我们已经实现了该设计，并应用该原型在四个主流 JavaScript 引擎中发现了新的 JIT 编译器错误。在一个月内，分别在 JavaScriptCore、V8、SpiderMonkey 和 ChakraCore 中发现了 10 个、5 个、2 个和 16 个新漏洞，其中 3 个被证明是可利用的。</p>
 <h2 id="1-介绍"><a href="#1-介绍" class="headerlink" title="1 介绍"></a>1 介绍</h2><p>由于执行图灵完备语言的固有复杂性，JavaScript 引擎成为浏览器的安全弱点，并被揭示为包含大多数浏览器漏洞。 JavaScript 引擎负责解析、解释、编译和执行 JavaScript 代码，其基本工作流程如图 1 所示。解析器和字节码生成器在流水线中工作，将 JavaScript 代码转换为抽象语法树 (AST)，然后转换为字节码。 字节码可以直接由解释器执行，也可以由 JIT 编译器编译。 JIT 编译器是一个可选模块，当某些 JavaScript 代码或函数变得热门时（即被调用了足够的次数）可以激活它。 它会即时工作，将函数编译成汇编代码，并对其进行优化以加速执行。 有时，JIT 编译器采用多层设计，其中编译和优化会随着执行次数的增加而逐渐升级。 JIT 编译器的工作机制，尤其是优化组件，非常复杂。 因此，在其实现中，错误是不可避免的。 由于 JavaScript 是一种弱类型和动态类型的语言，因此直接编译是不现实的，因为变量的类型在很多地方都是模棱两可的。 JIT 编译器不会生成 JavaScript 代码的完整编译，而是主要坚持根据解释器收集的运行时分析信息，根据历史观察到的变量类型。 为了正确性，编译结果必须受到类型检查的保护，并且只能用于类型合规性。 基于编译，优化器旨在减少完成功能所需的指令数量。 常用优化包括控制流图简化、公共子表达式消除和死代码消除。 通常，需要严格的控制和数据流分析才能安全地消除不必要的代码和检查。 当某些必要的安全检查被错误地删除时，后果会变得很严重。</p>
 <img src="/2025/04/18/FuzzJIT-%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20250404135413658.png" srcset="/img/loading.gif" lazyload class="" title="image-20250404135413658">
 

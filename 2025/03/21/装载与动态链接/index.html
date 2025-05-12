@@ -19,16 +19,16 @@
   <meta name="author" content="Lobo Q1ng">
   <meta name="keywords" content="">
   
-    <meta name="description" content="本文摘自《程序员的自我修养》  可执行文件的装载与进程进程虚拟地址空间 程序和进程有什么区别 程序是一个静态的概念，它就是一些预编译好的指令和数据集合的一个文件；进程则是一个动态的概念，它是程序运行时的一个过程，很多时候把动态库叫做运行时（Runtime）也有一定的含义。  每个程序被运行起来以后，它将拥有自己独立的虚拟地址空间 ，这个虚拟地址空间的大小由计算机的硬件平台决定，具体地说是由CPU">
+    <meta name="description" content="本文摘自《程序员的自我修养》">
 <meta property="og:type" content="article">
 <meta property="og:title" content="装载与动态链接">
 <meta property="og:url" content="https://loboq1ng.github.io/2025/03/21/%E8%A3%85%E8%BD%BD%E4%B8%8E%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5/index.html">
 <meta property="og:site_name" content="Q1ng&#39;s blog">
-<meta property="og:description" content="本文摘自《程序员的自我修养》  可执行文件的装载与进程进程虚拟地址空间 程序和进程有什么区别 程序是一个静态的概念，它就是一些预编译好的指令和数据集合的一个文件；进程则是一个动态的概念，它是程序运行时的一个过程，很多时候把动态库叫做运行时（Runtime）也有一定的含义。  每个程序被运行起来以后，它将拥有自己独立的虚拟地址空间 ，这个虚拟地址空间的大小由计算机的硬件平台决定，具体地说是由CPU">
+<meta property="og:description" content="本文摘自《程序员的自我修养》">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://loboq1ng.github.io/2025/03/21/%E8%A3%85%E8%BD%BD%E4%B8%8E%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5/image-20250321134614509.png">
 <meta property="article:published_time" content="2025-03-21T05:21:01.000Z">
-<meta property="article:modified_time" content="2025-03-30T09:10:32.234Z">
+<meta property="article:modified_time" content="2025-05-12T03:57:16.198Z">
 <meta property="article:author" content="Lobo Q1ng">
 <meta property="article:tag" content="Pwn">
 <meta name="twitter:card" content="summary_large_image">
@@ -296,6 +296,7 @@
                 <blockquote>
 <p>本文摘自《程序员的自我修养》</p>
 </blockquote>
+<span id="more"></span>
 <h1 id="可执行文件的装载与进程"><a href="#可执行文件的装载与进程" class="headerlink" title="可执行文件的装载与进程"></a>可执行文件的装载与进程</h1><h2 id="进程虚拟地址空间"><a href="#进程虚拟地址空间" class="headerlink" title="进程虚拟地址空间"></a>进程虚拟地址空间</h2><blockquote>
 <p><strong>程序和进程有什么区别</strong></p>
 <p>程序是一个静态的概念，它就是一些预编译好的指令和数据集合的一个文件；进程则是一个动态的概念，它是程序运行时的一个过程，很多时候把动态库叫做运行时（Runtime）也有一定的含义。</p>

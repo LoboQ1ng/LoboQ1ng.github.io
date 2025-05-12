@@ -19,16 +19,16 @@
   <meta name="author" content="Lobo Q1ng">
   <meta name="keywords" content="">
   
-    <meta name="description" content="Building a Web Serverlevel1正常的exit汇编 123456789.intel_syntax noprefix.global _start.section .text_start:    mov rdi,0    mov rax,60    syscall.section .data    level2要实现socket，其系统调用为41。原型int socket(int">
+    <meta name="description" content="来来来，你告诉我，什么TMD叫Web，什么TMD叫Asm。这TM八岁 ?_? Building a Web Serverlevel1正常的exit汇编 123456789.intel_syntax noprefix.global _start.section .text_start:    mov rdi,0    mov rax,60    syscall.section .data    le">
 <meta property="og:type" content="article">
-<meta property="og:title" content="pwn.college: Dealing with Data">
+<meta property="og:title" content="pwn.college: Building a Web Server">
 <meta property="og:url" content="https://loboq1ng.github.io/2024/11/10/pwn-college-Building-a-Web-Server/index.html">
 <meta property="og:site_name" content="Q1ng&#39;s blog">
-<meta property="og:description" content="Building a Web Serverlevel1正常的exit汇编 123456789.intel_syntax noprefix.global _start.section .text_start:    mov rdi,0    mov rax,60    syscall.section .data    level2要实现socket，其系统调用为41。原型int socket(int">
+<meta property="og:description" content="来来来，你告诉我，什么TMD叫Web，什么TMD叫Asm。这TM八岁 ?_? Building a Web Serverlevel1正常的exit汇编 123456789.intel_syntax noprefix.global _start.section .text_start:    mov rdi,0    mov rax,60    syscall.section .data    le">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://loboq1ng.github.io/2024/11/10/pwn-college-Building-a-Web-Server/image-20241031112813128.png">
 <meta property="article:published_time" content="2024-11-10T10:29:34.000Z">
-<meta property="article:modified_time" content="2025-05-12T02:45:14.367Z">
+<meta property="article:modified_time" content="2025-05-12T03:56:53.583Z">
 <meta property="article:author" content="Lobo Q1ng">
 <meta property="article:tag" content="Pwn">
 <meta name="twitter:card" content="summary_large_image">
@@ -38,7 +38,7 @@
     <meta name="referrer" content="no-referrer-when-downgrade">
   
   
-  <title>pwn.college: Dealing with Data - Q1ng&#39;s blog</title>
+  <title>pwn.college: Building a Web Server - Q1ng&#39;s blog</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -204,7 +204,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="pwn.college: Dealing with Data"></span>
+            <span id="subtitle" data-typed-text="pwn.college: Building a Web Server"></span>
           
         </div>
 
@@ -288,12 +288,13 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">pwn.college: Dealing with Data</h1>
+            <h1 id="seo-header">pwn.college: Building a Web Server</h1>
             
             
               <div class="markdown-body">
                 
-                <h3 id="Building-a-Web-Server"><a href="#Building-a-Web-Server" class="headerlink" title="Building a Web Server"></a>Building a Web Server</h3><h4 id="level1"><a href="#level1" class="headerlink" title="level1"></a>level1</h4><p>正常的exit汇编</p>
+                <p>来来来，你告诉我，什么TMD叫Web，什么TMD叫Asm。<del>这TM八岁 ?_?</del></p>
+<h3 id="Building-a-Web-Server"><a href="#Building-a-Web-Server" class="headerlink" title="Building a Web Server"></a>Building a Web Server</h3><h4 id="level1"><a href="#level1" class="headerlink" title="level1"></a>level1</h4><p>正常的exit汇编</p>
 <figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-meta">.intel_syntax</span> noprefix<br><span class="hljs-meta">.global</span> _start<br><span class="hljs-meta">.section</span> .text<br><span class="hljs-symbol">_start:</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rdi</span>,<span class="hljs-number">0</span><br>    <span class="hljs-keyword">mov</span> <span class="hljs-built_in">rax</span>,<span class="hljs-number">60</span><br>    <span class="hljs-keyword">syscall</span><br><span class="hljs-meta"></span><br><span class="hljs-meta">.section</span> .data<br></code></pre></td></tr></table></figure>
 
 
@@ -434,7 +435,7 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>pwn.college: Dealing with Data</div>
+      <div>pwn.college: Building a Web Server</div>
       <div>https://loboq1ng.github.io/2024/11/10/pwn-college-Building-a-Web-Server/</div>
     </div>
     <div class="license-meta">

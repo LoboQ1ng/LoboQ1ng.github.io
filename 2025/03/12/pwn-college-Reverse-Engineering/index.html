@@ -19,12 +19,12 @@
   <meta name="author" content="Lobo Q1ng">
   <meta name="keywords" content="">
   
-    <meta name="description" content="Reverse Engineeringlevel1.0这题很简单哇，就是把输入的字符串转成了ascii。对应输入即可获得flag 123456789101112131415161718Ready to receive your license key!quitInitial input:        71 75 69 74 0a The mangling is done! The resulti">
+    <meta name="description" content="不，你不会讨厌”yan85”的，因为后面的还有”yan85_64”。*_*">
 <meta property="og:type" content="article">
 <meta property="og:title" content="pwn.college: Reverse Engineering">
 <meta property="og:url" content="https://loboq1ng.github.io/2025/03/12/pwn-college-Reverse-Engineering/index.html">
 <meta property="og:site_name" content="Q1ng&#39;s blog">
-<meta property="og:description" content="Reverse Engineeringlevel1.0这题很简单哇，就是把输入的字符串转成了ascii。对应输入即可获得flag 123456789101112131415161718Ready to receive your license key!quitInitial input:        71 75 69 74 0a The mangling is done! The resulti">
+<meta property="og:description" content="不，你不会讨厌”yan85”的，因为后面的还有”yan85_64”。*_*">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://loboq1ng.github.io/2025/03/12/pwn-college-Reverse-Engineering/image-20241107202238497.png">
 <meta property="og:image" content="https://loboq1ng.github.io/2025/03/12/pwn-college-Reverse-Engineering/image-20241107202710303.png">
@@ -39,7 +39,7 @@
 <meta property="og:image" content="https://loboq1ng.github.io/2025/03/12/pwn-college-Reverse-Engineering/image-20250304121108218.png">
 <meta property="og:image" content="https://loboq1ng.github.io/2025/03/12/pwn-college-Reverse-Engineering/image-20250306162439521.png">
 <meta property="article:published_time" content="2025-03-12T15:43:40.000Z">
-<meta property="article:modified_time" content="2025-05-12T02:45:40.797Z">
+<meta property="article:modified_time" content="2025-05-12T03:39:14.794Z">
 <meta property="article:author" content="Lobo Q1ng">
 <meta property="article:tag" content="Pwn">
 <meta name="twitter:card" content="summary_large_image">
@@ -304,7 +304,9 @@
             
               <div class="markdown-body">
                 
-                <h3 id="Reverse-Engineering"><a href="#Reverse-Engineering" class="headerlink" title="Reverse Engineering"></a>Reverse Engineering</h3><h4 id="level1-0"><a href="#level1-0" class="headerlink" title="level1.0"></a>level1.0</h4><p>这题很简单哇，就是把输入的字符串转成了ascii。对应输入即可获得flag</p>
+                <p>不，你不会讨厌”yan85”的，因为后面的还有”yan85_64”。*_*</p>
+<span id="more"></span>
+<h3 id="Reverse-Engineering"><a href="#Reverse-Engineering" class="headerlink" title="Reverse Engineering"></a>Reverse Engineering</h3><h4 id="level1-0"><a href="#level1-0" class="headerlink" title="level1.0"></a>level1.0</h4><p>这题很简单哇，就是把输入的字符串转成了ascii。对应输入即可获得flag</p>
 <figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">Ready</span> to receive your license key!<br><br><span class="hljs-attribute">quit</span><br><span class="hljs-attribute">Initial</span> input:<br><br>        <span class="hljs-attribute">71</span> <span class="hljs-number">75</span> <span class="hljs-number">69</span> <span class="hljs-number">74</span> <span class="hljs-number">0</span>a <br><br><span class="hljs-attribute">The</span> mangling is done! The resulting bytes will be used for the final comparison.<br><br><span class="hljs-attribute">Final</span> result of mangling input:<br><br>        <span class="hljs-attribute">71</span> <span class="hljs-number">75</span> <span class="hljs-number">69</span> <span class="hljs-number">74</span> <span class="hljs-number">0</span>a <br><br><span class="hljs-attribute">Expected</span> result:<br><br>        <span class="hljs-attribute">63</span> <span class="hljs-number">6</span>c <span class="hljs-number">6</span>a <span class="hljs-number">79</span> <span class="hljs-number">62</span> <br><br><span class="hljs-attribute">Checking</span> the received license key!<br></code></pre></td></tr></table></figure>
 
 <h4 id="level1-1"><a href="#level1-1" class="headerlink" title="level1.1"></a>level1.1</h4><p>这下没有回显了，只能通过工具逆向一下子了。</p>
