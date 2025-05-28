@@ -33,7 +33,7 @@
 <meta property="og:image" content="https://loboq1ng.github.io/2024/08/07/ShapFuzz%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20240918155507735.png">
 <meta property="og:image" content="https://loboq1ng.github.io/2024/08/07/ShapFuzz%EF%BC%9A%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/image-20240918155413346.png">
 <meta property="article:published_time" content="2024-08-07T05:43:18.000Z">
-<meta property="article:modified_time" content="2025-05-12T07:11:22.529Z">
+<meta property="article:modified_time" content="2025-05-12T07:12:02.014Z">
 <meta property="article:author" content="Lobo Q1ng">
 <meta property="article:tag" content="Paper">
 <meta name="twitter:card" content="summary_large_image">
@@ -298,8 +298,9 @@
             
               <div class="markdown-body">
                 
-                <p>源码和AFL++杂在一起了，有点难以看懂。关于论文和源码呈现不一致问题，我提了issue，but nobody care. </p>
+                <p>源码和AFL++杂在一起了，有点难以看懂。<br>关于论文和源码呈现不一致问题，我提了issue，but nobody care. </p>
 <span id="more"></span>
+
 <h1 id="SHAPFUZZ-Efficient-Fuzzing-via-Shapley-Guided-Byte-Selection"><a href="#SHAPFUZZ-Efficient-Fuzzing-via-Shapley-Guided-Byte-Selection" class="headerlink" title="SHAPFUZZ: Efficient Fuzzing via Shapley-Guided Byte Selection"></a>SHAPFUZZ: Efficient Fuzzing via Shapley-Guided Byte Selection</h1><h2 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h2><p>​		基于变异的模糊测试是一种流行且有效的技术，用于发现程序中的漏洞和未覆盖代码。然而，只有少数研究关注<strong>量化输入字节的重要性</strong>。每个输入字节的重要性由其在发现新代码中的贡献程度决定。以前的工作往往集中于获取输入字节与路径约束之间的关系，而忽略了并非所有与约束相关的字节都能发现新代码的事实。在本文中，作者进行Shapley分析来理解字节位置对模糊测试性能的影响，发现某些字节位置比其他字节位置贡献更大，并且这种特性通常在不同的种子之间保持一致。基于此观察结果，我们提出了一种新颖的解决方案，成为SHAPFUZZ，以指导模糊测试过程中的字节选择变异。具体而言SHAPFUZZ在模糊测试期间每次测试输入时，以低开销更新字节的Shapley值（重要性）。它利用上下文多臂老虎机（CMAB）算法在变异高Shapley值字节和和低频选择字节之间进行权衡。作者基于AFL ++实现该解决方案的原型，即SHAPFUZZ，并针对包括五个字节调度Fuzzer和五个常用的Fuzzer在内的十个最先进的模糊器对其进行评估。与字节调度模糊器相比，SHAPFUZZ发现了更多边。它还在三组不同的初始种子集上暴露了比最佳基线更多的漏洞。SHAPFUZZ比最佳常用的模糊器多暴露20个漏洞，并且在MAGMA上比基线多发现6个CVE。此外，SHAPFUZZ在6个广泛使用的程序的最新版本上发现了11个新漏洞，其中3个漏洞已得到供应商的确认。</p>
 <h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>基于变异的模糊测试，核心是：**变异哪些字节？**这些字节该用什么值？</p>
 <blockquote>

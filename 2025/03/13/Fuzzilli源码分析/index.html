@@ -30,7 +30,7 @@
 <meta property="og:image" content="https://loboq1ng.github.io/2025/03/13/Fuzzilli%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/mutation_engine.png">
 <meta property="og:image" content="https://loboq1ng.github.io/2025/03/13/Fuzzilli%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/hybrid_engine.png">
 <meta property="article:published_time" content="2025-03-13T12:09:57.000Z">
-<meta property="article:modified_time" content="2025-05-12T03:48:33.822Z">
+<meta property="article:modified_time" content="2025-05-13T05:29:26.817Z">
 <meta property="article:author" content="Lobo Q1ng">
 <meta property="article:tag" content="Fuzz">
 <meta name="twitter:card" content="summary_large_image">
@@ -240,7 +240,7 @@
         
         
         
-          397 分钟
+          398 分钟
         
       </span>
     
@@ -1175,6 +1175,7 @@
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-meta">#<span class="hljs-keyword">ifdef</span> V8_FUZZILLI</span><br>  <span class="hljs-keyword">if</span> (fuzzilli_reprl) &#123;<br>    <span class="hljs-function">HandleScope <span class="hljs-title">handle_scope</span><span class="hljs-params">(isolate)</span></span>;<br>    Local&lt;String&gt; file_name =<br>        String::<span class="hljs-built_in">NewFromUtf8</span>(isolate, <span class="hljs-string">&quot;fuzzcode.js&quot;</span>, NewStringType::kNormal)<br>            .<span class="hljs-built_in">ToLocalChecked</span>();<br><br>    <span class="hljs-type">size_t</span> script_size;	<span class="hljs-comment">// 读取Reprl发送过来的script_size的地址</span><br>    <span class="hljs-built_in">CHECK_EQ</span>(<span class="hljs-built_in">read</span>(REPRL_CRFD, &amp;script_size, <span class="hljs-number">8</span>), <span class="hljs-number">8</span>);	<span class="hljs-comment">// 然后检查script_size地址是否正确读取</span><br>    <span class="hljs-comment">// 在栈上开辟Script脚本大小+1的空间</span><br>    <span class="hljs-type">char</span>* buffer = <span class="hljs-keyword">new</span> <span class="hljs-type">char</span>[script_size + <span class="hljs-number">1</span>];<br>    <span class="hljs-type">char</span>* ptr = buffer;<br>    <span class="hljs-comment">// 通过数据信道把测试程序读入到buffer中</span><br>    <span class="hljs-type">size_t</span> remaining = script_size;<br>    <span class="hljs-keyword">while</span> (remaining &gt; <span class="hljs-number">0</span>) &#123;	<span class="hljs-comment">// 保证读完</span><br>      <span class="hljs-type">ssize_t</span> rv = <span class="hljs-built_in">read</span>(REPRL_DRFD, ptr, remaining);<br>      <span class="hljs-built_in">CHECK_GE</span>(rv, <span class="hljs-number">0</span>);<br>      remaining -= rv;<br>      ptr += rv;<br>    &#125;<br>    buffer[script_size] = <span class="hljs-number">0</span>;	<span class="hljs-comment">// 末尾置0</span><br><br>    Local&lt;String&gt; source =	<br>        String::<span class="hljs-built_in">NewFromUtf8</span>(isolate, buffer, NewStringType::kNormal)<br>            .<span class="hljs-built_in">ToLocalChecked</span>();<br>    <span class="hljs-keyword">delete</span>[] buffer;<br>    Shell::<span class="hljs-built_in">set_script_executed</span>();<br>    <span class="hljs-comment">// 执行</span><br>    <span class="hljs-keyword">if</span> (!Shell::<span class="hljs-built_in">ExecuteString</span>(isolate, source, file_name,<br>                              Shell::kReportExceptions)) &#123;<br>      <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>    &#125;<br>  &#125;<br><span class="hljs-meta">#<span class="hljs-keyword">endif</span>  <span class="hljs-comment">// V8_FUZZILLI</span></span><br></code></pre></td></tr></table></figure>
 
 <p>这里会发现子进程通过read 管道句柄来访问jsc脚本数据，而不是直接通过地址来直接访问那块共享内存的，因此父进程写入脚本的效率会大大优于子进程读取脚本的效率。有没有办法能够让子进程拿到父进程mapping的地址？或者父进程mapping到子进程地址空间呢？</p>
+<p><strong>2025-5-13更新：由于是shell类型的目标，处理高级语言类的输入时，引擎会花费大量的时间去解释&#x2F;编译，因此父进程写入输入的速度快，子进程执行速度跟不上，所以读取输入效率的提升相对于输入的执行来说忽略不计。</strong></p>
 <blockquote>
 <p>可能的解决方案：可以让子进程通过fd来mmap映射一个内存地址，虽然虚拟内存不一样，但是由于fd是一致的，因此实际物理内存是一致的，所以映射出来的东西是一样的。</p>
 </blockquote>
@@ -1328,9 +1329,9 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2025/03/21/%E8%A3%85%E8%BD%BD%E4%B8%8E%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5/" title="装载与动态链接">
+                      <a href="/2025/03/16/pwn-college-Intermediate-Memory-Errors/" title="pwn.college: Intermediate Memory Errors">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">装载与动态链接</span>
+                        <span class="hidden-mobile">pwn.college: Intermediate Memory Errors</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     

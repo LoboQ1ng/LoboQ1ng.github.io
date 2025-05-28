@@ -1,0 +1,1126 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/Pi.png">
+  <link rel="icon" href="/img/Pi.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Lobo Q1ng">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="libFuzzerlibfuzzer是一个进程内、覆盖引导、进化的Fuzz引擎。 LibFuzzer与被测库链接，并通过特定的Fuzzing入口点（又称为“目标函数”）将模糊测试输入送到被测库；然后，Fuzzer会跟踪代码的哪些区域被覆盖，并对输入数据语料库进行修改，以最大化代码覆盖率。libFuzzer的覆盖率信息由LLVM的SanitizerCoverage提供代码插桩。关于LLVM的Sani">
+<meta property="og:type" content="article">
+<meta property="og:title" content="oss-fuzz-gen源码阅读">
+<meta property="og:url" content="https://loboq1ng.github.io/2025/05/28/oss-fuzz-gen%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/index.html">
+<meta property="og:site_name" content="Q1ng&#39;s blog">
+<meta property="og:description" content="libFuzzerlibfuzzer是一个进程内、覆盖引导、进化的Fuzz引擎。 LibFuzzer与被测库链接，并通过特定的Fuzzing入口点（又称为“目标函数”）将模糊测试输入送到被测库；然后，Fuzzer会跟踪代码的哪些区域被覆盖，并对输入数据语料库进行修改，以最大化代码覆盖率。libFuzzer的覆盖率信息由LLVM的SanitizerCoverage提供代码插桩。关于LLVM的Sani">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-05-28T05:59:06.000Z">
+<meta property="article:modified_time" content="2025-05-28T06:01:09.355Z">
+<meta property="article:author" content="Lobo Q1ng">
+<meta property="article:tag" content="Fuzz">
+<meta property="article:tag" content="ProjectZero">
+<meta property="article:tag" content="LLM">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+    <meta name="referrer" content="no-referrer-when-downgrade">
+  
+  
+  <title>oss-fuzz-gen源码阅读 - Q1ng&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"loboq1ng.github.io","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Q1ng&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/Townscaper.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="oss-fuzz-gen源码阅读"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-05-28 13:59" pubdate>
+          2025年5月28日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          11k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          140 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="busuanzi_container_page_pv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="busuanzi_value_page_pv"></span>次
+        </span>
+        
+
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">oss-fuzz-gen源码阅读</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="libFuzzer"><a href="#libFuzzer" class="headerlink" title="libFuzzer"></a>libFuzzer</h1><p>libfuzzer是一个进程内、覆盖引导、进化的Fuzz引擎。</p>
+<p>LibFuzzer与被测库链接，并通过特定的Fuzzing入口点（又称为“目标函数”）将模糊测试输入送到被测库；然后，Fuzzer会跟踪代码的哪些区域被覆盖，并对输入数据语料库进行修改，以最大化代码覆盖率。libFuzzer的覆盖率信息由<code>LLVM</code>的<code>SanitizerCoverage</code>提供代码插桩。关于LLVM的Sanitizer，笔者在<code>Fuzzilli</code>文章中有简要概述，主要介绍一些桩函数与回调函数啥的。</p>
+<h2 id="Fuzz-Target"><a href="#Fuzz-Target" class="headerlink" title="Fuzz Target"></a>Fuzz Target</h2><p>使用libFuzzer对库进行覆盖率引导模糊测试的第一步是实现一个<em>Fuzz target</em>，也就是一个函数。它接受一个字节数组，并使用要测试的API对这些字节执行一些”intrersting”的操作。例如：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">// fuzz_target.cc</span><br><span class="hljs-keyword">extern</span> <span class="hljs-string">&quot;C&quot;</span> <span class="hljs-type">int</span> <span class="hljs-title function_">LLVMFuzzerTestOneInput</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">uint8_t</span> *Data, <span class="hljs-type">size_t</span> Size)</span> &#123;<br>  DoSomethingInterestingWithMyAPI(Data, Size);<br>  <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;  <span class="hljs-comment">// Values other than 0 and -1 are reserved for future use.</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>请注意，此模糊测试目标与libFuzzer无关，因此使用其他Fuzzing引擎（例如AFL或Radamsa）是可能的，甚至更可取。</p>
+<p>关于fuzz target：</p>
+<ul>
+<li>libfuzzer将在同一进程中使用不同的输入多次执行fuzz target</li>
+<li>它必须能够忍受任何类型的输入（空、huge size、格式错误等）</li>
+<li>它不得在任何输入上<code>exit()</code></li>
+<li>它可以使用线程，但理想情况下，所有线程应在函数结束时加入</li>
+<li>它必须尽可能确定。非确定性（例如基于输入字节的不随机决策）会使Fuzzing效率低下</li>
+<li>它必须很快。尽量避免三次方或更高复杂度、日志记录或过度内存消耗</li>
+<li>理想情况下，它不应该修改任何全局状态（尽管这不是强制性的）。</li>
+<li>通常，目标越窄越好。例如，如果你的目标可以解析多种数据格式，将其拆分为多个目标，每个格式一个。</li>
+</ul>
+<h2 id="Fuzzer-usage"><a href="#Fuzzer-usage" class="headerlink" title="Fuzzer usage"></a>Fuzzer usage</h2><p>较新版本的Clang(从6.0开始)已经包含libFuzzer，无需额外安装。</p>
+<p>在build Fuzz target源码时，在编译和链接时使用<code>-fsanitizer=fuzzer</code>标志。在大多数情况下，将libFuzzer和AddressSanitizer(ASAN)、UndefinedBehaviorSanitizer(UBSAN)结合使用，也可以使用MemorySanitizer(MSAN)进行构建。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">clang -g -O1 -fsanitize=fuzzer                         mytarget.c <span class="hljs-comment"># Builds the fuzz target w/o sanitizers</span><br>clang -g -O1 -fsanitize=fuzzer,address                 mytarget.c <span class="hljs-comment"># Builds the fuzz target with ASAN</span><br>clang -g -O1 -fsanitize=fuzzer,signed-integer-overflow mytarget.c <span class="hljs-comment"># Builds the fuzz target with a part of UBSAN</span><br>clang -g -O1 -fsanitize=fuzzer,memory                  mytarget.c <span class="hljs-comment"># Builds the fuzz target with MSAN</span><br></code></pre></td></tr></table></figure>
+
+<p>这将执行必要的插桩，并与libFuzzer库进行链接。请注意，<code>-fsanitize=fuzzer</code>时，会给目标代码插桩，还会自动把libFuzzer库链接进来，其中包括libFuzzer自己定义的<code>main()</code>函数。这代表目标代码中不能再定义另一个<code>main()</code>函数，否则会冲突。</p>
+<p>libFuzzer是一个模糊测试引擎和框架，所以它的<code>main</code>是为了启动Fuzzing loop。那么在实际使用的过程中，使用libFuzzer测试函数时是不带<code>main()</code>的，也就是说我们写在<code>LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) </code>内的是测试目标，它不带main()函数。libFuzzer会不断生成<code>*Data</code>调用<code>LLVMFuzzerTestOneInput</code>以充分测试。</p>
+<p>那么如果我们写入的目标中存在一个main()函数的话，也就是说想自定义测试前的行为。例如：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-keyword">extern</span> <span class="hljs-type">int</span> <span class="hljs-title function_">LLVMFuzzerTestOneInput</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">uint8_t</span> *data, <span class="hljs-type">size_t</span> size)</span>;<br><br><span class="hljs-type">int</span> <span class="hljs-title function_">main</span><span class="hljs-params">(<span class="hljs-type">int</span> argc, <span class="hljs-type">char</span> **argv)</span> &#123;<br>    <span class="hljs-comment">// 这里省略了真正的 fuzz 驱动代码，通常你会调用 libFuzzer 的接口</span><br>    <span class="hljs-comment">// 这里只是示范，通常不建议自己写main，除非很特殊</span><br><br>    <span class="hljs-comment">// 简单示范：用固定输入调用测试函数</span><br>    <span class="hljs-type">const</span> <span class="hljs-type">char</span> *test_input = <span class="hljs-string">&quot;TEST FUZZ&quot;</span>;<br>    LLVMFuzzerTestOneInput((<span class="hljs-type">const</span> <span class="hljs-type">uint8_t</span> *)test_input, <span class="hljs-built_in">strlen</span>(test_input));<br><br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br><br></code></pre></td></tr></table></figure>
+
+<p>那么就需要编译链接分开，先编译：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">clang -fsanitize=fuzzer-no-link -c fuzzer_test.c -o fuzzer_test.o<br>clang -c my_main.c -o my_main.o<br></code></pre></td></tr></table></figure>
+
+<p>再链接：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">clang fuzzer_test.o my_main.o -fsanitize=fuzzer -o my_fuzzer<br></code></pre></td></tr></table></figure>
+
+<p>通过一个示例(CVE-2016-5180)来理解libFuzzer的工作流程。首先将<code>c-ares</code>项目克隆下来：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">git <span class="hljs-built_in">clone</span> https://github.com/c-ares/c-ares.git<br><span class="hljs-built_in">cd</span> c-ares/<br>git reset --hard 51fbb479f7948fca2ace3ff34a15ff27e796afdd<br></code></pre></td></tr></table></figure>
+
+<p>再编译<code>c-ares</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">./buildconf<br>./configure<br>make CC=<span class="hljs-string">&quot;clang -O2 -fno-omit-frame-pointer -g -fsanitize=address -fsanitize-coverage=trace-cmp,trace-gep,trace-div&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p>编译成功后，写<code>LLVMFuzzerTestOneInput()</code>函数，将其输入的字节流进行转换，再调用<code>ares_create_query()</code>，将代码保存为<code>.cc</code>文件。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">// Copyright 2016 Google Inc. All Rights Reserved.</span><br><span class="hljs-comment">// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdint.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdlib.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;string&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;arpa/nameser.h&gt;</span></span><br><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;ares.h&gt;</span></span><br><br><span class="hljs-keyword">extern</span> <span class="hljs-string">&quot;C&quot;</span> <span class="hljs-type">int</span> <span class="hljs-title function_">LLVMFuzzerTestOneInput</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">uint8_t</span> *Data, <span class="hljs-type">size_t</span> Size)</span> &#123;<br>  <span class="hljs-type">unsigned</span> <span class="hljs-type">char</span> *buf;<br>  <span class="hljs-type">int</span> buflen;<br>  <span class="hljs-built_in">std</span>::<span class="hljs-built_in">string</span> <span class="hljs-title function_">s</span><span class="hljs-params">(reinterpret_cast&lt;<span class="hljs-type">const</span> <span class="hljs-type">char</span> *&gt;(Data), Size)</span>;<br>  ares_create_query(s.c_str(), ns_c_in, ns_t_a, <span class="hljs-number">0x1234</span>, <span class="hljs-number">0</span>, &amp;buf, &amp;buflen, <span class="hljs-number">0</span>);<br>  <span class="hljs-built_in">free</span>(buf);<br>  <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>编译该文件。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">clang++ -g fuzzer_test.cc -fsanitize=address,fuzzer -I c-ares c-ares/.libs/libcares.a -o fuzzer_test<br></code></pre></td></tr></table></figure>
+
+<p>然后执行即可出现crash。那么这里测试的API就是<code>ares_create_query()</code>，当然这只是顶层API，其中依然会调用其它API，也会一起测试。</p>
+<h1 id="oss-fuzz-gen-usage"><a href="#oss-fuzz-gen-usage" class="headerlink" title="oss-fuzz-gen usage"></a>oss-fuzz-gen usage</h1><h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><p>安装<code>python 3.11</code>，<code>git</code>，<code>Docker</code>，<code>Google Cloud SDK</code>，<code>C++ filt</code>，(optional for project_src.py)<code>clang-format</code></p>
+<p>安装python相关依赖：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">python -m venv.venv<br><span class="hljs-built_in">source</span> .venv/bin/activate<br>pip install -r requirements.txt<br></code></pre></td></tr></table></figure>
+
+
+
+<h2 id="LLM-接入"><a href="#LLM-接入" class="headerlink" title="LLM 接入"></a>LLM 接入</h2><p>配置OpenAI的API Key：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">export</span> OPENAI_API_KEY=<span class="hljs-string">&#x27;&lt;your-api-key&gt;&#x27;</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h2 id="运行实验"><a href="#运行实验" class="headerlink" title="运行实验"></a>运行实验</h2><p>通过本地实验生成和评估 benchmark set中的目标</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs bash">./run_all_experiments.py \<br>    --model=&lt;model-name&gt; \<br>    --benchmarks-directory=<span class="hljs-string">&#x27;./benchmark-sets/comparison&#x27;</span> \<br>    [--ai-binary=&lt;llm-access-binary&gt;] \<br>    [--template-directory=prompts/custom_template] \<br>    [--work-dir=results-dir]<br>    [...]<br><span class="hljs-comment"># E.g., generate fuzz targets for TinyXML-2 with default template and fuzz for 30 seconds.</span><br><span class="hljs-comment"># ./run_all_experiments.py -y ./benchmark-sets/all/tinyxml2.yaml</span><br></code></pre></td></tr></table></figure>
+
+<p><code>&lt;model-name&gt;</code>必须是支持模型之一的名称。OSS-Fuzz-gen支持的模型列表会定期更新，可以使用<code>run_all_experitments.py --help</code>列出所有可支持的模型。</p>
+<p>实验也可以在google Cloud上使用Google Cloud Build运行。您可以通过传递<code>--cloud &lt;experiment-name&gt; --cloud-experiment-bucket &lt;bucket&gt;</code>来完成此操作，其中<code>&lt;bucket&gt;</code>是Google Cloud Storage bucket的名称。</p>
+<p>目前提供的各种benchmark sets：</p>
+<ol>
+<li><code>comparison</code>：一些OSS-Fuzz C&#x2F;C++项目</li>
+<li><code>all</code>：所有OSS-Fuzz C&#x2F;C++项目</li>
+<li><code>c-specific</code>：一个专注于C项目的基准测试集</li>
+<li>…</li>
+</ol>
+<h3 id="可视化的结果"><a href="#可视化的结果" class="headerlink" title="可视化的结果"></a>可视化的结果</h3><p>一旦完成，框架将输出类似以下的实验结果：</p>
+<figure class="highlight nix"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs nix"><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><span class="hljs-operator">==</span><br><span class="hljs-operator">*</span><span class="hljs-symbol">&lt;project-name&gt;</span>, <span class="hljs-symbol">&lt;function-name&gt;</span><span class="hljs-operator">*</span><br>build success <span class="hljs-params">rate:</span> <span class="hljs-symbol">&lt;build-rate&gt;</span>, crash <span class="hljs-params">rate:</span> <span class="hljs-symbol">&lt;crash-rate&gt;</span>, max <span class="hljs-params">coverage:</span> <span class="hljs-symbol">&lt;max-coverage&gt;</span>, max line coverage <span class="hljs-params">diff:</span> <span class="hljs-symbol">&lt;max-coverage-diff&gt;</span><br>max coverage <span class="hljs-params">sample:</span> <span class="hljs-symbol">&lt;results-dir&gt;</span><span class="hljs-operator">/</span><span class="hljs-symbol">&lt;benchmark-dir&gt;</span><span class="hljs-operator">/</span>fixed_targets<span class="hljs-operator">/</span><span class="hljs-symbol">&lt;LLM-generated-fuzz-target&gt;</span><br>max coverage diff <span class="hljs-params">sample:</span> <span class="hljs-symbol">&lt;results-dir&gt;</span><span class="hljs-operator">/</span><span class="hljs-symbol">&lt;benchmark-dir&gt;</span><span class="hljs-operator">/</span>fixed_targets<span class="hljs-operator">/</span><span class="hljs-symbol">&lt;LLM-generated-fuzz-target&gt;</span><br></code></pre></td></tr></table></figure>
+
+<p>其中<code>&lt;build-rate&gt;</code>是可编译的模糊测试目标数量与LLM生成的总模糊测试数量的比值（例如，如果8个模糊目标中有4个可以构建，则为0.5），<code>&lt;crash-rate&gt;</code>是运行时崩溃率，<code>&lt;max-coverage&gt;</code>衡量所有目标的最高行覆盖率，而<code>&lt;max-coverage-diff&gt;</code>显示LLM生成的目标相对于OSS-Fuzz中现有人类编写的目标的最高新行覆盖率。</p>
+<p>注意<code>&lt;max-coverage&gt;</code>和<code>&lt;max-coverage-diff&gt;</code>是基于与模糊测试目标链接的代码计算的，而不是整个项目。例如：</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs vim">================================================================================<br>*tinyxml2, tinyxml2::XMLDocument::<span class="hljs-keyword">Print</span>*<br>build success rate: <span class="hljs-number">1.0</span>, crash rate: <span class="hljs-number">0.125</span>, <span class="hljs-built_in">max</span> coverage: <span class="hljs-number">0.29099427381572096</span>, <span class="hljs-built_in">max</span> <span class="hljs-built_in">line</span> coverage diff: <span class="hljs-number">0.11301753077209996</span><br><span class="hljs-built_in">max</span> coverage sample: <span class="hljs-symbol">&lt;result-dir&gt;</span>/output-tinyxml2-tinyxml2-xmldocument-<span class="hljs-keyword">print</span>/fixed_targets/<span class="hljs-number">08</span>.cpp<br><span class="hljs-built_in">max</span> coverage diff sample: <span class="hljs-symbol">&lt;result-dir&gt;</span>/output-tinyxml2-tinyxml2-xmldocument-<span class="hljs-keyword">print</span>/fixed_targets/<span class="hljs-number">08</span>.cpp<br></code></pre></td></tr></table></figure>
+
+<h4 id="结果报告"><a href="#结果报告" class="headerlink" title="结果报告"></a>结果报告</h4><p>要通过Web UI可视化这些结果，并查看有关所使用的确切提示、生成的样本和其他日志的更多详细信息，可运行：</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs vim"><span class="hljs-keyword">python</span> -<span class="hljs-keyword">m</span> report.web -r <span class="hljs-symbol">&lt;results-dir&gt;</span> -<span class="hljs-keyword">o</span> <span class="hljs-symbol">&lt;output-dir&gt;</span><br><span class="hljs-keyword">python</span> -<span class="hljs-keyword">m</span> http.server <span class="hljs-symbol">&lt;port&gt;</span> -d <span class="hljs-symbol">&lt;output-dir&gt;</span><br></code></pre></td></tr></table></figure>
+
+<p>其中<code>&lt;results-dir&gt;</code>是实验中传递给<code>--work-dir</code>的目录（默认值 <code>./results</code>），然后导航到<code>http://localhost:&lt;port&gt;</code>查看结果。</p>
+<h3 id="实验的工作流细节"><a href="#实验的工作流细节" class="headerlink" title="实验的工作流细节"></a>实验的工作流细节</h3><p>配置和使用框架，请按照以下步骤进行：</p>
+<ol>
+<li>配置Benchmark</li>
+<li>设置Prompt模板</li>
+<li>生成Fuzz目标</li>
+<li>修复编译错误</li>
+<li>评估Fuzz目标</li>
+<li>使用本地Fuzz Introspector实例</li>
+</ol>
+<h4 id="配置Benchmark"><a href="#配置Benchmark" class="headerlink" title="配置Benchmark"></a>配置Benchmark</h4><p>准备一个benchmark YAML文件，指定需要测试的函数。关于这个YAML文件，可以使用intropector自动生成。但是请注意，待测项目需要集成到<code>OSS-Fuzz</code>中才能构建。</p>
+<p>Benchmark YAML文件是Fuzz目标生成所必需的，它制定了<code>functions</code>，<code>project</code>，<code>target_path</code>以及可选的<code>target_name</code>：</p>
+<ul>
+<li><code>functions</code>列出了生成模糊测试目标的函数签名</li>
+<li><code>project</code>是<code>OSS-Fuzz</code>中包含<code>functions</code>的开源项目名称（例如，<code>TinyXML-2</code>）。</li>
+<li><code>target_path</code>是<code>project</code>的<code>OSS-Fuzz</code>容器中现有fuzz 目标的路径。<strong>它将被替换为LLM生成的目标</strong>，并用于fuzzing评估。</li>
+<li><code>target_name</code>是一个<em>可选</em>字段，用于指定Fuzz目标的二进制名称。</li>
+</ul>
+<p>可以使用<code>introspector.py</code>在<code>OSS-Fuzz</code>中生成<code>c</code>&#x2F;<code>c++</code>项目的YAML文件：</p>
+<figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs gherkin"><span class="hljs-comment"># In virtual env under root directory.</span><br>python -m data_prep.introspector <span class="hljs-variable">&lt;project-name&gt;</span> -m <span class="hljs-variable">&lt;num_benchmark_per_project&gt;</span> -o <span class="hljs-variable">&lt;output_dir&gt;</span><br><span class="hljs-comment"># E.g., python -m data_prep.introspector tinyxml2 -m 5 -o benchmark-sets/new</span><br></code></pre></td></tr></table></figure>
+
+<p>以这种方式生成的基准文件优先考虑<code>OSS-Fuzz</code>中覆盖范围较远但覆盖率较低的函数，因此更容易实现更高的<code>max_line_coverage_diff</code></p>
+<p>该框架将现有的人工编写的模糊测试目标（先前<code>oss-fuzz</code>项目中人工编写的harness）作为示例添加到Prompt中，以提高结果质量。我们的实验表明，使用来自同一项目的人工编写的模糊测试目标（即使针对不同的函数）可以为LLM提供更多项目特定的上下文，而使用来自不同项目的目标则可以减少过拟合。</p>
+<p>每个示例都包含一个问题和一个解决方案。解决方案包含一个由<code>OSS-Fuzz</code>人工编写的模糊测试目标，该目标已被证明是有效的。其格式与我们预期的LLM响应相同。问题包含结果模糊测试目标中一个函数的签名。同样，其格式也与LLM的最终问题相同。</p>
+<p>示例通过<code>project_targets.py</code>中的<code>generate_data()</code>自动添加到prompts中。</p>
+<p>使用<code>project_src.py</code>将<code>OSS-Fuzz</code>中<code>c</code>&#x2F;<code>c++</code>项目的所有模糊测试目标文件检索到本地目录（默认情况下为<code>example_targets/&lt;projetc_name&gt;</code>）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># In virtual env under root directory.</span><br>python -m data_prep.project_src -p &lt;project-name&gt;<br><span class="hljs-comment"># E.g., retrieve all human-written fuzz targets for TinyXML-2:</span><br><span class="hljs-comment"># python -m data_prep.project_src -p tinyxml2</span><br><span class="hljs-comment"># E.g., retrieve all fuzz targets for all projects:</span><br>python -m data_prep.project_src -p all<br></code></pre></td></tr></table></figure>
+
+<p>我们提供了一些生成用于模型微调或参数高效调优（PET）的训练数据的方法。训练数据是一个包含两个项目的子列表，其中函数签名和对应的fuzz目标分别为子列表的第一项和第二项。由于一个Fuzz目标可能会测试多个函数，因此多个<code>function_signature</code>可能共享同一个<code>fuzz_target</code>，即：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs xml">[<br>  [<span class="hljs-tag">&lt;<span class="hljs-name">function_signature_1</span>&gt;</span>, <span class="hljs-tag">&lt;<span class="hljs-name">fuzz_target_1</span>&gt;</span>],<br>  [<span class="hljs-tag">&lt;<span class="hljs-name">function_signature_2</span>&gt;</span>, <span class="hljs-tag">&lt;<span class="hljs-name">fuzz_target_2</span>&gt;</span>],<br>  [<span class="hljs-tag">&lt;<span class="hljs-name">function_signature_3</span>&gt;</span>, <span class="hljs-tag">&lt;<span class="hljs-name">fuzz_target_2</span>&gt;</span>],<br>]<br></code></pre></td></tr></table></figure>
+
+<p>具体生成训练数据的命令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># In virtual env under root directory.</span><br>python -m data_prep.project_targets --project-name &lt;project-name&gt;<br><span class="hljs-comment"># E.g., generate data for TinyXML-2:</span><br><span class="hljs-comment"># python -m data_prep.project_targets --project-name tinyxml2</span><br><span class="hljs-comment"># E.g., generate data for all C/C++ projects:</span><br><span class="hljs-comment"># python -m data_prep.project_targets --project-name all</span><br></code></pre></td></tr></table></figure>
+
+<h4 id="配置Prompt模板"><a href="#配置Prompt模板" class="headerlink" title="配置Prompt模板"></a>配置Prompt模板</h4><p>准备Prompt模板。LLM的提示词将基于<code>oss-fuzz-gen/prompts/</code>下的文件构建。它首先会定义主要目标和重要注意事项，然后是一些示例问题和解决方案。每个示例问题的格式和最终问题相同（即模糊测试的函数签名），解决方案是针对同一项目或其他项目中不同函数的人工编写的<code>harness</code>。提示还可以包含更多关于函数的信息（例如，函数的用法、源代码或参数类型定义）以及特定于模型的注释（例如，需要避免的常见陷阱）。</p>
+<p>可以通过<code>--template-directory</code>传递备用模板目录。新的模板目录不必包含所有文件：如果缺少<code>template_xml/</code>中的文件，框架将默认使用这些文件。默认Prompt的结果如下：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">Priming</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">Model-specific</span> <span class="hljs-attr">notes</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">Examples</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">Final</span> <span class="hljs-attr">question</span> + <span class="hljs-attr">Function</span> <span class="hljs-attr">information</span>&gt;</span><br></code></pre></td></tr></table></figure>
+
+<h4 id="生成Fuzz目标"><a href="#生成Fuzz目标" class="headerlink" title="生成Fuzz目标"></a>生成Fuzz目标</h4><p>脚本<code>run_all_experiments.py</code>将使用上面构建的Prmopt模板通过LLM生成Fuzz目标，并测量其代码覆盖率。所有实验数据都将保存到<code>--work-dir</code>中。</p>
+<h4 id="修复编译错误"><a href="#修复编译错误" class="headerlink" title="修复编译错误"></a>修复编译错误</h4><p>当Fuzz目标构建失败时，框架会在终止前自动尝试修复五次。每次尝试都会请求LLM根据<code>OSS-Fuzz</code>的构建失败信息修复模糊测试目标，解析响应中的源代码，然后重新编译。</p>
+<h4 id="评估Fuzz目标"><a href="#评估Fuzz目标" class="headerlink" title="评估Fuzz目标"></a>评估Fuzz目标</h4><p>如果模糊测试目标编译成功，框架会使用<code>libFuzzer</code>对其进行模糊测试，并测量其行覆盖率。模糊测试超时由<code>--run-timeout</code>标志指定。此外，还会将其行覆盖率与生产环境中现有的人工编写的<code>OSS-Fuzz</code>目标进行比较。</p>
+<h4 id="使用本地Fuzz-Introspector实例"><a href="#使用本地Fuzz-Introspector实例" class="headerlink" title="使用本地Fuzz Introspector实例"></a>使用本地Fuzz Introspector实例</h4><p>运行本地版本的Fuzz Introspector Web应用程序可能比直接查询introspector分析过的数据更合适。这在测试OSS-Fuzz-gen扩展程序时非常有用，因为该扩展程序Fuzzing查询时需要新的程序分析数据，也可能面临查询网站的网络带宽受限制，或者网站可能关闭等问题。可以通过<code>-e</code>标志传递给<code>run_all_experiments.py</code>来将OSS-Fuzz-gen设置为使用本地的<code>fuzz-introspector</code>。但是，要做到这一点，首先需要在本地初始化<code>fuzz-introspector</code>端点的本地实例。</p>
+<h1 id="搭建-OSS-Fuzz-gen实验"><a href="#搭建-OSS-Fuzz-gen实验" class="headerlink" title="搭建 OSS-Fuzz-gen实验"></a>搭建 OSS-Fuzz-gen实验</h1><p>我这里用的pyenv装的<code>python 3.11.12</code>，装了<code>Docker</code>等。关于<code>Google Cloud SDK</code>，因为不打算用Google AI Platform就本地测试一下，因此没有装。</p>
+<h2 id="本地fuzz-introspector"><a href="#本地fuzz-introspector" class="headerlink" title="本地fuzz-introspector"></a>本地fuzz-introspector</h2><p>由于用的pyenv管理的python版本，所以改了一下<code>/fuzz-introspector/scripts/oss-fuzz-gen-e2e/build_all.sh</code>，将<code>python3 -m virtualenv .venv</code>改成了<code>python -m venv .venv</code>，只是创建虚拟环境的方式不同而已。</p>
+<blockquote>
+<p>对于docker容器内的代理配置说明</p>
+<p>特别要注意，由于需要用到docker，需要配置代理来拉镜像以及构建镜像。在给clash中记得设置监听地址<code>bind-address: 0.0.0.0:7890</code>，而不是只监听<code>127.0.0.1:7890</code>。否则，你的docker容器是无法访问到代理的，因为对于docker容器来说<code>127.0.0.1</code>是它本身，而不是宿主机。可以使用<code>netstat -tunlp | grep 7890</code>来查看你<code>7890</code>端口所监听的地址。</p>
+</blockquote>
+<p>配置好docker的守护进程(<code>Daemon.json</code>)代理和容器(<code>config.json</code>)代理后，改原脚本<code>build_all.sh</code>为：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs sh">ROOT_FI=<span class="hljs-variable">$PWD</span>/../../<br><br>python3 -m venv .venv<br>. .venv/bin/activate<br><br><span class="hljs-built_in">cd</span> <span class="hljs-variable">$ROOT_FI</span><br>python3 -m venv .venv<br>. .venv/bin/activate<br><br>python3 -m pip install -r ./requirements.txt<br>python3 -m pip install -r ./tools/web-fuzzing-introspection/requirements.txt<br><span class="hljs-built_in">cd</span> oss_fuzz_integration<br>./build_post_processing.sh<br></code></pre></td></tr></table></figure>
+
+<p>因为不太想把<code>oss-fuzz-gen</code>放在<code>fuzz-introspector</code>下，这样集成度太高，封装太好会导致理解不了到底introspector做了啥。运行完<code>build_all.sh</code>脚本后，下载的镜像如下：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">REPOSITORY</span>                                 TAG       IMAGE ID       CREATED          SIZE<br><span class="hljs-attribute">gcr</span>.io/oss-fuzz-base/base-runner           latest    <span class="hljs-number">98</span>a302497240   <span class="hljs-number">15</span> seconds ago   <span class="hljs-number">1</span>.<span class="hljs-number">38</span>GB<br><span class="hljs-section">&lt;none&gt;</span>                                     <span class="hljs-section">&lt;none&gt;</span>    <span class="hljs-attribute">ee9986b8de3e</span>   <span class="hljs-number">25</span> hours ago     <span class="hljs-number">1</span>.<span class="hljs-number">38</span>GB<br><span class="hljs-attribute">gcr</span>.io/oss-fuzz-base/base-builder-go       latest    <span class="hljs-number">1</span>e3e2bd1199c   <span class="hljs-number">25</span> hours ago     <span class="hljs-number">2</span>.<span class="hljs-number">31</span>GB<br><span class="hljs-attribute">gcr</span>.io/oss-fuzz-base/base-builder-rust     latest    <span class="hljs-number">7</span>a0091ac473f   <span class="hljs-number">26</span> hours ago     <span class="hljs-number">2</span>.<span class="hljs-number">44</span>GB<br><span class="hljs-attribute">gcr</span>.io/oss-fuzz-base/base-builder-jvm      latest    <span class="hljs-number">05</span>e48fb4e39a   <span class="hljs-number">26</span> hours ago     <span class="hljs-number">2</span>.<span class="hljs-number">28</span>GB<br><span class="hljs-attribute">gcr</span>.io/oss-fuzz-base/base-builder-python   latest    fc469b915f16   <span class="hljs-number">28</span> hours ago     <span class="hljs-number">2</span>.<span class="hljs-number">01</span>GB<br><span class="hljs-attribute">gcr</span>.io/oss-fuzz-base/base-builder          latest    <span class="hljs-number">9</span>b6900c549c3   <span class="hljs-number">28</span> hours ago     <span class="hljs-number">1</span>.<span class="hljs-number">88</span>GB<br><span class="hljs-attribute">gcr</span>.io/oss-fuzz-base/base-clang            latest    <span class="hljs-number">05158</span>c6b3ea6   <span class="hljs-number">34</span> hours ago     <span class="hljs-number">1</span>.<span class="hljs-number">15</span>GB<br></code></pre></td></tr></table></figure>
+
+<h3 id="创建webserver-DB"><a href="#创建webserver-DB" class="headerlink" title="创建webserver DB"></a>创建webserver DB</h3><p>首先去项目目录下<code>source .venv/bin/activate</code>。随后，去<code>/fuzz-introspector/tools/web-fuzzing-introspection/app/static/assets/db</code>目录下，执行以下指令为introspector构建指定项目的db：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">./launch_specific_targets.sh xpdf<br></code></pre></td></tr></table></figure>
+
+<p>DB是以.json文件创建的可供<code>webapp</code>理解使用的数据库。所使用的原始数据是OSS-Fuzz每日生成的<code>Fuzz Introspector</code>报告。所有的OSS-Fuzz项目的报告都会被整理并精简为更小的数据单元，然后合并到代表OSS-Fuzz宏观状态的数据结构中。例如，为了统计OSS-Fuzz覆盖的行数，google会合并所有OSS-Fuzz项目的数据。</p>
+<p>DB由<code>web_db_creator_from_summary.py</code>创建。此文件名中的<code>summary</code>是对Fuzz Introspector为每个报告输出的<code>summary.json</code>文件的引用。简单来说就是，通过使用google storage的project状态数据来构建一个本地的db（实际是json文件）存储项目的状态信息。</p>
+<h3 id="运行webserver"><a href="#运行webserver" class="headerlink" title="运行webserver"></a>运行webserver</h3><p>然后去<code>/web-fuzzing-introspector</code>下跑<code>webserver</code>，并让它在后台运行。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">python3 ./main.py &gt; /tmp/fi-weblog.txt 2&gt;&amp;1 &amp;<br></code></pre></td></tr></table></figure>
+
+<p>检查服务是否启动成功：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">curl http://127.0.0.1:8080/api/far-reach-but-low-coverage?project=xpdf<br></code></pre></td></tr></table></figure>
+
+<p>如果有数据，那么说明webserver启动成功。也就是本地搭建fuzz-introspector成功。</p>
+<h2 id="启动OSS-Fuzz-gen"><a href="#启动OSS-Fuzz-gen" class="headerlink" title="启动OSS-Fuzz-gen"></a>启动OSS-Fuzz-gen</h2><p>把项目克隆下来，进入项目根目录，创建虚拟环境然后配置环境即可，不赘述了。</p>
+<h3 id="LLM-Access-配置"><a href="#LLM-Access-配置" class="headerlink" title="LLM Access 配置"></a>LLM Access 配置</h3><p>需要准备相关大模型的api，需要通过设置相应的环境变量，例如openai需要设置<code>OPENAI_API_KEY=&#39;&lt;your-api-key&gt;&#39;</code>。如果是Azure上的openai模型，那么相应的设置：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">export</span> AZURE_OPENAI_API_KEY=<span class="hljs-string">&#x27;&lt;your-azure-api-key&gt;&#x27;</span><br><span class="hljs-built_in">export</span> AZURE_OPENAI_ENDPOINT=<span class="hljs-string">&#x27;&lt;your-azure-endpoint&gt;&#x27;</span><br><span class="hljs-built_in">export</span> AZURE_OPENAI_API_VERSION=<span class="hljs-string">&#x27;&lt;your-azure-api-version&gt;&#x27;</span> <span class="hljs-comment"># default is &#x27;2024-02-01&#x27;</span><br></code></pre></td></tr></table></figure>
+
+<p>具体请参考<a target="_blank" rel="noopener" href="https://github.com/google/oss-fuzz-gen/blob/main/USAGE.md#llm-access">oss-fuzz-gen&#x2F;USAGE.md at main · google&#x2F;oss-fuzz-gen</a></p>
+<h3 id="Benchmark-YAML-构建"><a href="#Benchmark-YAML-构建" class="headerlink" title="Benchmark YAML 构建"></a>Benchmark YAML 构建</h3><p>在项目根目录下，使用如下指令构建xpdf的YAML文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">python -m data_prep.introspector xpdf -m &lt;target数量&gt; -o benchmark-sets/xpdf-test<br></code></pre></td></tr></table></figure>
+
+<h3 id="Fuzz-Target-构建"><a href="#Fuzz-Target-构建" class="headerlink" title="Fuzz Target 构建"></a>Fuzz Target 构建</h3><p>在项目根目录下，使用如下指令构建xpdf，将其自动添加到prompts中。</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus">python -m data_prep<span class="hljs-selector-class">.project_src</span> -<span class="hljs-selector-tag">p</span> xpdf<br></code></pre></td></tr></table></figure>
+
+<h3 id="Start"><a href="#Start" class="headerlink" title="Start"></a>Start</h3><p>启动测试xpdf的某些API（可以在<code>/oss-fuzz-data</code>中看到相关数据）：</p>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli"><span class="hljs-string">./run_all_experiments.py</span> <span class="hljs-params">--model=gpt-3</span>.5-turbo <span class="hljs-params">--benchmarks-directory=</span>&#x27;<span class="hljs-string">./benchmark-sets/xpdf-test</span>&#x27; -e http:<span class="hljs-string">//127.0.0.1</span><span class="hljs-function">:8080</span>/api<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>对的，你一定会经常构建失败。（除非你不在国内）</p>
+<p>为了使你的服务器不爆炸的话，建议每次失败的实验都清空一下docker images和contianer：（以下为删除所有容器（请谨慎，我这是只有我自己在用的服务器，且没有其他docker container在跑），以及删除所有包含’xpdf-‘的images）</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs powershell">docker <span class="hljs-built_in">rm</span> <span class="hljs-operator">-f</span> <span class="hljs-variable">$</span>(docker <span class="hljs-built_in">ps</span> <span class="hljs-literal">-aq</span>)<br>docker images <span class="hljs-literal">--format</span> <span class="hljs-string">&quot;&#123;&#123;.Repository&#125;&#125;:&#123;&#123;.Tag&#125;&#125; &#123;&#123;.ID&#125;&#125;&quot;</span> | grep <span class="hljs-string">&#x27;xpdf-&#x27;</span> | awk <span class="hljs-string">&#x27;&#123;print $2&#125;&#x27;</span> | xargs <span class="hljs-literal">-r</span> docker rmi <span class="hljs-operator">-f</span><br>docker builder prune <span class="hljs-literal">-a</span> <span class="hljs-operator">-f</span><br>docker volume prune <span class="hljs-operator">-f</span><br></code></pre></td></tr></table></figure></blockquote>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli"><span class="hljs-string">./run_all_experiments.py</span> <span class="hljs-params">--model=gpt-3</span>.5-turbo <span class="hljs-params">--benchmarks-directory=</span>&#x27;<span class="hljs-string">./benchmark-sets/xpdf-test</span>&#x27; -e http:<span class="hljs-string">//127.0.0.1</span><span class="hljs-function">:8080</span>/api <span class="hljs-params">--context</span> -lo info -of <span class="hljs-string">../oss-fuzz</span> -w <span class="hljs-string">./results</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h1 id="oss-fuzz-gen源码阅读"><a href="#oss-fuzz-gen源码阅读" class="headerlink" title="oss-fuzz-gen源码阅读"></a>oss-fuzz-gen源码阅读</h1><p>此环节的debug时的参数和上述一致：<code>run_all_experiments.py --model gpt-3.5-turbo --benchmarks-directory ./benchmark-sets/xpdf-test -e http://127.0.0.1:8080/api --context -lo info -of ../oss-fuzz -w ./results</code>。</p>
+<p>如果你在运行的时候也报各种代理错误的话，也看看源码吧。万变不离其宗。</p>
+<h2 id="run-all-experiments-py"><a href="#run-all-experiments-py" class="headerlink" title="run_all_experiments.py"></a>run_all_experiments.py</h2><p>从<code>run_all_experiments.py</code>开始入手：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():<br>  <span class="hljs-keyword">global</span> WORK_DIR<br><br>  args = parse_args()<br>  _setup_logging(args.log_level, is_cloud=args.cloud_experiment_name != <span class="hljs-string">&#x27;&#x27;</span>)<br>  logger.info(<span class="hljs-string">&#x27;Starting experiments on PR branch&#x27;</span>)<br><br>  <span class="hljs-comment"># Capture time at start</span><br>  start = time.time()<br>  add_to_json_report(args.work_dir, <span class="hljs-string">&#x27;start_time&#x27;</span>,<br>                     time.strftime(TIME_STAMP_FMT, time.gmtime(start)))<br>  <span class="hljs-comment"># Add num_samples to report.json</span><br>  add_to_json_report(args.work_dir, <span class="hljs-string">&#x27;num_samples&#x27;</span>, args.num_samples)<br><br>  <span class="hljs-comment"># Set introspector endpoint before performing any operations to ensure the</span><br>  <span class="hljs-comment"># right API endpoint is used throughout.</span><br>  introspector.set_introspector_endpoints(args.introspector_endpoint)<br><br>  run_one_experiment.prepare(args.oss_fuzz_dir)<br></code></pre></td></tr></table></figure>
+
+<p><code>parse_args()</code>拿到参数，一个列表形式放入<code>args</code>变量中。紧接着设置<code>log_level</code>。然后记录时间，并将时间与<code>num_samples</code>记录于结果目录中。其中<code>num_samples</code>是每次大模型返回的样本数量，默认为2。</p>
+<p>然后设置<code>fuzz-introspector</code>，这里使用本地搭建的<code>introspector</code>，因此将<code>-e</code>参数设定的webapp设置为<code>introspector</code>。随后进入到<code>run_one_experiment.py</code>中，执行<code>prepare()</code>方法。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">prepare</span>(<span class="hljs-params">oss_fuzz_dir: <span class="hljs-built_in">str</span></span>) -&gt; <span class="hljs-literal">None</span>:<br>  <span class="hljs-string">&quot;&quot;&quot;Prepares the experiment environment.&quot;&quot;&quot;</span><br>  oss_fuzz_checkout.clone_oss_fuzz(oss_fuzz_dir)<br>  oss_fuzz_checkout.postprocess_oss_fuzz()<br></code></pre></td></tr></table></figure>
+
+<p>这里的oss_fuzz_dir是我们通过参数传递的<code>../oss-fuzz</code>。通过<code>clone_oss_fuzz()</code>方法将全局变量<code>global OSS_FUZZ_DIR</code>设置为了这里的参数<code>oss_fuzz_dir</code>。设置后会调用<code>git clean -fxd -e venv -e build</code>，清理<code>OSS_FUZZ_DIR</code>工作区环境，会删除所有未跟踪的文件和目录，但保留<code>venv</code>和<code>build</code>两个目录。</p>
+<p>接下来回到<code>main()</code>中的剩余部分，首先会执行<code>prepare_experiment_targets</code>部分。它会遍历我们给予的<code>benchmark-sets/xpdf-test/</code>中所有的yaml文件（此前已经生成好的），获取目标的相关配置，例如函数，变量等信息。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python">experiment_targets = prepare_experiment_targets(args)  <br>  <span class="hljs-keyword">if</span> oss_fuzz_checkout.ENABLE_CACHING:<br>  oss_fuzz_checkout.prepare_cached_images(experiment_targets)<br><br>logger.info(<span class="hljs-string">&#x27;Running %s experiment(s) in parallels of %s.&#x27;</span>,<br>            <span class="hljs-built_in">len</span>(experiment_targets), <span class="hljs-built_in">str</span>(NUM_EXP))<br></code></pre></td></tr></table></figure>
+
+<p>然后会来到<code>prepare_cached_images(experiments_targets)</code>，参数就是读取的<code>xpdf.yaml</code>内容。</p>
+<p>它会检查<code>fuzz_build_script/</code>目录下是否存在<code>xpdf</code>这么一个<code>build</code>脚本。发现是没有的。因此会输出 <strong>INFO oss_fuzz_checkout - _prepare_image_cache: No cached script for xpdf</strong> 。那么<code>prepare_cached_images()</code>就是加载一个<code>build</code>脚本，然后使用docker pull镜像。由于本次没有走这个路径，因此返回到到<code>main()</code>中继续：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># Set global variables that are updated throughout experiment runs.</span><br>WORK_DIR = args.work_dir<br><br><span class="hljs-comment"># Start parallel coverage aggregate analysis</span><br>coverage_gains_process = Process(<br>    target=extend_report_with_coverage_gains_process)<br>coverage_gains_process.start()<br></code></pre></td></tr></table></figure>
+
+<p>设置<code>-w</code>参数，然后去启动一个新进程，新进程执行的函数为<code>extend_report_with_coverage_gains_process()</code>，它会每间隔5min执行一次<code>extend_report_with_coverage_gains()</code>，其会更新当前实验的状态到<code>report.json</code>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">extend_report_with_coverage_gains_process</span>():<br>  <span class="hljs-string">&quot;&quot;&quot;A process that continuously runs to update coverage gains in the</span><br><span class="hljs-string">  background.&quot;&quot;&quot;</span><br>  <span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:<br>    time.sleep(<span class="hljs-number">300</span>)  <span class="hljs-comment"># 5 minutes.</span><br>    <span class="hljs-keyword">try</span>:<br>      extend_report_with_coverage_gains()<br>    <span class="hljs-keyword">except</span> Exception:<br>      logger.error(<span class="hljs-string">&#x27;Failed to extend report with coverage gains&#x27;</span>)<br>      traceback.print_exc()<br></code></pre></td></tr></table></figure>
+
+<p>紧接着运行实验，并输出实验结果。分析其中<code>run_experiments(target_benchmark)</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">run_experiments</span>(<span class="hljs-params">benchmark: benchmarklib.Benchmark, args</span>) -&gt; Result:<br>  <span class="hljs-string">&quot;&quot;&quot;Runs an experiment based on the |benchmark| config.&quot;&quot;&quot;</span><br>  <span class="hljs-keyword">try</span>:<br>    work_dirs = WorkDirs(os.path.join(args.work_dir, <span class="hljs-string">f&#x27;output-<span class="hljs-subst">&#123;benchmark.<span class="hljs-built_in">id</span>&#125;</span>&#x27;</span>))<br>    args.work_dirs = work_dirs<br>    model = models.LLM.setup(<br>        ai_binary=args.ai_binary,<br>        name=args.model,<br>        max_tokens=MAX_TOKENS,<br>        num_samples=args.num_samples,<br>        temperature=args.temperature,<br>        temperature_list=args.temperature_list,<br>    )<br><br>    result = run_one_experiment.run(benchmark=benchmark,<br>                                    model=model,<br>                                    args=args,<br>                                    work_dirs=work_dirs)<br>    <span class="hljs-keyword">return</span> Result(benchmark, result)<br>  <span class="hljs-keyword">except</span> Exception <span class="hljs-keyword">as</span> e:<br>    logger.error(<span class="hljs-string">&#x27;Exception while running experiment: %s&#x27;</span>, <span class="hljs-built_in">str</span>(e))<br>    traceback.print_exc()<br>    <span class="hljs-keyword">return</span> Result(benchmark, <span class="hljs-string">f&#x27;Exception while running experiment: <span class="hljs-subst">&#123;e&#125;</span>&#x27;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>首先会初始化并建立与大模型的连接，然后调用<code>run_one_experiment.py</code>的<code>run()</code>方法。实际执行在<code>_fuzzing_pipeline()</code>中，为了调试方便，将<code>NUM_EVA = int(os.getenv(&#39;LLM_NUM_EVA&#39;, &#39;3&#39;))</code>改成<code>NUM_EVA = int(os.getenv(&#39;LLM_NUM_EVA&#39;, &#39;1&#39;))</code>，并且源码<code>_fuzzing_pipes()</code>中多线程调用<code>_fuzzing_pipe()</code>改成单线程：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">_fuzzing_pipelines</span>(<span class="hljs-params">benchmark: Benchmark, model: models.LLM,</span><br><span class="hljs-params">                       args: argparse.Namespace,</span><br><span class="hljs-params">                       work_dirs: WorkDirs</span>) -&gt; BenchmarkResult:<br>    <span class="hljs-string">&quot;&quot;&quot;Runs all trial experiments in their pipelines.&quot;&quot;&quot;</span><br>    <span class="hljs-comment"># Create a pool of worker processes</span><br>    <span class="hljs-keyword">with</span> pool.ThreadPool(processes=NUM_EVA) <span class="hljs-keyword">as</span> p:<br>        <span class="hljs-comment"># Initialize thread-local storage in each worker before processing</span><br>        task_args = [(benchmark, model, args, work_dirs, trial)<br>                     <span class="hljs-keyword">for</span> trial <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, args.num_samples + <span class="hljs-number">1</span>)]<br>        <span class="hljs-comment"># trial_results = p.starmap(_fuzzing_pipeline, task_args)</span><br>        trial_results = [ _fuzzing_pipeline(*args) <span class="hljs-keyword">for</span> args <span class="hljs-keyword">in</span> task_args]<br>        <span class="hljs-keyword">return</span> BenchmarkResult(benchmark=benchmark,<br>                               work_dirs=work_dirs,<br>                               trial_results=trial_results)<br></code></pre></td></tr></table></figure>
+
+<p>这种情况下，我们能够来到<code>_fuzzing_pipe()</code>中，初始化LLM相关的变量后，来到：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">execute</span>(<span class="hljs-params">self, result_history: <span class="hljs-built_in">list</span>[Result]</span>) -&gt; <span class="hljs-built_in">list</span>[Result]:<br>    <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">    Runs the fuzzing pipeline iteratively to assess and refine the fuzz target.</span><br><span class="hljs-string">    1. Writing Stage refines the fuzz target and its build script using insights</span><br><span class="hljs-string">    from the previous cycle.</span><br><span class="hljs-string">    2. Evaluation Stage measures the performance of the revised fuzz target.</span><br><span class="hljs-string">    3. Analysis Stage examines the evaluation results to guide the next cycle&#x27;s</span><br><span class="hljs-string">    improvements.</span><br><span class="hljs-string">    The process repeats until the termination conditions are met.</span><br><span class="hljs-string">    &quot;&quot;&quot;</span><br>    <span class="hljs-variable language_">self</span>.logger.debug(<span class="hljs-string">&#x27;Pipeline starts&#x27;</span>)<br>    cycle_count = <span class="hljs-number">0</span><br>    <span class="hljs-variable language_">self</span>._update_status(result_history=result_history)<br>    <span class="hljs-keyword">while</span> <span class="hljs-keyword">not</span> <span class="hljs-variable language_">self</span>._terminate(result_history=result_history,<br>                              cycle_count=cycle_count):<br>        cycle_count += <span class="hljs-number">1</span><br>        <span class="hljs-variable language_">self</span>._execute_one_cycle(result_history=result_history,<br>                                cycle_count=cycle_count)<br>    <span class="hljs-keyword">return</span> result_history<br><br></code></pre></td></tr></table></figure>
+
+<p><code>execute()</code>函数返回值为一个周期的实验结果。进入到<code>_execute_one_cycle()</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">_execute_one_cycle</span>(<span class="hljs-params">self, result_history: <span class="hljs-built_in">list</span>[Result],</span><br><span class="hljs-params">                       cycle_count: <span class="hljs-built_in">int</span></span>) -&gt; <span class="hljs-literal">None</span>:<br>    <span class="hljs-string">&quot;&quot;&quot;Executes the stages once.&quot;&quot;&quot;</span><br>    <span class="hljs-variable language_">self</span>.logger.info(<span class="hljs-string">&#x27;[Cycle %d] Initial result is %s&#x27;</span>, cycle_count,<br>                     result_history[-<span class="hljs-number">1</span>])<br>    <span class="hljs-comment"># Writing stage.</span><br>    result_history.append(<br>        <span class="hljs-variable language_">self</span>.writing_stage.execute(result_history=result_history))<br>    <span class="hljs-variable language_">self</span>._update_status(result_history=result_history)<br>    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">not</span> <span class="hljs-built_in">isinstance</span>(result_history[-<span class="hljs-number">1</span>], BuildResult) <span class="hljs-keyword">or</span><br>        <span class="hljs-keyword">not</span> result_history[-<span class="hljs-number">1</span>].success):<br>        <span class="hljs-variable language_">self</span>.logger.warning(<span class="hljs-string">&#x27;[Cycle %d] Build failure, skipping the rest steps&#x27;</span>,<br>                            cycle_count)<br>        <span class="hljs-keyword">return</span><br><br>    <span class="hljs-comment"># Execution stage.</span><br>    result_history.append(<br>        <span class="hljs-variable language_">self</span>.execution_stage.execute(result_history=result_history))<br>    <span class="hljs-variable language_">self</span>._update_status(result_history=result_history)<br>    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">not</span> <span class="hljs-built_in">isinstance</span>(result_history[-<span class="hljs-number">1</span>], RunResult) <span class="hljs-keyword">or</span><br>        <span class="hljs-keyword">not</span> result_history[-<span class="hljs-number">1</span>].log_path):<br>        <span class="hljs-variable language_">self</span>.logger.warning(<span class="hljs-string">&#x27;[Cycle %d] Run failure, skipping the rest steps&#x27;</span>,<br>                            cycle_count)<br>        <span class="hljs-keyword">return</span><br><br>    <span class="hljs-comment"># Analysis stage.</span><br>    result_history.append(<br>        <span class="hljs-variable language_">self</span>.analysis_stage.execute(result_history=result_history))<br>    <span class="hljs-variable language_">self</span>._update_status(result_history=result_history)<br>    <span class="hljs-variable language_">self</span>.logger.info(<span class="hljs-string">&#x27;[Cycle %d] Analysis result %s: %s&#x27;</span>, cycle_count,<br>                     result_history[-<span class="hljs-number">1</span>].success, result_history[-<span class="hljs-number">1</span>])<br></code></pre></td></tr></table></figure>
+
+<p>进入到writing stage中的<code>execute()</code>会调用<code>project_targets.generate_data()</code>来生成fuzz targets。期间会访问</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">generate_data</span>(<span class="hljs-params">project_name: <span class="hljs-built_in">str</span>,</span><br><span class="hljs-params">                  language: <span class="hljs-built_in">str</span>,</span><br><span class="hljs-params">                  sig_per_target: <span class="hljs-built_in">int</span> = <span class="hljs-number">1</span>,</span><br><span class="hljs-params">                  max_samples: <span class="hljs-built_in">int</span> = <span class="hljs-number">1</span>,</span><br><span class="hljs-params">                  cloud_experiment_bucket: <span class="hljs-built_in">str</span> = <span class="hljs-string">&#x27;&#x27;</span></span>):<br>  <span class="hljs-string">&quot;&quot;&quot;Generates project-specific fuzz targets examples.&quot;&quot;&quot;</span><br>  target_funcs = introspector.get_project_funcs(project_name)<br>  project_fuzz_target_dir = _get_fuzz_target_dir(project_name)<br>  target_content_signature_dict = _bucket_match_target_content_signatures(<br>      target_funcs, project_fuzz_target_dir, project_name)<br></code></pre></td></tr></table></figure>
+
+<p>它会请求”<a target="_blank" rel="noopener" href="https://storage.googleapis.com/oss-fuzz-introspector/%22%E8%8E%B7%E5%BE%97%60xpdf/%60%E4%B8%8B%E7%9A%84%E6%89%80%E6%9C%89%60summary.json%60%E6%96%87%E4%BB%B6%E5%88%97%E8%A1%A8%EF%BC%8C%E7%84%B6%E5%90%8E%E8%AF%BB%E5%8F%96%E6%9C%80%E6%96%B0%E7%9A%84%60summary.json%60%E6%96%87%E4%BB%B6%E3%80%82%E9%9A%8F%E5%90%8E%EF%BC%8C%E6%A0%B9%E6%8D%AE%E8%BF%99%E4%B8%AAsummary%E6%96%87%E4%BB%B6%EF%BC%8C%E8%AE%BF%E9%97%AE%E6%9C%AC%E5%9C%B0%E5%BB%BA%E7%AB%8B%E7%9A%84xpdf%E6%95%B0%E6%8D%AE%E5%BA%93%EF%BC%8C%E8%8E%B7%E5%8F%96func%E7%9A%84%E6%BA%90%E7%A0%81%EF%BC%8C%E8%A6%86%E7%9B%96%E7%8E%87%E7%AD%89%E4%BF%A1%E6%81%AF%E3%80%82%E9%9A%8F%E5%90%8E%E4%BC%9A%E5%92%8CLLM%E4%BA%A4%E4%BA%92%E7%94%9F%E6%88%90fuzz">https://storage.googleapis.com/oss-fuzz-introspector/&quot;获得`xpdf/`下的所有`summary.json`文件列表，然后读取最新的`summary.json`文件。随后，根据这个summary文件，访问本地建立的xpdf数据库，获取func的源码，覆盖率等信息。随后会和LLM交互生成fuzz</a> target：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">execute</span>(<span class="hljs-params">self, result_history: <span class="hljs-built_in">list</span>[Result]</span>) -&gt; BuildResult:<br>  <span class="hljs-string">&quot;&quot;&quot;Executes the agent based on previous result.&quot;&quot;&quot;</span><br>  last_result = result_history[-<span class="hljs-number">1</span>]<br>  logger.info(<span class="hljs-string">&#x27;Executing %s&#x27;</span>, <span class="hljs-variable language_">self</span>.name, trial=last_result.trial)<br>  <span class="hljs-comment"># Use keep to avoid deleting files, such as benchmark.yaml</span><br>  WorkDirs(<span class="hljs-variable language_">self</span>.args.work_dirs.base, keep=<span class="hljs-literal">True</span>)<br><br>  prompt = <span class="hljs-variable language_">self</span>._initial_prompt(result_history)<br>  cur_round = <span class="hljs-number">1</span><br>  build_result = BuildResult(benchmark=last_result.benchmark,<br>                             trial=last_result.trial,<br>                             work_dirs=last_result.work_dirs,<br>                             author=<span class="hljs-variable language_">self</span>,·<br>                             chat_history=&#123;<span class="hljs-variable language_">self</span>.name: prompt.gettext()&#125;)<br><br>  <span class="hljs-keyword">while</span> prompt <span class="hljs-keyword">and</span> cur_round &lt;= <span class="hljs-variable language_">self</span>.max_round:<br>    <span class="hljs-variable language_">self</span>._generate_fuzz_target(prompt, result_history, build_result,<br>                               cur_round)<br>    <span class="hljs-variable language_">self</span>._validate_fuzz_target(cur_round, build_result)<br>    prompt = <span class="hljs-variable language_">self</span>._advice_fuzz_target(build_result, cur_round)<br>    cur_round += <span class="hljs-number">1</span><br><br>  <span class="hljs-keyword">return</span> build_result<br></code></pre></td></tr></table></figure>
+
+<p>上面的源码可以看到，先初始化<code>proompt</code>，这里的prompt在默认情况下，且没有参数<code>ag</code>时，构造为如下文件。默认的Prompt模板会由以下文件构成：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">system</span>:<br>priming.txt <span class="hljs-operator">+</span> cpp<span class="hljs-operator">-</span><span class="hljs-keyword">specific</span><span class="hljs-operator">-</span>priming<span class="hljs-operator">-</span>filter.txt<br><br><span class="hljs-keyword">user</span>:<br>problme.txt <span class="hljs-operator">+</span> func_source_code<br></code></pre></td></tr></table></figure>
+
+<p>调用<code>model.py</code>中的API初始化LLM Client，通过上面源码中的<code>_generate_fuzz_target()</code>生成了一个如下样式的libfuzzer target：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;/src/xpdf-4.05/xpdf/OutputDev.h&quot;</span></span><br><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">SplashOutputDev::drawChar</span><span class="hljs-params">(GfxState *state, <span class="hljs-type">double</span> x, <span class="hljs-type">double</span> y,</span></span><br><span class="hljs-params"><span class="hljs-function">                               <span class="hljs-type">double</span> dx, <span class="hljs-type">double</span> dy,</span></span><br><span class="hljs-params"><span class="hljs-function">                               <span class="hljs-type">double</span> originX, <span class="hljs-type">double</span> originY,</span></span><br><span class="hljs-params"><span class="hljs-function">                               CharCode code, <span class="hljs-type">int</span> nBytes,</span></span><br><span class="hljs-params"><span class="hljs-function">                               Unicode *u, <span class="hljs-type">int</span> uLen,</span></span><br><span class="hljs-params"><span class="hljs-function">                               GBool fill, GBool stroke, GBool makePath)</span></span>;<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">LLVMFuzzerTestOneInput</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">uint8_t</span> *data, <span class="hljs-type">size_t</span> size)</span> </span>&#123;<br>    <span class="hljs-function">FuzzedDataProvider <span class="hljs-title">stream</span><span class="hljs-params">(data, size)</span></span>;<br><br>    GfxState state;<br>    <span class="hljs-type">double</span> x = stream.<span class="hljs-built_in">ConsumeFloatingPoint</span>&lt;<span class="hljs-type">double</span>&gt;();<br>    <span class="hljs-type">double</span> y = stream.<span class="hljs-built_in">ConsumeFloatingPoint</span>&lt;<span class="hljs-type">double</span>&gt;();<br>    <span class="hljs-type">double</span> dx = stream.<span class="hljs-built_in">ConsumeFloatingPoint</span>&lt;<span class="hljs-type">double</span>&gt;();<br>    <span class="hljs-type">double</span> dy = stream.<span class="hljs-built_in">ConsumeFloatingPoint</span>&lt;<span class="hljs-type">double</span>&gt;();<br>    <span class="hljs-type">double</span> originX = stream.<span class="hljs-built_in">ConsumeFloatingPoint</span>&lt;<span class="hljs-type">double</span>&gt;();<br>    <span class="hljs-type">double</span> originY = stream.<span class="hljs-built_in">ConsumeFloatingPoint</span>&lt;<span class="hljs-type">double</span>&gt;();<br>    CharCode code = stream.<span class="hljs-built_in">ConsumeIntegral</span>&lt;CharCode&gt;();<br>    <span class="hljs-type">int</span> nBytes = stream.<span class="hljs-built_in">ConsumeIntegral</span>&lt;<span class="hljs-type">int</span>&gt;();<br>    Unicode *u = <span class="hljs-literal">nullptr</span>; <span class="hljs-comment">// Initialize Unicode pointer to nullptr</span><br>    <span class="hljs-type">int</span> uLen = stream.<span class="hljs-built_in">ConsumeIntegral</span>&lt;<span class="hljs-type">int</span>&gt;();<br>    GBool fill = stream.<span class="hljs-built_in">ConsumeBool</span>();<br>    GBool stroke = stream.<span class="hljs-built_in">ConsumeBool</span>();<br>    GBool makePath = stream.<span class="hljs-built_in">ConsumeBool</span>();<br><br>    SplashOutputDev splashOutputDev;<br>    splashOutputDev.<span class="hljs-built_in">drawChar</span>(&amp;state, x, y, dx, dy, originX, originY, code, nBytes, u, uLen, fill, stroke, makePath);<br><br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br><br></code></pre></td></tr></table></figure>
+
+<p>随后来到<code>_validate_fuzz_target()</code>方法中，它会编译AI生成的fuzz_targets，也就是<code>harness</code>。先看看镜像是如何创建的，以及为什么我正常运行过程中一直在创建镜像，而不执行。看看<code>one_prompt_prototyper.py</code>中的<code>_validate_fuzz_taget()</code>方法。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># 先查看镜像部分的源码：</span><br>  <span class="hljs-keyword">def</span> <span class="hljs-title function_">_validate_fuzz_target</span>(<span class="hljs-params">self, cur_round: <span class="hljs-built_in">int</span>,</span><br><span class="hljs-params">                            build_result: BuildResult</span>) -&gt; <span class="hljs-literal">None</span>:<br>    <span class="hljs-string">&quot;&quot;&quot;Validates the new fuzz target by recompiling it.&quot;&quot;&quot;</span><br>	benchmark = build_result.benchmark<br>    compilation_tool = ProjectContainerTool(benchmark=benchmark)<br>    ....<br><br></code></pre></td></tr></table></figure>
+
+<p>构建镜像是在<code>ProjectContianerTool()</code>中，它会使用<code>__init__()</code>进行初始化。初始化会准备以下内容：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, benchmark: Benchmark, name: <span class="hljs-built_in">str</span> = <span class="hljs-string">&#x27;&#x27;</span></span>) -&gt; <span class="hljs-literal">None</span>:<br>  <span class="hljs-built_in">super</span>().__init__(benchmark, name)<br>  <span class="hljs-variable language_">self</span>.image_name = <span class="hljs-variable language_">self</span>._prepare_project_image()<br>  <span class="hljs-variable language_">self</span>.container_id = <span class="hljs-variable language_">self</span>._start_docker_container()<br>  <span class="hljs-variable language_">self</span>.build_script_path = <span class="hljs-string">&#x27;/src/build.sh&#x27;</span><br>  <span class="hljs-variable language_">self</span>._backup_default_build_script()<br>  <span class="hljs-variable language_">self</span>.project_dir = <span class="hljs-variable language_">self</span>._get_project_dir()<br></code></pre></td></tr></table></figure>
+
+<p>其中<code>_prepare_project_image()</code>就是<code>image_name = oss_fuzz_checkout.prepare_project_image(self.benchmark)</code>。定位到该函数中。</p>
+<p>镜像名称为<code>gcr.io/oss-fuzz/xpdf</code>，并且通过<code>uuid</code>构建一个临时id方便区分：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">prepare_project_image</span>(<span class="hljs-params">benchmark: benchmarklib.Benchmark</span>) -&gt; <span class="hljs-built_in">str</span>:<br>  <span class="hljs-string">&quot;&quot;&quot;Prepares original image of the |project|&#x27;s fuzz target build container.&quot;&quot;&quot;</span><br>  project = benchmark.project<br>  image_name = <span class="hljs-string">f&#x27;gcr.io/oss-fuzz/<span class="hljs-subst">&#123;project&#125;</span>&#x27;</span><br>  generated_oss_fuzz_project = <span class="hljs-string">f&#x27;<span class="hljs-subst">&#123;benchmark.<span class="hljs-built_in">id</span>&#125;</span>-<span class="hljs-subst">&#123;uuid.uuid4().<span class="hljs-built_in">hex</span>&#125;</span>&#x27;</span><br>  generated_oss_fuzz_project = rectify_docker_tag(generated_oss_fuzz_project)<br>  create_ossfuzz_project(benchmark, generated_oss_fuzz_project)<br>  ...<br></code></pre></td></tr></table></figure>
+
+<p>首先，这个<code>benchmark.id</code>就是project名字加上<code>benchmark-sets/</code>下生成的<code>xpdf.yaml</code>中的<code>name</code>字段。例如，这里为<code>&quot;name&quot;: &quot;_ZN15SplashOutputDev8drawCharEP8GfxStateddddddjiPjiiii&quot;</code>。这里的<code>generated_oss_fuzz_project</code>组成字段为<code>xpdf-name-uuid</code>。随后调用<code>rectify_docker_tag</code>修正该docker名称，修改一些Docker无法处理的名称，例如<code>-_</code>等。</p>
+<p>紧接着执行<code>create_oss_fuzz_project()</code>，它会做啥呢？创建<code>&#39;../oss-fuzz/projects/xpdf-zn15splashoutputdev8drawcharep8gfxstateddddddjipjiiii-cc7d7bd89e0545e982e828bc537e1012&#39;</code>目录，并复制<code>oss-fuzz/projects/xpdf</code>中的内容于新目录中。</p>
+
+
+<p>然后会判断是否存在缓存，是否使用缓存：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">prepare_project_image</span>(<span class="hljs-params">benchmark: benchmarklib.Benchmark</span>) -&gt; <span class="hljs-built_in">str</span>:<br>  <span class="hljs-string">&quot;&quot;&quot;Prepares original image of the |project|&#x27;s fuzz target build container.&quot;&quot;&quot;</span><br>	...<br>	<span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> ENABLE_CACHING:<br>        logger.warning(<span class="hljs-string">&#x27;Disabled caching when building image for %s&#x27;</span>, project)<br>    <span class="hljs-keyword">elif</span> is_image_cached(project, <span class="hljs-string">&#x27;address&#x27;</span>):<br>        logger.info(<span class="hljs-string">&#x27;Will use cached instance.&#x27;</span>)<br>    	<span class="hljs-comment"># Rewrite for caching.</span><br>    	rewrite_project_to_cached_project(project, generated_oss_fuzz_project,<span class="hljs-string">&#x27;address&#x27;</span>)<br>        <span class="hljs-comment"># Prepare build</span><br>    	prepare_build(project, <span class="hljs-string">&#x27;address&#x27;</span>, generated_oss_fuzz_project)<br>    	<span class="hljs-comment"># Build the image</span><br>    	logger.info(<span class="hljs-string">&#x27;Using cached project image for %s: %s&#x27;</span>,generated_oss_fuzz_project, image_name)<br>    ...<br></code></pre></td></tr></table></figure>
+
+<p>接下来进入到<code>is_image_cached()</code>中，它要访问远程是否有xpdf的<strong>构建</strong>缓存。因此会执行<code>docker manifest inspect &#39;us-central1-docker.pkg.dev/oss-fuzz/oss-fuzz-gen/xpdf-ofg-cached-address&#39;</code>来判断是否存在元数据。我们使用的是<code>OSS-Fuzz</code>中的项目，因此是存在的。</p>
+<p>所以会看到  <strong>INFO oss_fuzz_checkout - prepare_project_image: Will use cached instance.</strong></p>
+<p>那么会来到<code>rewrite_project_to_cached_project()</code>，这个函数将已有的 <strong>Dockerfile</strong> 加以修改，使其支持从缓存镜像<code>$CACHE_IMAGE</code>从而加速构建过程。将原始<code>Dockerfile</code>复制，并保存为<code>original_dockerfile</code>。读取原来的Dockerfile并添加ARG指令，替换原来的FROM行，使其基于缓存镜像构建。</p>
+<p>随后会对Dockerfile做“精简处理”，也就是注释掉一些内容，只保留关键的几行。因为大部分内容在缓存镜像中已经存在了，所以不需要重复执行。例如，原Dockerfile如下：</p>
+<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs dockerfile"><span class="hljs-keyword">FROM</span> gcr.io/oss-fuzz-base/base-builder<br><br><span class="hljs-keyword">RUN</span><span class="language-bash"> git <span class="hljs-built_in">clone</span> --depth 1 https://gitlab.freedesktop.org/freetype/freetype</span><br><span class="hljs-keyword">RUN</span><span class="language-bash"> apt-get update</span><br><span class="hljs-keyword">RUN</span><span class="language-bash"> apt-get install --no-install-recommends -y make wget cmake qtbase5-dev libcups2-dev autoconf automake autotools-dev libtool</span><br><span class="hljs-keyword">RUN</span><span class="language-bash"> wget https://dl.xpdfreader.com/xpdf-latest.tar.gz</span><br><br><span class="hljs-keyword">WORKDIR</span><span class="language-bash"> <span class="hljs-variable">$SRC</span></span><br><span class="hljs-keyword">COPY</span><span class="language-bash"> fuzz_*.cc <span class="hljs-variable">$SRC</span>/</span><br><span class="hljs-keyword">COPY</span><span class="language-bash"> build.sh <span class="hljs-variable">$SRC</span>/</span><br><span class="hljs-keyword">COPY</span><span class="language-bash"> fuzz_*.options <span class="hljs-variable">$SRC</span>/</span><br></code></pre></td></tr></table></figure>
+
+<p>而通过精简以及缓存加载修改后的Dockerfile如下：</p>
+<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs dockerfile"><span class="hljs-keyword">FROM</span> $CACHE_IMAGE<br><span class="hljs-comment"># </span><br><span class="hljs-comment"># RUN git clone --depth 1 https://gitlab.freedesktop.org/freetype/freetype</span><br><span class="hljs-comment"># RUN apt-get update</span><br><span class="hljs-comment"># RUN apt-get install --no-install-recommends -y make wget cmake qtbase5-dev libcups2-dev autoconf automake autotools-dev libtool</span><br><span class="hljs-comment"># RUN wget https://dl.xpdfreader.com/xpdf-latest.tar.gz</span><br><span class="hljs-comment"># </span><br><span class="hljs-comment"># WORKDIR $SRC</span><br><span class="hljs-comment"># COPY fuzz_*.cc $SRC/</span><br><span class="hljs-keyword">COPY</span><span class="language-bash"> build.sh <span class="hljs-variable">$SRC</span>/</span><br><span class="hljs-keyword">COPY</span><span class="language-bash"> fuzz_*.options <span class="hljs-variable">$SRC</span>/</span><br></code></pre></td></tr></table></figure>
+
+<p>然后来到<code>prepare_build()</code>中，这里会判断选择哪个<code>Dockerfile</code>，由于使用缓存镜像，因此会使用刚创建的<code>Dockerfile_address_cached</code>，所以这里会看到 <strong>Using cached dockerfile</strong> 。</p>
+<p>以及Build前的一个消息：<strong>INFO oss_fuzz_checkout - prepare_project_image: Using cached project image for xpdf-zn15splashoutputdev8drawcharep8gfxstateddddddjipjiiii-cc7d7bd89e0545e982e828bc537e1012: gcr.io&#x2F;oss-fuzz&#x2F;xpdf</strong></p>
+<p>最后build镜像，<code>return _build_image(generated_oss_fuzz_project)</code>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">_build_image</span>(<span class="hljs-params">project_name: <span class="hljs-built_in">str</span></span>) -&gt; <span class="hljs-built_in">str</span>:<br>  <span class="hljs-string">&quot;&quot;&quot;Builds project image in OSS-Fuzz&quot;&quot;&quot;</span><br>  adjusted_env = os.environ | &#123;<br>      <span class="hljs-string">&#x27;FUZZING_LANGUAGE&#x27;</span>: get_project_language(project_name)<br>  &#125;<br>  command = [<br>      <span class="hljs-string">&#x27;python3&#x27;</span>, <span class="hljs-string">&#x27;infra/helper.py&#x27;</span>, <span class="hljs-string">&#x27;build_image&#x27;</span>, <span class="hljs-string">&#x27;--pull&#x27;</span>, project_name<br>  ]<br>  <span class="hljs-keyword">try</span>:<br>    sp.run(command,<br>           cwd=OSS_FUZZ_DIR,<br>           env=adjusted_env,<br>           stdout=sp.PIPE,<br>           stderr=sp.PIPE,<br>           check=<span class="hljs-literal">True</span>)<br>    logger.info(<span class="hljs-string">&#x27;Successfully build project image for %s&#x27;</span>, project_name)<br>    <span class="hljs-keyword">return</span> <span class="hljs-string">f&#x27;gcr.io/oss-fuzz/<span class="hljs-subst">&#123;project_name&#125;</span>&#x27;</span><br>  <span class="hljs-keyword">except</span> sp.CalledProcessError <span class="hljs-keyword">as</span> e:<br>    logger.error(<span class="hljs-string">&#x27;Failed to build project image for %s: %s&#x27;</span>, project_name,<br>                 e.stderr.decode(<span class="hljs-string">&#x27;utf-8&#x27;</span>))<br>    <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;&#x27;</span><br></code></pre></td></tr></table></figure>
+
+<p>会使用<code>oss-fuzz/infra/helper.py</code>来pull以及build镜像。关于<code>helper.py</code>的整个调用链为：<code>main(), build_image(), build_image_impl(), pull_images() + docker_build()</code>。有兴趣可以看看源码。记录一下这里执行的命令为：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">python3 infra/helper.py build_image --pull xpdf-zn15splashoutputdev8drawcharep8gfxstateddddddjipjiiii-cc7d7bd89e0545e982e828bc537e1012 <br></code></pre></td></tr></table></figure>
+
+<p>然后会build出一个镜像文件：</p>
+
+
+<p>终端也会出现消息：</p>
+<p> <strong>INFO oss_fuzz_checkout - _build_image: Successfully build project image for xpdf-zn15splashoutputdev8drawcharep8gfxstateddddddjipjiiii-cc7d7bd89e0545e982e828bc537e1012</strong></p>
+<p>由于子进程运行时重定向了<code>stdout</code>所以，执行helper.py期间的消息就不会输出到终端。若是想知道这期间执行的相关命令（oss-fuzz中的logger.info消息），可以注释掉<code>stdout</code>和<code>stderr</code>的重定向。</p>
+<p>至此一大圈，我们完成了<code>_validate_fuzz_target()</code>中关于<code>ProjectContainerTool()</code>的构造函数<code>__init__()</code>中的<code>self._prepare_project_image()</code>。也就是为xpdf项目创建了一个镜像。回到<code>__init__()</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, benchmark: Benchmark, name: <span class="hljs-built_in">str</span> = <span class="hljs-string">&#x27;&#x27;</span></span>) -&gt; <span class="hljs-literal">None</span>:<br>  <span class="hljs-built_in">super</span>().__init__(benchmark, name)<br>  <span class="hljs-variable language_">self</span>.image_name = <span class="hljs-variable language_">self</span>._prepare_project_image()<br>  <span class="hljs-variable language_">self</span>.container_id = <span class="hljs-variable language_">self</span>._start_docker_container()<br>  <span class="hljs-variable language_">self</span>.build_script_path = <span class="hljs-string">&#x27;/src/build.sh&#x27;</span><br>  <span class="hljs-variable language_">self</span>._backup_default_build_script()<br>  <span class="hljs-variable language_">self</span>.project_dir = <span class="hljs-variable language_">self</span>._get_project_dir()<br></code></pre></td></tr></table></figure>
+
+<p>接下来执行<code>_start_docker_container()</code>，首先会构造一个docker run命令，在后台运行一个基于<code>OSS-Fuzz</code>项目镜像的容器，并返回容器ID。那么这里执行的：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">docker run -d -t --entrypoint=/bin/sh -e FUZZINGLANGUAGE=c++ gcr.io/oss-fuzz/xpdf-zn15splashoutputdev8drawcharep8gfxstateddddddjipjiiii-cc7d7bd89e0545e982e828bc537e1012<br></code></pre></td></tr></table></figure>
+
+<p>在后台运行一个容器，并将容器返回给<code>self.container_id</code>。紧接着设置使用的<code>build_scrpit</code>脚本路径。然后调用<code>_backup_default_build_script()</code>，在执行前，我们进入容器尝尝咸淡：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">docker <span class="hljs-built_in">exec</span> -it &lt;contianer_id&gt; /bin/bash<br></code></pre></td></tr></table></figure>
+
+
+
+<p>这就是拉取的google缓存好的镜像。里头有源码以及一些fuzzer。那么执行<code>_backup_default_build_script()</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">_backup_default_build_script</span>(<span class="hljs-params">self</span>) -&gt; <span class="hljs-literal">None</span>:<br>  <span class="hljs-string">&quot;&quot;&quot;Creates a copy of the human-written /src/build.sh for LLM to use.&quot;&quot;&quot;</span><br>  backup_command = <span class="hljs-string">f&#x27;cp <span class="hljs-subst">&#123;self.build_script_path&#125;</span> /src/build.bk.sh&#x27;</span><br>  process = <span class="hljs-variable language_">self</span>.execute(backup_command)<br>  <span class="hljs-keyword">if</span> process.returncode:<br>    logger.error(<span class="hljs-string">&#x27;Failed to create a backup of %s: %s&#x27;</span>,<br>                 <span class="hljs-variable language_">self</span>.build_script_path, <span class="hljs-variable language_">self</span>.image_name)<br></code></pre></td></tr></table></figure>
+
+<p>这个<code>self.execute()</code>是在容器内执行command。因此会在容器内执行指令<code>cp /src/build.sh /src/build.bk.sh</code>，而这个<code>build.sh</code>就是<code>oss-fuzz/projects/xpdf/build.sh</code>。</p>
+<p>最后的<code>self._get_project_dir()</code>就是容器内的project目录，也就是<code>/src</code></p>
+<p>至此，初始化出一个<code>ProjectContainerTool</code>对象，拉取google库中的项目对应的镜像，并根据该镜像创建容器，执行必要的初始化操作。接下来回到<code>_validate_fuzz_target()</code>中：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">_validate_fuzz_target</span>(<span class="hljs-params">self, cur_round: <span class="hljs-built_in">int</span>,</span><br><span class="hljs-params">                          build_result: BuildResult</span>) -&gt; <span class="hljs-literal">None</span>:<br>  <span class="hljs-string">&quot;&quot;&quot;Validates the new fuzz target by recompiling it.&quot;&quot;&quot;</span><br>  <span class="hljs-comment"># Replace fuzz target and build script in the container.</span><br>  ...<br>  replace_file_content_command = (<br>      <span class="hljs-string">&#x27;cat &lt;&lt; &quot;OFG_EOF&quot; &gt; &#123;file_path&#125;\n&#123;file_content&#125;\nOFG_EOF&#x27;</span>)<br>  compilation_tool.execute(<br>      replace_file_content_command.<span class="hljs-built_in">format</span>(<br>          file_path=benchmark.target_path,<br>          file_content=build_result.fuzz_target_source))<br>  ...<br></code></pre></td></tr></table></figure>
+
+<p>这构建一个指令，并且在会在容器内执行该指令。在容器内执行的命令如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">cat</span> &lt;&lt; <span class="hljs-string">&quot;OFG_EOF&quot;</span> &gt; /src/fuzz_zxdoc.cc\n#include <span class="hljs-string">&quot;/src/xpdf-4.05/xpdf/OutputDev.h&quot;</span>\n\nvoid SplashOutputDev::drawChar(GfxState *state, double x, double y,\n\t\t\t       double dx, double dy,\n\t\t\t       double originX, double originY,\n\t\t\t       CharCode code, int nBytes,\n\t\t\t       Unicode *u, int uLen,\n\t\t\t       GBool fill, GBool stroke, GBool makePath);\n\nint LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) &#123;\n    FuzzedDataProvider stream(data, size);\n\n    GfxState state;\n    double x = stream.ConsumeFloatingPoint&lt;double&gt;();\n    double y = stream.ConsumeFloatingPoint&lt;double&gt;();\n    double dx = stream.ConsumeFloatingPoint&lt;double&gt;();\n    double dy = stream.ConsumeFloatingPoint&lt;double&gt;();\n    double originX = stream.ConsumeFloatingPoint&lt;double&gt;();\n    double originY = stream.ConsumeFloatingPoint&lt;double&gt;();\n    CharCode code = stream.ConsumeIntegral&lt;CharCode&gt;();\n    int nBytes = stream.ConsumeIntegral&lt;int&gt;();\n    Unicode *u = nullptr; // Initialize Unicode pointer to nullptr\n    int uLen = stream.ConsumeIntegral&lt;int&gt;();\n    GBool fill = stream.ConsumeBool();\n    GBool stroke = stream.ConsumeBool();\n    GBool makePath = stream.ConsumeBool();\n\n    SplashOutputDev splashOutputDev;\n    splashOutputDev.drawChar(&amp;state, x, y, dx, dy, originX, originY, code, nBytes, u, uLen, fill, stroke, makePath);\n\n    <span class="hljs-built_in">return</span> 0;\n&#125;\nOFG_EOF<br></code></pre></td></tr></table></figure>
+
+<p>也就是将LLM生成的harness覆盖容器内，执行指令前的<code>fuzz_zxdoc.cc</code>内容如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdlib.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;string.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdint.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;Zoox.h&quot;</span></span><br><br><span class="hljs-keyword">extern</span> <span class="hljs-string">&quot;C&quot;</span> <span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">LLVMFuzzerTestOneInput</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">uint8_t</span> *data, <span class="hljs-type">size_t</span> size)</span> </span>&#123;<br>    <span class="hljs-type">char</span> *ss = (<span class="hljs-type">char</span>*)<span class="hljs-built_in">malloc</span>(size<span class="hljs-number">+1</span>);<br>    <span class="hljs-built_in">memcpy</span>(ss, data, size);<br>    ss[size] = <span class="hljs-string">&#x27;\0&#x27;</span>;<br><br>    ZxDoc Z1;<br>    ZxDoc *new_doc = Z<span class="hljs-number">1.l</span>oadMem(ss, size);<br>    <span class="hljs-keyword">if</span> (new_doc != <span class="hljs-literal">NULL</span>)<br>        <span class="hljs-keyword">delete</span> new_doc;<br><br>    <span class="hljs-built_in">free</span>(ss);<br><br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;  <br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>执行命令后，就会将其覆盖为LLM生成的harness。随后继续回到<code>_validate_fuzz_target()</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">_validate_fuzz_target</span>(<span class="hljs-params">self, cur_round: <span class="hljs-built_in">int</span>,</span><br><span class="hljs-params">                          build_result: BuildResult</span>) -&gt; <span class="hljs-literal">None</span>:<br>  <span class="hljs-string">&quot;&quot;&quot;Validates the new fuzz target by recompiling it.&quot;&quot;&quot;</span><br>  <span class="hljs-comment"># Replace fuzz target and build script in the container.</span><br>  ...<br>  <span class="hljs-keyword">if</span> build_result.build_script_source:<br>    compilation_tool.execute(<br>        replace_file_content_command.<span class="hljs-built_in">format</span>(<br>            file_path=<span class="hljs-string">&#x27;/src/build.sh&#x27;</span>,<br>            file_content=build_result.build_script_source))<br>  ...<br></code></pre></td></tr></table></figure>
+
+<p>这个部分主要是替换容器内的<code>/src/build.sh</code>，但是这里为空。那么就不会覆盖重写该build脚本。紧接着<code>_validate_fuzz_target()</code>就开始编译目标了：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">_validate_fuzz_target</span>(<span class="hljs-params">self, cur_round: <span class="hljs-built_in">int</span>,</span><br><span class="hljs-params">                          build_result: BuildResult</span>) -&gt; <span class="hljs-literal">None</span>:<br>  <span class="hljs-string">&quot;&quot;&quot;Validates the new fuzz target by recompiling it.&quot;&quot;&quot;</span><br>  <span class="hljs-comment"># Replace fuzz target and build script in the container.</span><br>  ...<br>  <span class="hljs-comment"># Recompile.</span><br>  logger.info(<span class="hljs-string">&#x27;===== ROUND %02d Recompile =====&#x27;</span>,<br>              cur_round,<br>              trial=build_result.trial)<br>  start_time = time.time()<br>  compile_process = compilation_tool.<span class="hljs-built_in">compile</span>()<br>  end_time = time.time()<br>  logger.debug(<span class="hljs-string">&#x27;ROUND %02d compilation time: %s&#x27;</span>,<br>               cur_round,<br>               timedelta(seconds=end_time - start_time),<br>               trial=build_result.trial)<br>  compile_succeed = compile_process.returncode == <span class="hljs-number">0</span><br>  logger.debug(<span class="hljs-string">&#x27;ROUND %02d Fuzz target compiles: %s&#x27;</span>,<br>               cur_round,<br>               compile_succeed,<br>               trial=build_result.trial)<br>  ...<br></code></pre></td></tr></table></figure>
+
+<p>调用<code>compilation_tool</code>的<code>compile()</code>方法，也就是我们前面生成的<code>ProjectComtainerTool</code>对象。在重写完相关文件与harness后进行编译。进入到<code>compile()</code>中，执行的指令为：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">docker <span class="hljs-built_in">exec</span> 042e63a1bc152b17073ce094eb3ed185e6b2f69f01ea1b627b8bac1de5e39e6d /bin/bash -c compile &gt; /dev/null<br></code></pre></td></tr></table></figure>
+
+<p>看看compile是个啥：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">root@042e63a1bc15:/src# <span class="hljs-built_in">which</span> compile<br>/usr/local/bin/compile<br>root@042e63a1bc15:/src# file /usr/local/bin/compile<br>/usr/local/bin/compile: Bourne-Again shell script, ASCII text executable<br></code></pre></td></tr></table></figure>
+
+<p>是个脚本，源码太长了就不贴了。丢给AI解释解释：OSS-Fuzz项目的主构建脚本，主要作用是在构建fuzz target之前，配置和处理环境变量、编译标志、构建工具、平台兼容性、特定语言支持（如Rust、Python、JVM等），以及对不同fuzzing引擎和sanitizers（如ASan、UBSan等）以及Introspector的支持。具体的职责包括：</p>
+<ol>
+<li>基础配置：<ul>
+<li>设置内核参数，如<code>vm.mmap_rnd_bits=28</code></li>
+<li>设置编译标志，例如<code>CFLAGS</code>,<code>CXXFLAGS</code>,<code>RUSTFLAGS</code></li>
+</ul>
+</li>
+<li>按语言处理特殊逻辑<ul>
+<li>Rust的introspector处理方式</li>
+<li>JVM fuzzing的兼容性检查（仅支持libFuzzer或wycheproof）</li>
+<li>Python fuzzing的sanitizer限制等</li>
+</ul>
+</li>
+<li>环境变量的传递<ul>
+<li>将sanitizer类型映射到相应的编译标志</li>
+<li>设置LLVM工具链路径（如<code>llvm-ar</code>,<code>llvm-nm</code>）</li>
+</ul>
+</li>
+<li>调用fuzz-introspector（如果启用Introspector sanitizer）：<ul>
+<li>执行<code>fuzz-introspector</code>分析</li>
+<li>生成HTML报告和YAML&#x2F;JSON分析文件</li>
+</ul>
+</li>
+<li><strong>构建项目</strong><ul>
+<li>调用<code>$SRC/build.sh</code>或回放脚本<code>relay_build.sh</code>进行构建</li>
+</ul>
+</li>
+<li>特殊工具和符号表处理：<ul>
+<li>拷贝<code>llvm-symbolizer</code>到<code>$OUT/</code>，方便后续的栈信息符号化</li>
+<li>为JVM fuzzing准备<code>jazzer_driver_with_sanitizer</code></li>
+</ul>
+</li>
+</ol>
+<p>也就是说，它会调用<code>/src/build.sh</code>进行构建，关于本次harness的build编译会出现错误：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-string">&#x27;sysctl: setting key &quot;vm.mmap_rnd_bits&quot;,</span><br><span class="hljs-string">ignoring: Read-only file system\n+ tar -zxf xpdf-latest.tar.gz\n++ tar -tzf xpdf-latest.tar.gz\n++ head -1\n++ cut -f1 -d/\n+ dir_name=xpdf-4.05\n+ cd xpdf-4.05\n+ PREFIX=/work/prefix\n+ mkdir -p -p /work/prefix\n++ which pkg-config\n+ export \&#x27;</span>PKG_CONFIG= --static\&#x27;\n+ PKG_CONFIG=\&#x27; --static\&#x27;\n+ <span class="hljs-built_in">export</span> PKG_CONFIG_PATH=/work/prefix/lib/pkgconfig\n+ PKG_CONFIG_PATH=/work/prefix/lib/pkgconfig\n+ <span class="hljs-built_in">export</span> PATH=/work/prefix/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/out\n+ PATH=/work/prefix/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/out\n+ <span class="hljs-built_in">pushd</span> /src/freetype\n+ CFLAGS=\&#x27;-O1   -fno-omit-frame-pointer   -gline-tables-only   -Wno-error=enum-constexpr-conversion   -Wno-error=incompatible-function-pointer-types   -Wno-error=int-conversion   -Wno-error=deprecated-declarations   -Wno-error=implicit-function-declaration   -Wno-error=implicit-int   -Wno-error=vla-cxx-extension   -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=address -fsanitize-address-use-after-scope -fsanitize=fuzzer-no-link -D_GNU_SOURCE\&#x27;\n+ ./autogen.sh\n+ CFLAGS=\&#x27;-O1   -fno-omit-frame-pointer   -gline-tables-only   -Wno-error=enum-constexpr-conversion   -Wno-error=incompatible-function-pointer-types   -Wno-error=int-conversion   -Wno-error=deprecated-declarations   -Wno-error=implicit-function-declaration   -Wno-error=implicit-int   -Wno-error=vla-cxx-extension   -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=address -fsanitize-address-use-after-scope -fsanitize=fuzzer-no-link -D_GNU_SOURCE\&#x27;\n+ ./configure --prefix=/work/prefix --disable-shared PKG_CONFIG_PATH=/work/prefix/lib/pkgconfig --with-png=no --with-zlib=no\n./configure: line 3492: --static: <span class="hljs-built_in">command</span> not found\nconfigure: WARNING:\n  `make refdoc\&#x27; will fail since pip package `docwriter\&#x27; is not installed.\n  To install, run `python3 -m pip install docwriter\&#x27;, or to use a Python\n  virtual environment,<br>run `make refdoc-venv\&#x27; (requires pip package\n  `virtualenv\&#x27;).  These operations require Python &gt;= 3.5.\n  \n++ <span class="hljs-built_in">nproc</span>\n+ CFLAGS=\&#x27;-O1   -fno-omit-frame-pointer   -gline-tables-only   -Wno-error=enum-constexpr-conversion   -Wno-error=incompatible-function-pointer-types   -Wno-error=int-conversion   -Wno-error=deprecated-declarations   -Wno-error=implicit-function-declaration   -Wno-error=implicit-int   -Wno-error=vla-cxx-extension   -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=address -fsanitize-address-use-after-scope -fsanitize=fuzzer-no-link -D_GNU_SOURCE\&#x27;\n+ make -j112\n+ CFLAGS=\&#x27;-O1   -fno-omit-frame-pointer   -gline-tables-only   -Wno-error=enum-constexpr-conversion   -Wno-error=incompatible-function-pointer-types   -Wno-error=int-conversion   -Wno-error=deprecated-declarations   -Wno-error=implicit-function-declaration   -Wno-error=implicit-int   -Wno-error=vla-cxx-extension   -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=address -fsanitize-address-use-after-scope -fsanitize=fuzzer-no-link -D_GNU_SOURCE\&#x27;\n+ make install\n+ <span class="hljs-built_in">popd</span>\n+ sed -i \&#x27;s/#--- object files needed by XpdfWidget/add_library(testXpdfStatic STATIC $&lt;TARGET_OBJECTS:xpdf_objs&gt;)\\n#--- object files needed by XpdfWidget/\&#x27; ./xpdf/CMakeLists.txt\n+ sed -i \&#x27;s/#--- pdftops/add_library(testXpdfWidgetStatic STATIC $&lt;TARGET_OBJECTS:xpdf_widget_objs&gt;\\n $&lt;TARGET_OBJECTS:splash_objs&gt;\\n $&lt;TARGET_OBJECTS:xpdf_objs&gt;\\n <span class="hljs-variable">$&#123;FREETYPE_LIBRARY&#125;</span>\\n <span class="hljs-variable">$&#123;FREETYPE_OTHER_LIBS&#125;</span>)\\n#--- pdftops/\&#x27; ./xpdf/CMakeLists.txt\n+ <span class="hljs-built_in">mkdir</span> -p build\n+ <span class="hljs-built_in">cd</span> build\n+ <span class="hljs-built_in">export</span> LD=clang++\n+ LD=clang++\n+ make\nCMake Deprecation Warning at CMakeLists.txt:11 (cmake_minimum_required):\n  Compatibility with CMake &lt; 3.5 will be removed from a future version of\n  CMake.\n\n  Update the VERSION argument &lt;min&gt; value or use a ...&lt;max&gt; suffix to tell\n  CMake that the project does not need compatibility with older versions.\n\n\n+ <span class="hljs-keyword">for</span> fuzzer <span class="hljs-keyword">in</span> zxdoc pdfload JBIG2\n+ <span class="hljs-built_in">cp</span> ../../fuzz_zxdoc.cc .\n+ clang++ fuzz_zxdoc.cc -o /out/fuzz_zxdoc -O1 -fno-omit-frame-pointer -gline-tables-only -Wno-error=enum-constexpr-conversion -Wno-error=incompatible-function-pointer-types -Wno-error=int-conversion -Wno-error=deprecated-declarations -Wno-error=implicit-function-declaration -Wno-error=implicit-int -Wno-error=vla-cxx-extension -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=address -fsanitize-address-use-after-scope -fsanitize=fuzzer-no-link -stdlib=libc++ -fsanitize=fuzzer ./xpdf/libtestXpdfStatic.a ./fofi/libfofi.a ./goo/libgoo.a ./splash/libsplash.a ./xpdf/libtestXpdfWidgetStatic.a /work/prefix/lib/libfreetype.a -I../ -I../goo -I../fofi -I. -I../xpdf -I../splash\nIn file included from fuzz_zxdoc.cc:1:\n/src/xpdf-4.05/xpdf/OutputDev.h:99:28: error: unknown <span class="hljs-built_in">type</span> name \&#x27;Ref\&#x27;\n   99 |   virtual void startStream(Ref streamRef, GfxState *state) &#123;&#125;\n      |                            ^\n/src/xpdf-4.05/xpdf/OutputDev.h:100:26: error: unknown <span class="hljs-built_in">type</span> name \&#x27;Ref\&#x27;\n  100 |   virtual void endStream(Ref streamRef) &#123;&#125;\n      |                          ^\n/src/xpdf-4.05/xpdf/OutputDev.h:156:61: error: unknown <span class="hljs-built_in">type</span> name \&#x27;Object\&#x27;\n  156 |   virtual void tilingPatternFill(GfxState *state, Gfx *gfx, Object *strRef,\n      |                                                             ^\n/src/xpdf-4.05/xpdf/OutputDev.h:157:37: error: unknown <span class="hljs-built_in">type</span> name \&#x27;Dict\&#x27;\n  157 |                                  int paintType, int tilingType, Dict *resDict,\n      |                                                                 ^\n/src/xpdf-4.05/xpdf/OutputDev.h:198:47: error: unknown <span class="hljs-built_in">type</span> name \&#x27;Object\&#x27;\n  198 |   virtual void drawImageMask(GfxState *state, Object *ref, Stream *str,\n      |                                               ^\n/src/xpdf-4.05/xpdf/OutputDev.h:202:6: error: unknown <span class="hljs-built_in">type</span> name \&#x27;Object\&#x27;\n  202 |                                         Object *ref, Stream *str,\n      |                                         ^\n/src/xpdf-4.05/xpdf/OutputDev.h:205:43: error: unknown <span class="hljs-built_in">type</span> name \&#x27;Object\&#x27;\n  205 |   virtual void drawImage(GfxState *state, Object *ref, Stream *str,\n      |                                           ^\n/src/xpdf-4.05/xpdf/OutputDev.h:208:49: error: unknown <span class="hljs-built_in">type</span> name \&#x27;Object\&#x27;\n  208 |   virtual void drawMaskedImage(GfxState *state, Object *ref, Stream *str,\n      |                                                 ^\n/src/xpdf-4.05/xpdf/OutputDev.h:211:11: error: unknown <span class="hljs-built_in">type</span> name \&#x27;Object\&#x27;\n  211 |                                Object *maskRef, Stream *maskStr,\n      |                                ^\n/src/xpdf-4.05/xpdf/OutputDev.h:214:53: error: unknown <span class="hljs-built_in">type</span> name \&#x27;Object\&#x27;\n  214 |   virtual void drawSoftMaskedImage(GfxState *state, Object *ref, Stream *str,\n      |                                                     ^\n/src/xpdf-4.05/xpdf/OutputDev.h:217:8: error: unknown <span class="hljs-built_in">type</span> name \&#x27;Object\&#x27;\n  217 |                                    Object *maskRef, Stream *maskStr,\n      |                                    ^\n/src/xpdf-4.05/xpdf/OutputDev.h:224:42: error: unknown <span class="hljs-built_in">type</span> name \&#x27;Dict\&#x27;\n  224 |   virtual void opiBegin(GfxState *state, Dict *opiDict);\n      |                                          ^\n/src/xpdf-4.05/xpdf/OutputDev.h:225:40: error: unknown <span class="hljs-built_in">type</span> name \&#x27;Dict\&#x27;\n  225 |   virtual void opiEnd(GfxState *state, Dict *opiDict);\n      |                                        ^\n/src/xpdf-4.05/xpdf/OutputDev.h:234:25: error: unknown <span class="hljs-built_in">type</span> name \&#x27;Ref\&#x27;\n  234 |   virtual void drawForm(Ref <span class="hljs-built_in">id</span>) &#123;&#125;\n      |                         ^\n/src/xpdf-4.05/xpdf/OutputDev.h:254:62: error: unknown <span class="hljs-built_in">type</span> name \&#x27;Dict\&#x27;\n  254 |   virtual void beginStructureItem(const char *tag, int mcid,<br>Dict *dict) &#123;&#125;\n      |                                                              ^\n/src/xpdf-4.05/xpdf/OutputDev.h:88:48: error: use of undeclared identifier \&#x27;NULL\&#x27;\n   88 |                                GBool (*abortCheckCbk)(void *data) = NULL,<br>\n      |                                                                     ^\n/src/xpdf-4.05/xpdf/OutputDev.h:89:37: error: use of undeclared identifier \&#x27;NULL\&#x27;\n   89 |                                void *abortCheckCbkData = NULL)\n      |                                                          ^\nfuzz_zxdoc.cc:3:6: error: use of undeclared identifier \&#x27;SplashOutputDev\&#x27;\n    3 | void SplashOutputDev::drawChar(GfxState *state, double x, double y,\n      |      ^\nfuzz_zxdoc.cc:10:34: error: unknown <span class="hljs-built_in">type</span> name \&#x27;uint8_t\&#x27;\n   10 | int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) &#123;\n      |                                  ^\nfatal error: too many errors emitted,<br>stopping now [-ferror-limit=]\n20 errors generated.\n<span class="hljs-string">&#x27;)</span><br></code></pre></td></tr></table></figure>
+
+<p>也就是编译失败，紧接着<code>_validate_fuzz_target()</code>会进行二次check：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">_validate_fuzz_target</span>(<span class="hljs-params">self, cur_round: <span class="hljs-built_in">int</span>,</span><br><span class="hljs-params">                          build_result: BuildResult</span>) -&gt; <span class="hljs-literal">None</span>:<br>  <span class="hljs-string">&quot;&quot;&quot;Validates the new fuzz target by recompiling it.&quot;&quot;&quot;</span><br>  <span class="hljs-comment"># Replace fuzz target and build script in the container.</span><br>  ...<br>  <span class="hljs-comment"># Double-check binary.</span><br>  ls_result = compilation_tool.execute(<span class="hljs-string">f&#x27;ls /out/<span class="hljs-subst">&#123;benchmark.target_name&#125;</span>&#x27;</span>)<br>  binary_exists = ls_result.returncode == <span class="hljs-number">0</span><br>  logger.debug(<span class="hljs-string">&#x27;ROUND %02d Final fuzz target binary exists: %s&#x27;</span>,<br>               cur_round,<br>               binary_exists,<br>               trial=build_result.trial)<br>  ...<br></code></pre></td></tr></table></figure>
+
+<p>也就是去容器中检查编译出来的可执行文件是否存在，在容器内执行指令<code>ls /out/fuzz_zxdoc</code>。由于编译失败，故也不存在。接下来<code>_validate_fuzz_target()</code>会查看待测API是否被生成的harness引用。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs python">function_referenced = <span class="hljs-variable language_">self</span>._validate_fuzz_target_references_function(<br>    compilation_tool, benchmark, cur_round, build_result.trial)<br></code></pre></td></tr></table></figure>
+
+<p>调用<code>_validate_fuzz_target_references_function()</code>方法，用来验证由LLM生成的fuzz target是否在其汇编代码中实际引用了目标函数。这个检查方法会跳过<code>&#39;jvm&#39;,&#39;python&#39;, &#39;rust&#39;</code>的校验，因为这些语言的编译产物通常不是ELF可执行文件，<code>objdump</code>无法正常反汇编，所以略过检查。它的核心是在容器内执行：</p>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">objdump <span class="hljs-params">--disassemble=LLVMFuzzerTestOneInput</span> -d <span class="hljs-string">/out/fuzz_zxdoc</span><br></code></pre></td></tr></table></figure>
+
+<p>验证指令返回内容中是否有<code>_ZN15SplashOutputDev8drawCharEP8GfxStateddddddjiPjiiii</code>。那显然没有，因为编译失败了。那么这里会输出：</p>
+<p><strong>[Trial ID: 01] DEBUG [logger.debug]: ROUND 01 Final fuzz target function referenced: False</strong></p>
+<p><strong>[Trial ID: 01] DEBUG [logger.debug]: ROUND 01 Final fuzz target function not referenced</strong></p>
+<p>紧接着最后部分的<code>_validate_fuzz_target()</code>，会先停止这个运行的容器，然后更新build result.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">_validate_fuzz_target</span>(<span class="hljs-params">self, cur_round: <span class="hljs-built_in">int</span>,</span><br><span class="hljs-params">                        build_result: BuildResult</span>) -&gt; <span class="hljs-literal">None</span>:<br><span class="hljs-string">&quot;&quot;&quot;Validates the new fuzz target by recompiling it.&quot;&quot;&quot;</span><br>	...<br>	compilation_tool.terminate()<br>	<span class="hljs-variable language_">self</span>._update_build_result(build_result,<br>                          compile_process=compile_process,<br>                          compiles=compile_succeed,<br>                          binary_exists=binary_exists,<br>                          referenced=function_referenced)<br><br></code></pre></td></tr></table></figure>
+
+<p>更新的参数如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">_update_build_result</span>(<span class="hljs-params">self, build_result: BuildResult,</span><br><span class="hljs-params">                         compile_process: sp.CompletedProcess, compiles: <span class="hljs-built_in">bool</span>,</span><br><span class="hljs-params">                         binary_exists: <span class="hljs-built_in">bool</span>, referenced: <span class="hljs-built_in">bool</span></span>) -&gt; <span class="hljs-literal">None</span>:<br>  <span class="hljs-string">&quot;&quot;&quot;Updates the build result with the latest info.&quot;&quot;&quot;</span><br>  build_result.compiles = compiles<br>  build_result.binary_exists = binary_exists<br>  build_result.compile_error = compile_process.stderr<br>  build_result.compile_log = <span class="hljs-variable language_">self</span>._format_bash_execution_result(<br>      compile_process)<br>  build_result.is_function_referenced = referenced<br></code></pre></td></tr></table></figure>
+
+<p>首先<code>compiles</code>为<code>False</code>，<code>binary_exists</code>也为<code>Flase</code>。然后将编译错误的输出保存，并将编译过程也保存。其实保存的内容是一致的，只不过删了些<code>\n</code>。</p>
+<p>随后我们来到<code>execute()</code>循环中：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">execute</span>(<span class="hljs-params">self, result_history: <span class="hljs-built_in">list</span>[Result]</span>) -&gt; BuildResult:<br>  <span class="hljs-string">&quot;&quot;&quot;Executes the agent based on previous result.&quot;&quot;&quot;</span><br>  last_result = result_history[-<span class="hljs-number">1</span>]<br>  logger.info(<span class="hljs-string">&#x27;Executing %s&#x27;</span>, <span class="hljs-variable language_">self</span>.name, trial=last_result.trial)<br>  <span class="hljs-comment"># Use keep to avoid deleting files, such as benchmark.yaml</span><br>  WorkDirs(<span class="hljs-variable language_">self</span>.args.work_dirs.base, keep=<span class="hljs-literal">True</span>)<br><br>  prompt = <span class="hljs-variable language_">self</span>._initial_prompt(result_history)<br>  cur_round = <span class="hljs-number">1</span><br>  build_result = BuildResult(benchmark=last_result.benchmark,<br>                             trial=last_result.trial,<br>                             work_dirs=last_result.work_dirs,<br>                             author=<span class="hljs-variable language_">self</span>,<br>                             chat_history=&#123;<span class="hljs-variable language_">self</span>.name: prompt.gettext()&#125;)<br><br>  <span class="hljs-keyword">while</span> prompt <span class="hljs-keyword">and</span> cur_round &lt;= <span class="hljs-variable language_">self</span>.max_round:<br>    <span class="hljs-variable language_">self</span>._generate_fuzz_target(prompt, result_history, build_result,<br>                               cur_round)<br>    <span class="hljs-variable language_">self</span>._validate_fuzz_target(cur_round, build_result)<br>    prompt = <span class="hljs-variable language_">self</span>._advice_fuzz_target(build_result, cur_round)<br>    cur_round += <span class="hljs-number">1</span><br><br>  <span class="hljs-keyword">return</span> build_result<br></code></pre></td></tr></table></figure>
+
+<p>紧接着就来到了<code>_advice_fuzz_target()</code>，要用LLM修复此前生成的harness。首先会初始化一个新的agent作为fixer，然后从编译过程的log中，摘取出报错部分，发现了一个bug，在<code>_advice_fuzz_target()</code>中，执行<code>collect_context()</code>后，<code>context</code>为空。在执行完<code>_advice_fuzz_target</code>后，重新生成了新的prompt：</p>
+<figure class="highlight vbnet"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs vbnet"><span class="hljs-symbol">system:</span><br><span class="hljs-comment">&#x27;Given the following C++ fuzz harness and its build error message, fix the code to make it build for fuzzing.\n\nIf there is undeclared identifier or unknown type name error, fix it by finding and including the related libraries.\n\nMUST RETURN THE FULL CODE, INCLUDING UNCHANGED PARTS.\n&#x27;</span><br><span class="hljs-symbol">user:</span><br><span class="hljs-comment">&#x27;Below is the code needs to be built:</span><br>&lt;code&gt;<br>source_code, 也就是上一次LLM生成的源码。<br>&lt;/code&gt;<br>Below <span class="hljs-built_in">is</span> the <span class="hljs-keyword">error</span> <span class="hljs-keyword">to</span> fix:<br>The code has the following build issues:<br>&lt;<span class="hljs-keyword">error</span>&gt;<br><br>&lt;/<span class="hljs-keyword">error</span>&gt;<br><br>Below are instructions <span class="hljs-keyword">to</span> assist you <span class="hljs-keyword">in</span> fixing the <span class="hljs-keyword">error</span>.<br>&lt;instruction&gt;<br><span class="hljs-symbol">IMPORTANT:</span> ALWAYS INCLUDE STANDARD LIBRARIES BEFORE PROJECT-SPECIFIC (xpdf) LIBRARIES. This <span class="hljs-keyword">order</span> prevents errors <span class="hljs-built_in">like</span> <span class="hljs-string">&quot;unknown type name&quot;</span> <span class="hljs-keyword">for</span> basic types. Additionally, include project-specific libraries that contain declarations before those thatuse these declared symbols.<br>&lt;/instruction&gt;<br>Fix code:<br><span class="hljs-number">1</span>. Consider possible solutions <span class="hljs-keyword">for</span> the issues listed above.<br><span class="hljs-number">2</span>. Choose a solution that can maximize fuzzing result, which <span class="hljs-built_in">is</span> utilizing the <span class="hljs-keyword">function</span> under test <span class="hljs-built_in">and</span> feeding it <span class="hljs-built_in">not</span> null input.<br><span class="hljs-number">3</span>. Apply the solutions <span class="hljs-keyword">to</span> the original code.<br>It<span class="hljs-comment">&#x27;s important to show the complete code, not only the fixed line.</span><br>&lt;solution&gt;<br></code></pre></td></tr></table></figure>
+
+<p><code>error</code>字段为空，所以才导致我此前一直在创建docker却没有什么结果，因为它压根没有修复编译错误，所以一直是编译失败。重新执行，在<code>_advice_fuzz_target()</code>中打断点，查看为何提取的errors没了，因为编译失败的log是已经保存了的。首先会经过<code>extract_error_from_lines()</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">extract_error_from_lines</span>(<span class="hljs-params">log_lines: <span class="hljs-built_in">list</span>[<span class="hljs-built_in">str</span>], project_target_basename: <span class="hljs-built_in">str</span>,</span><br><span class="hljs-params">                             language: <span class="hljs-built_in">str</span></span>) -&gt; <span class="hljs-built_in">list</span>[<span class="hljs-built_in">str</span>]:<br>  <span class="hljs-string">&quot;&quot;&quot;Extracts error message and its context from the file in |log_path|.&quot;&quot;&quot;</span><br>  <span class="hljs-comment"># 当language为jvm,rust时的处理，暂时略过...</span><br>  target_name, _ = os.path.splitext(project_target_basename)<br><br>  error_lines_range: <span class="hljs-built_in">list</span>[<span class="hljs-type">Optional</span>[<span class="hljs-built_in">int</span>]] = [<span class="hljs-literal">None</span>, <span class="hljs-literal">None</span>]<br>  temp_range: <span class="hljs-built_in">list</span>[<span class="hljs-type">Optional</span>[<span class="hljs-built_in">int</span>]] = [<span class="hljs-literal">None</span>, <span class="hljs-literal">None</span>]<br><br>  error_start_pattern = <span class="hljs-string">r&#x27;\S*&#x27;</span> + target_name + <span class="hljs-string">r&#x27;(\.\S*)?:\d+:\d+: .+: .+\n?&#x27;</span><br>  error_include_pattern = (<span class="hljs-string">r&#x27;In file included from \S*&#x27;</span> + target_name +<br>                           <span class="hljs-string">r&#x27;(\.\S*)?:\d+:\n?&#x27;</span>)<br>  error_end_pattern = <span class="hljs-string">r&#x27;.*\d+ errors? generated.\n?&#x27;</span><br><br>  error_keywords = [<br>      <span class="hljs-string">&#x27;multiple definition of&#x27;</span>,<br>      <span class="hljs-string">&#x27;undefined reference to&#x27;</span>,<br>  ]<br>  errors = []<br>  unique_symbol = <span class="hljs-built_in">set</span>()<br></code></pre></td></tr></table></figure>
+
+<p>这里定义了错误的匹配模式，首先定义Clang错误的起止位置：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">error_start_pattern = <span class="hljs-string">r&#x27;\S*&#x27;</span> + target_name + <span class="hljs-string">r&#x27;(\.\S*)?:\d+:\d+: .+: .+\n?&#x27;</span><br></code></pre></td></tr></table></figure>
+
+<p>它会匹配形式如：</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs aspectj">/src/xpdf/<span class="hljs-keyword">target</span>.cc:123:45: <span class="hljs-keyword">error</span>: ...   # 标准 Clang <span class="hljs-keyword">error</span> 起始<br></code></pre></td></tr></table></figure>
+
+<p>其次第二个匹配模式，抓取include模式：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">error_include_pattern = <span class="hljs-string">r&#x27;In file included from \S*&#x27;</span> + target_name + <span class="hljs-string">r&#x27;(\.\S*)?:\d+:\n?&#x27;</span><br></code></pre></td></tr></table></figure>
+
+<p>它会匹配形式如：</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs gradle">In <span class="hljs-keyword">file</span> included <span class="hljs-keyword">from</span> <span class="hljs-regexp">/src/</span>xpdf/target.cc:<span class="hljs-number">5</span>:<br></code></pre></td></tr></table></figure>
+
+<p>最后一个匹配模式会抓取错误结束行，也就是Clang最后一句。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">error_end_pattern = <span class="hljs-string">r&#x27;.*\d+ errors? generated.\n?&#x27;</span><br></code></pre></td></tr></table></figure>
+
+<p>它会匹配形式如：</p>
+<figure class="highlight basic"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs basic"><span class="hljs-symbol">20 </span>errors generated.<br></code></pre></td></tr></table></figure>
+
+<p>最后有一个关键词错误（由链接器ld提供）：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">error_keywords = [<span class="hljs-string">&#x27;multiple definition of&#x27;</span>, <span class="hljs-string">&#x27;undefined reference to&#x27;</span>]<br></code></pre></td></tr></table></figure>
+
+<p>具体的提取匹配逻辑就不贴了，errors包含的内容为从 <strong>In file included from fuzz_zxdoc.cc:1:</strong> 到 <strong>20 errors generated.</strong> 但不包含最后一个汇总错误数量语句。随后执行：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">return</span> group_error_messages(errors)<br></code></pre></td></tr></table></figure>
+
+<p>由于匹配是以行进行构建的，而有些错误应该是多行的形式，因此通过该函数对error行处理形成error块。</p>
+<p>随后来到<code>collect_context()</code>中，参数是完成分块后的errors。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">collect_context</span>(<span class="hljs-params">benchmark: benchmarklib.Benchmark,</span><br><span class="hljs-params">                    errors: <span class="hljs-built_in">list</span>[<span class="hljs-built_in">str</span>]</span>) -&gt; <span class="hljs-built_in">str</span>:<br>  <span class="hljs-string">&quot;&quot;&quot;Collects the useful context to fix the errors.&quot;&quot;&quot;</span><br>  <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> errors:<br>    <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;&#x27;</span><br><br>  context = <span class="hljs-string">&#x27;&#x27;</span><br>  <span class="hljs-keyword">for</span> error <span class="hljs-keyword">in</span> errors:<br>    context += _collect_context_no_member(benchmark, error)<br><br>  <span class="hljs-keyword">return</span> context<br></code></pre></td></tr></table></figure>
+
+<p>这里返回的<code>context</code>为空，因为错误主要为以下两类（<code>unknown type name xxx</code> 和 <code>use of undeclared identifier xxxx</code>）：</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs gradle"><span class="hljs-regexp">/src/</span>xpdf-<span class="hljs-number">4.05</span><span class="hljs-regexp">/xpdf/</span>OutputDev.h:<span class="hljs-number">99</span>:<span class="hljs-number">28</span>: error: unknown type name <span class="hljs-string">&#x27;Ref&#x27;</span><br>   <span class="hljs-number">99</span> |   virtual <span class="hljs-keyword">void</span> startStream(Ref streamRef, GfxState *state) &#123;&#125;<br>      |                            ^<br><span class="hljs-regexp">/src/</span>xpdf-<span class="hljs-number">4.05</span><span class="hljs-regexp">/xpdf/</span>OutputDev.h:<span class="hljs-number">88</span>:<span class="hljs-number">48</span>: error: use of undeclared identifier <span class="hljs-string">&#x27;NULL&#x27;</span><br>   <span class="hljs-number">88</span> |                                GBool (*abortCheckCbk)(<span class="hljs-keyword">void</span> *data) = <span class="hljs-keyword">NULL</span>,<br>      |                                                                     ^<br></code></pre></td></tr></table></figure>
+
+<p>而当前只支持处理<code>no member named</code>错误，它的正则匹配模式为<code>NO_MEMBER_ERROR_REGEX = r&quot;error: no member named &#39;.*&#39; in &#39;([^&#39;:]*):?.*&#39;&quot;</code>，因此此处是不会匹配上任何error的，返回为空。</p>
+<p>紧接着来到<code>collect_instructions()</code>中，根据构建&#x2F;编译 错误信息errors和harness源码收集修复这些错误的 <strong>说明性指令</strong>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">collect_instructions</span>(<span class="hljs-params">benchmark: benchmarklib.Benchmark, errors: <span class="hljs-built_in">list</span>[<span class="hljs-built_in">str</span>],</span><br><span class="hljs-params">                         fuzz_target_source_code: <span class="hljs-built_in">str</span></span>) -&gt; <span class="hljs-built_in">str</span>:<br>  <span class="hljs-string">&quot;&quot;&quot;Collects the useful instructions to fix the errors.&quot;&quot;&quot;</span><br>  <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> errors:<br>    <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;&#x27;</span><br><br>  instruction = <span class="hljs-string">&#x27;&#x27;</span><br>  <span class="hljs-keyword">for</span> error <span class="hljs-keyword">in</span> errors:<br>    instruction += _collect_instruction_file_not_found(benchmark, error,<br>                                                       fuzz_target_source_code)<br>    instruction += _collect_instruction_undefined_reference(<br>        benchmark, error, fuzz_target_source_code)<br>  instruction += _collect_instruction_fdp_in_c_target(benchmark, errors,<br>                                                      fuzz_target_source_code)<br>  instruction += _collect_instruction_no_goto(fuzz_target_source_code)<br>  instruction += _collect_instruction_builtin_libs_first(benchmark, errors)<br>  instruction += _collect_instruction_extern(benchmark)<br>  instruction += _collect_consume_buffers(fuzz_target_source_code)<br><br>  <span class="hljs-keyword">return</span> instruction<br></code></pre></td></tr></table></figure>
+
+<p>当前遇到的错误为<code>unknown type name xxx</code>和<code>use of undeclared identifier</code>其实质都是由于有些库没有加载进来，我们进一步看它的处理逻辑：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">_collect_instruction_builtin_libs_first</span>(<span class="hljs-params">benchmark: benchmarklib.Benchmark,</span><br><span class="hljs-params">                                            errors: <span class="hljs-built_in">list</span>[<span class="hljs-built_in">str</span>]</span>) -&gt; <span class="hljs-built_in">str</span>:<br>  <span class="hljs-string">&quot;&quot;&quot;Collects the instructions to include builtin libraries first to fix</span><br><span class="hljs-string">  unknown type name error.&quot;&quot;&quot;</span><br>  <span class="hljs-comment"># Refine this, e.g., check if the symbol is builtin or from a project file.</span><br>  <span class="hljs-keyword">if</span> <span class="hljs-built_in">any</span>(UNKNOWN_TYPE_ERROR <span class="hljs-keyword">in</span> error <span class="hljs-keyword">for</span> error <span class="hljs-keyword">in</span> errors):<br>    <span class="hljs-keyword">return</span> (<br>        <span class="hljs-string">&#x27;IMPORTANT: ALWAYS INCLUDE STANDARD LIBRARIES BEFORE PROJECT-SPECIFIC &#x27;</span><br>        <span class="hljs-string">f&#x27;(<span class="hljs-subst">&#123;benchmark.project&#125;</span>) LIBRARIES. This order prevents errors like &#x27;</span><br>        <span class="hljs-string">&#x27;&quot;unknown type name&quot; for basic types. Additionally, include &#x27;</span><br>        <span class="hljs-string">&#x27;project-specific libraries that contain declarations before those that&#x27;</span><br>        <span class="hljs-string">&#x27;use these declared symbols.&#x27;</span>)<br>  <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;&#x27;</span><br></code></pre></td></tr></table></figure>
+
+<p>这里增加的提示是，当遇到“unknown type name”错误时，提示用户检查并调整投文件包含顺序，特别是要先包含标准库，再包含项目特定头文件。OK，接下来就是正常的第二轮了，将对应的prompt + 源码给LLM后，它继续生成harness。现在少了<code>use of undeclared identifier</code>错误，多了一个<code>file not found</code>：</p>
+<figure class="highlight stan"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs stan">fuzz_zxdoc.cc:<span class="hljs-number">5</span>:<span class="hljs-number">10</span>: fatal error: &#x27;/src/xpdf-<span class="hljs-number">4.05</span>/xpdf/Splash.h&#x27; file not found<br>    <span class="hljs-number">5</span> | <span class="hljs-meta">#include &quot;/<span class="hljs-string">src</span>/<span class="hljs-string">xpdf-</span>4.05/<span class="hljs-string">xpdf</span>/S<span class="hljs-string">plash.h</span>&quot;</span><br>      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<br><span class="hljs-number">16</span> errors <span class="hljs-title">generated</span>.<br></code></pre></td></tr></table></figure>
+
+<p>随后下一轮生成的harness便修复了这个错误：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;/src/xpdf-4.05/splash/Splash.h&quot;</span> <span class="hljs-comment">// Corrected path for Splash.h</span></span><br></code></pre></td></tr></table></figure>
+
+<p>到第42轮的时候，出现了问题。也就是经过了42轮的重新编译，修复问题，却连最开始的<code>unknown type name</code>的问题都没有修复，每次给予LLM的修复中，只有instruction来解决<code>unknown type name</code>，而<code>error</code>中却为空。</p>
+<p>可以尝试改一下逻辑，将正则匹配提取的<code>errors</code>信息放进<code>error</code>中，而不是只把<code>no member</code>类的错误给LLM。</p>
+<blockquote>
+<p>还有一个问题，每次重新执行并不会用到已经创建的容器，而是会重新pull。而其实每次更改的部分不多，仅是harness文件而已，那为什么不可以把harness文件写入到同一个contianer，只为了保留每次生成的harness而直接创建镜像和容器未免有点太奢侈了，完全将每次的编译过程以及源文件可以写入到文件中。</p>
+</blockquote>
+<p>此次执行，第一次生成的harness如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;/src/xpdf-4.05/xpdf/OutputDev.h&quot;</span></span><br><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">SplashOutputDev::drawChar</span><span class="hljs-params">(...)</span> </span>&#123;<br>                     ...<br>&#125;<br><br><span class="hljs-keyword">extern</span> <span class="hljs-string">&quot;C&quot;</span> <span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">LLVMFuzzerTestOneInput</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">uint8_t</span> *data, <span class="hljs-type">size_t</span> size)</span> </span>&#123;<br>  <span class="hljs-comment">// Initialize parameters to call drawChar function</span><br><br>  <span class="hljs-comment">// Create FuzzedDataProvider object</span><br><br>  <span class="hljs-comment">// Initialize parameters with fuzzed data</span><br><br>  <span class="hljs-comment">// Call the function-under-test</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>最后一轮的harness如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;cstdint&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;/src/xpdf-4.05/xpdf/OutputDev.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;/src/xpdf-4.05/xpdf/GfxState.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;/src/xpdf-4.05/splash/Splash.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;/src/xpdf-4.05/splash/SplashPath.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;/src/xpdf-4.05/splash/SplashFont.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;/src/xpdf-4.05/fofi/FoFiBase.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;/src/xpdf-4.05/xpdf/Stream.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;/src/xpdf-4.05/xpdf/SplashOutputDev.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;/src/xpdf-4.05/fofi/FoFiType1.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;/src/xpdf-4.05/fofi/FoFiType1C.h&quot;</span></span><br><br><span class="hljs-comment">// Include the necessary headers for FuzzedDataProvider</span><br><span class="hljs-comment">// #include &quot;FuzzedDataProvider.h&quot;</span><br><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">SplashOutputDev::drawChar</span><span class="hljs-params">(...)</span> </span>&#123;<br>                               ...<br>&#125;<br><br><span class="hljs-keyword">extern</span> <span class="hljs-string">&quot;C&quot;</span> <span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">LLVMFuzzerTestOneInput</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">uint8_t</span> *data, <span class="hljs-type">size_t</span> size)</span> </span>&#123;<br>  <span class="hljs-comment">// Initialize parameters to call drawChar function</span><br>  ...<br><br>  <span class="hljs-comment">// Create FuzzedDataProvider object</span><br>  <span class="hljs-comment">// FuzzedDataProvider stream(data, size);</span><br><br>  <span class="hljs-comment">// Initialize parameters with fuzzed data</span><br>  ...<br><br>  <span class="hljs-comment">// Call the function-under-test</span><br>  ...<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>其中，相同部分的代码我给略去了，也就是说，在这42轮的编译错误修复中，只是在增加头文件以解决<code>unknown type name </code>问题。但却一直解决不掉。</p>
+<p><strong>那也就是说，单纯靠当前的Prompt+Fuzz-introspector提供的函数签名及摘要生成harness时，针对于大部分OSS-Fuzz项目是很有可能生成一个需要修复N轮的harness</strong></p>
+<p>后半部分就没有继续调试了，因为本次源码阅读仅为了解决我使用oss-fuzz-gen过程中遇到的问题。当然，后续会继续补充完善。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Fuzz/" class="category-chain-item">Fuzz</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Fuzz/" class="print-no-link">#Fuzz</a>
+      
+        <a href="/tags/ProjectZero/" class="print-no-link">#ProjectZero</a>
+      
+        <a href="/tags/LLM/" class="print-no-link">#LLM</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>oss-fuzz-gen源码阅读</div>
+      <div>https://loboq1ng.github.io/2025/05/28/oss-fuzz-gen源码阅读/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Lobo Q1ng</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2025年5月28日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2025/05/11/pwn-college-Program-Exploitation/" title="pwn.college: Program Exploitation">
+                        <span class="hidden-mobile">pwn.college: Program Exploitation</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="gitalk-container"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#gitalk-container', function() {
+      Fluid.utils.createCssLink('/css/gitalk.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/gitalk/1.8.0/gitalk.min.js', function() {
+        var options = Object.assign(
+          {"clientID":"Ov23liQFbmwDKuCDRUJV","clientSecret":"ccc29e1700d0ef16f183a840546ac4639ad5fcab","repo":"LoboQ1ng.github.io","owner":"LoboQ1ng","admin":["LoboQ1ng"],"language":"zh-CN","labels":["Gitalk"],"perPage":10,"pagerDirection":"last","distractionFreeMode":false,"createIssueManually":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token"},
+          {
+            id: '89e02dfef4b996562e7b13e4839d89d0'
+          }
+        )
+        var gitalk = new Gitalk(options);
+        gitalk.render('gitalk-container');
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="busuanzi_container_site_pv" style="display: none">
+        总访问量
+        <span id="busuanzi_value_site_pv"></span>
+        次
+      </span>
+    
+    
+      <span id="busuanzi_container_site_uv" style="display: none">
+        总访客数
+        <span id="busuanzi_value_site_uv"></span>
+        人
+      </span>
+    
+    
+
+  
+
+</div>
+
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+  <script defer src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
