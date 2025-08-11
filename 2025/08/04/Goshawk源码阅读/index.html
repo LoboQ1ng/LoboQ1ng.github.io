@@ -27,7 +27,7 @@
 <meta property="og:description" content="我不造啊，我什么都不造（T_^）;发生了什么？怎么就过去了一个月？">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2025-08-04T08:19:36.000Z">
-<meta property="article:modified_time" content="2025-08-04T08:48:03.955Z">
+<meta property="article:modified_time" content="2025-08-08T02:43:54.565Z">
 <meta property="article:author" content="Lobo Q1ng">
 <meta property="article:tag" content="静态程序分析">
 <meta property="article:tag" content="Clang Static Analyzer">
@@ -237,7 +237,7 @@
         
         
         
-          210 分钟
+          212 分钟
         
       </span>
     
@@ -968,6 +968,9 @@
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs cpp">state = state-&gt;<span class="hljs-built_in">set</span>&lt;RegionState&gt;(RS);<br>C.<span class="hljs-built_in">addTransition</span>(state);<br></code></pre></td></tr></table></figure>
 
 <p>否则修改不会生效，路径的状态仍然是旧的。当前阶段的笔者（”菜逼“）认为，由于Goshawk并不检查<em>内存泄露</em>，所以这个符号不更新进入State中也不影响结果。</p>
+<p><strong>2025.8.8更：</strong></p>
+<p>整个<code>Analyzer</code>很多内容是Goshawk借鉴于MallocChecker的。因此这个优化是必要的，原MallocChecker是加上了<code>C.addTransition()</code>进行状态回写。</p>
+<p>其次，关于参数以地址形式传递时无法识别的问题，也并不是Goshawk的问题，这一部分代码也是借鉴于MallocChecker的，因此这实际上是CSA中<code>unix.Malloc</code>这个检查器的问题。关于这一问题笔者提了一个<a target="_blank" rel="noopener" href="https://github.com/llvm/llvm-project/issues/152446"> Issue #152446 · llvm&#x2F;llvm-project</a>，以及相应的<a target="_blank" rel="noopener" href="https://github.com/llvm/llvm-project/pull/152462">Pull Request #152462 · llvm&#x2F;llvm-project</a></p>
 
                 
               </div>
